@@ -62,6 +62,7 @@ public class PGSBasedMixupMapperOptions {
 	private final double mafFilter;
 	private final String forceSeqName;
 	private final String gwasSummaryStatisticsPhenotypeCouplingFile;
+	private String genotypeToPhenotypeSampleCouplingFile;
 //	private final boolean quantileNormalizePermutations;
 
 	public boolean isDebugMode() {
@@ -153,6 +154,13 @@ public class PGSBasedMixupMapperOptions {
 		OptionBuilder.hasArg();
 		OptionBuilder.withDescription("CSV file representing the coupling between GWAS summary statistics files and phenotypes.");
 		OptionBuilder.withLongOpt("gwasStatsToPhenCoupling");
+		OptionBuilder.isRequired();
+		OPTIONS.addOption(OptionBuilder.create("wpc"));
+
+		OptionBuilder.withArgName("path");
+		OptionBuilder.hasArg();
+		OptionBuilder.withDescription("CSV file representing the current coupling between genotype and phenotype samples.");
+		OptionBuilder.withLongOpt("genToPhenSampleCoupling");
 		OptionBuilder.isRequired();
 		OPTIONS.addOption(OptionBuilder.create("gpc"));
 
@@ -348,7 +356,8 @@ public class PGSBasedMixupMapperOptions {
 		debugMode = commandLine.hasOption('d');
 		forceSeqName = commandLine.hasOption('f') ? commandLine.getOptionValue('f') : null;
 		gwasSummaryStatisticsPath = commandLine.getOptionValue('s');
-		gwasSummaryStatisticsPhenotypeCouplingFile = commandLine.getOptionValue("gpc");
+		gwasSummaryStatisticsPhenotypeCouplingFile = commandLine.getOptionValue("wpc");
+		genotypeToPhenotypeSampleCouplingFile = commandLine.getOptionValue("gpc");
 		debugFolder = new File(outputBasePath + "_debugFiles");
 //		intermediateFolder = new File(outputBasePath + "_intermediates");
 //		ignoreGeneCorrelations = commandLine.hasOption("igc");
@@ -1025,6 +1034,11 @@ public class PGSBasedMixupMapperOptions {
 	public String getGwasSummaryStatisticsPhenotypeCouplingFile() {
 		return gwasSummaryStatisticsPhenotypeCouplingFile;
 	}
+
+    public String getGenotypeToPhenotypeSampleCouplingFile() {
+        return genotypeToPhenotypeSampleCouplingFile;
+    }
+
 //
 //	public boolean isQuantileNormalizePermutations() {
 //		return quantileNormalizePermutations;

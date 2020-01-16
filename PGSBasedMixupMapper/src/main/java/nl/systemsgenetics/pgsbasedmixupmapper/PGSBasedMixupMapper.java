@@ -1,13 +1,15 @@
 package nl.systemsgenetics.pgsbasedmixupmapper;
 
 import cern.colt.matrix.tdouble.DoubleMatrix1D;
+import cern.jet.math.tdouble.DoubleFunctions;
 import com.opencsv.CSVParser;
 import com.opencsv.CSVParserBuilder;
 import com.opencsv.CSVReader;
 import com.opencsv.CSVReaderBuilder;
-import nl.systemsgenetics.gwassummarystatistics.GwasSummaryStatisticsVcfData;
+import nl.systemsgenetics.gwassummarystatistics.GwasSummaryStatisticsException;
+import nl.systemsgenetics.gwassummarystatistics.VcfGwasSummaryStatistics;
 import org.apache.commons.cli.ParseException;
-import org.apache.commons.math3.stat.correlation.SpearmansCorrelation;
+import org.apache.commons.math3.stat.StatUtils;
 import org.apache.commons.math3.stat.ranking.NaNStrategy;
 import org.apache.commons.math3.stat.ranking.NaturalRanking;
 import org.apache.commons.math3.stat.ranking.TiesStrategy;
@@ -20,10 +22,11 @@ import org.molgenis.genotype.sampleFilter.SampleIdIncludeFilter;
 import org.molgenis.genotype.variantFilter.VariantCombinedFilter;
 import org.molgenis.genotype.variantFilter.VariantFilter;
 import org.molgenis.genotype.variantFilter.VariantFilterMaf;
-import org.molgenis.genotype.vcf.VcfGenotypeData;
 import umcg.genetica.math.matrix2.DoubleMatrixDataset;
 
 import java.io.*;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.text.DateFormat;
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
@@ -56,11 +59,15 @@ public class PGSBasedMixupMapper {
 	private final Map<String, String> genotypeSampleToTraitSample;
 	private final DoubleMatrixDataset<String, String> phenotypeMatrix;
 	private final DoubleMatrixDataset<String, String> zScoreMatrix;
+	private List<String> genotypeSampleIdentifiers;
+	private List<String> phenotypeSampleIdentifiers;
 
 	public PGSBasedMixupMapper(RandomAccessGenotypeData genotypeData,
 							   ArrayList<Sample> phenotypeSamples,
-							   Map<String, String> genotypeSampleToTraitSample) throws PGSBasedMixupMapperException {
+							   Map<String, String> genotypeSampleToTraitSample, Map<String, VcfGwasSummaryStatistics> gwasSummaryStatisticsMap) throws PGSBasedMixupMapperException {
 		this.genotypeData = genotypeData;
+		this.setGenotypeSampleIdentifiers();
+		this.setPhenotypeSampleIdentifiers(phenotypeSamples);
 
 		// Check if all phenotype samples are unique.
 		assertUniquePhenotypeSamples(genotypeSampleToTraitSample);
@@ -79,21 +86,83 @@ public class PGSBasedMixupMapper {
 			throw new PGSBasedMixupMapperException("An error occured while processing phenotype data", e);
 		}
 
-		// Map QTLs for all stuff
-//		mapQTLs();
-
-		// Calculate polygenic scores
-		calculatePolyGenicScores();
-		// Get the matrix with (Z?)scores
 		zScoreMatrix = getzScoreMatrix();
+
+		for (String phenotype : phenotypeMatrix.getColObjects()) {
+			// Calculate the Z scores for every phenotype
+			DoubleMatrixDataset<String, String> phenotypeSpecificZscoreMatrix = calculateZscoreMatrix(phenotype);
+			// Sum the Z score.
+			zScoreMatrix.getMatrix()
+					.assign(phenotypeSpecificZscoreMatrix.getMatrix(), DoubleFunctions.plus);
+		}
+		zScoreMatrix.getMatrix().assign(DoubleFunctions.div(phenotypeMatrix.getColObjects().size()));
 
 		// Get the samples
 		Map<String, String> bestMatchingPhenotypeSamplePerGenotype = new HashMap<>();
-		for (Sample genotypeSample : genotypeData.getSamples()) {
+		for (String genotypeSample : genotypeSampleIdentifiers) {
 			determineBestMatchingPhenotypeSample(genotypeSample, bestMatchingPhenotypeSamplePerGenotype);
 		}
 
-		resolveMixups(bestMatchingPhenotypeSamplePerGenotype);
+		resolveMixUps(bestMatchingPhenotypeSamplePerGenotype);
+	}
+
+	private DoubleMatrixDataset<String, String> calculateZscoreMatrix(String phenotype) {
+		DoubleMatrixDataset<String, String> zScoreMatrixOfPolyGenicScoreDeviations =
+				new DoubleMatrixDataset<>(genotypeSampleIdentifiers, phenotypeSampleIdentifiers);
+
+		// Initialize residuals of trait prediction
+		double[] residuals = new double[genotypeSampleIdentifiers.size()];
+		// Initialize polygenic scores
+		double[] polyGenicScores = new double[genotypeSampleIdentifiers.size()];
+
+		// Calculate the polygenic score for every genotype sample
+		for (int i = 0; i < genotypeSampleIdentifiers.size(); i++) {
+			String genotypeSample = genotypeSampleIdentifiers.get(i);
+			// Calculate polygenic score
+			polyGenicScores[i] = calculatePolyGenicScore(genotypeSample);
+			// Obtain the actual phenotype score
+			double actualPhenotypeScore = phenotypeMatrix.getElement(
+					genotypeSampleToTraitSample.get(genotypeSample), phenotype);
+			// Calculate the residual
+			residuals[i] = actualPhenotypeScore - polyGenicScores[i];
+		}
+
+		// Calculate the standard deviation and the mean of the residuals.
+		double variance = StatUtils.populationVariance(residuals);
+		double sd = Math.sqrt(variance);
+		double mean = StatUtils.mean(residuals);
+
+		// Calculate Z-score for every sample combination
+		for (int i = 0; i < genotypeSampleIdentifiers.size(); i++) {
+			String genotypeSample = genotypeSampleIdentifiers.get(i);
+			for (String phenotypeSample : phenotypeSampleIdentifiers) {
+				double actualTraitScores = phenotypeMatrix.getElement(phenotypeSample, phenotype);
+				double polyGenicScoreDeviation = Math.abs(actualTraitScores - polyGenicScores[i]);
+
+				// Divide every standard deviation with the standard deviations within the population of (...)
+				zScoreMatrixOfPolyGenicScoreDeviations.setElement(
+						genotypeSample, phenotypeSample, (polyGenicScoreDeviation - mean) / sd);
+			}
+		}
+		return zScoreMatrixOfPolyGenicScoreDeviations;
+	}
+
+	private void setGenotypeSampleIdentifiers() {
+		genotypeSampleIdentifiers = new ArrayList<>(this.genotypeSampleToTraitSample.keySet());
+		if (!genotypeData.getSamples().stream()
+				.map(Sample::getId).collect(Collectors.toList())
+				.containsAll(genotypeSampleIdentifiers)) {
+			throw new IllegalArgumentException("genotype data does not contain all samples from the link file");
+		}
+	}
+
+	private void setPhenotypeSampleIdentifiers(ArrayList<Sample> phenotypeSamples) {
+		phenotypeSampleIdentifiers = new ArrayList<>(this.genotypeSampleToTraitSample.values());
+		if (!genotypeData.getSamples().stream()
+				.map(Sample::getId).collect(Collectors.toList())
+				.containsAll(genotypeSampleIdentifiers)) {
+			throw new IllegalArgumentException("phenotype data does not contain all samples from the link file");
+		}
 	}
 
 	private void assertUniquePhenotypeSamples(Map<String, String> genotypeSampleToTraitSample) {
@@ -106,11 +175,12 @@ public class PGSBasedMixupMapper {
 		}
 	}
 
-	private void calculatePolyGenicScores() {
+	private double calculatePolyGenicScore(String id) {
 
+		return 1;
 	}
 
-	private void resolveMixups(Map<String, String> bestMatchingPhenotypeSamplePerGenotypeSample) {
+	private void resolveMixUps(Map<String, String> bestMatchingPhenotypeSamplePerGenotypeSample) {
 		Map<String, String> traitSampleToGenotypeSample =
 				genotypeSampleToTraitSample.entrySet()
 						.stream()
@@ -149,28 +219,14 @@ public class PGSBasedMixupMapper {
 	}
 
 	private DoubleMatrixDataset<String, String> getzScoreMatrix() {
-		return new DoubleMatrixDataset<>();
+		return new DoubleMatrixDataset<>(genotypeSampleIdentifiers, phenotypeSampleIdentifiers);
 	}
 
-	private void determineBestMatchingPhenotypeSample(Sample genotypeSample, Map<String, String> bestMatchingPhenotypeSamplePerGenotype) {
-		DoubleMatrix1D scores = zScoreMatrix.getCol(genotypeSample.getId());
+	private void determineBestMatchingPhenotypeSample(String genotypeSample, Map<String, String> bestMatchingPhenotypeSamplePerGenotype) {
+		DoubleMatrix1D scores = zScoreMatrix.getCol(genotypeSample);
 		int minimumValueIndex = (int) scores.getMinLocation()[1];
-		bestMatchingPhenotypeSamplePerGenotype.put(genotypeSample.getId(),
+		bestMatchingPhenotypeSamplePerGenotype.put(genotypeSample,
 				phenotypeMatrix.getRowObjects().get(minimumValueIndex));
-	}
-
-	private void mapQTLs() {
-		// Quantile normalize and rank traits
-		rankPhenotypes();
-
-		for (int i = 0; i < genotypeData.getVariantIdMap().size(); i++) {
-			for (int j = 0; j < phenotypeMatrix.columns(); j++) {
-				new SpearmansCorrelation();
-			}
-		}
-
-
-		// Return QTLS
 	}
 
 	private void rankPhenotypes() {
@@ -186,19 +242,22 @@ public class PGSBasedMixupMapper {
 
 	private DoubleMatrixDataset<String, String> phenotypesToDoubleMatrixDataset(ArrayList<Sample> phenotypeSamples) throws Exception {
 		List<String> phenotypeLabels = getPhenotypeLabels(phenotypeSamples);
-		DoubleMatrixDataset<String, String> traitMatrix = new DoubleMatrixDataset<>();
-		traitMatrix.setRowObjects(phenotypeSamples.stream().map(Sample::getId).collect(Collectors.toList()));
-		traitMatrix.setColObjects(phenotypeLabels);
-		traitMatrix.setMatrix(new double[phenotypeSamples.size()][phenotypeLabels.size()]);
+		// Initialize phenotype matrix (samples as rows; phenotypes as columns)
+		DoubleMatrixDataset<String, String> phenotypeMatrix = new DoubleMatrixDataset<>(
+				phenotypeSampleIdentifiers,
+				phenotypeLabels);
+
 		for (int i = 0; i < phenotypeLabels.size(); i++) {
 			String key = phenotypeLabels.get(i);
+			// Filter to make sure that the same phenotype samples are used.
 			double[] values = phenotypeSamples.stream()
+					.filter(sample -> phenotypeSampleIdentifiers.contains(sample.getId()))
 					.map(sample -> Double.valueOf(String.valueOf(sample.getAnnotationValues().get(key))))
 					.mapToDouble(Double::doubleValue)
 					.toArray();
-			traitMatrix.viewCol(i).assign(values);
+			phenotypeMatrix.viewCol(i).assign(values);
 		}
-		return traitMatrix;
+		return phenotypeMatrix;
 	}
 
 	private ArrayList<String> getPhenotypeLabels(ArrayList<Sample> phenotypeSamples) {
@@ -256,12 +315,15 @@ public class PGSBasedMixupMapper {
 		ArrayList<Sample> traitSamples = loadTraitSamples(options);
 
 		// Load GWAS summary statistics
-		loadGwasSummaryStatistics(options);
+		Map<String, String> gwasPhenotypeCoupling = loadGwasSummaryStatisticsPhenotypeCouplings(
+				options.getGwasSummaryStatisticsPhenotypeCouplingFile(), CSV_DELIMITER);
+		Map<String, VcfGwasSummaryStatistics> gwasSummaryStatisticsMap = loadGwasSummaryStatisticsMap(
+				options.getGwasSummaryStatisticsPath(), gwasPhenotypeCoupling);
 
 		// Run the mixup mapper stuff
 		try {
 			PGSBasedMixupMapper pgsBasedMixupMapper = new PGSBasedMixupMapper(
-					genotypeData, traitSamples, null);
+					genotypeData, traitSamples, null, gwasSummaryStatisticsMap);
 			pgsBasedMixupMapper.getResults();
 
 		} catch (PGSBasedMixupMapperException e) {
@@ -272,17 +334,78 @@ public class PGSBasedMixupMapper {
 		}
 	}
 
-	private static void loadGwasSummaryStatistics(PGSBasedMixupMapperOptions options) {
-		String traitSpecificGwasSummaryStatisiticsVcfPath =
-				"/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/summarystatistics/ukb-b-19953.vcf.gz";
+	private static Map<String, String> loadGwasSummaryStatisticsPhenotypeCouplings(String couplingFilePath, char delimiter) {
+		Map<String, String> gwasSummaryStatisticsPhenotypeCoupling = new LinkedHashMap<>();
+
 		try {
-			new GwasSummaryStatisticsVcfData(
-					new VcfGenotypeData(new File(
-							traitSpecificGwasSummaryStatisiticsVcfPath + ".vcf.gz"),
-							0,0.4));
-		} catch (IOException e) {
-			e.printStackTrace();
+			// Create prepare csv parser
+			final CSVParser parser = new CSVParserBuilder()
+					.withSeparator(delimiter)
+					.withIgnoreQuotations(true).build();
+			final CSVReader reader = new CSVReaderBuilder(new BufferedReader(
+					new FileReader(couplingFilePath)))
+					.withCSVParser(parser).build();
+
+			String[] nextLine;
+			int lineIndex = 0;
+			while ((nextLine = reader.readNext()) != null) {
+				// We want strictly 2 values every line:
+				// one for the prefix of the gwas vcf file and
+				// one for the phenotype label that this represents.
+				if (nextLine.length != 2) {
+					throw new PGSBasedMixupMapperException(String.format(
+							"Encountered %d values on line %d while 2 where expected",
+							nextLine.length, lineIndex));
+				}
+				String gwasSummaryStatisticsFilePrefix = nextLine[0];	// The first value (index zero (0)) on this
+																		// line respresents the prefix for a vcf(.gz(.tbi)) file(s)
+				// Throw an exception if the prefix is already used.
+				if (gwasSummaryStatisticsPhenotypeCoupling.containsKey(gwasSummaryStatisticsFilePrefix)) {
+					throw new PGSBasedMixupMapperException(String.format(
+							"Encountered a duplicate prefix '%s' on line %d, this is not supported.",
+							gwasSummaryStatisticsFilePrefix, lineIndex));
+				}
+				gwasSummaryStatisticsPhenotypeCoupling.put(
+						gwasSummaryStatisticsFilePrefix,
+						nextLine[1]); 	// The second value (index one (1)) on this line represents the phenotype
+										// label that corresponds to the gwas summary stats in the vcf file.
+
+				// Count the line
+				lineIndex++;
+			}
+
+		} catch (IOException | PGSBasedMixupMapperException e) {
+			System.err.println("GWAS summary statistics phenotype coupling file could not be loaded: " + e.getMessage());
+			System.err.println("See log file for stack trace");
+			LOGGER.fatal("GWAS summary statistics phenotype coupling file could not be loaded: " + e.getMessage(), e);
+			System.exit(1);
 		}
+
+		// Return the stuff...
+		return gwasSummaryStatisticsPhenotypeCoupling;
+	}
+
+	private static Map<String, VcfGwasSummaryStatistics> loadGwasSummaryStatisticsMap(String gwasSummaryStatisticsPath, Map<String, String> gwasPhenotypeCoupling) {
+		Map<String, VcfGwasSummaryStatistics> summaryStatisticsVcfDataMap = new LinkedHashMap<>();
+
+		Path traitSpecificGwasSummaryStatisiticsVcfPath =
+				Paths.get(gwasSummaryStatisticsPath);
+		try {
+			for (String gwasSummaryStatisticsFilePrefix : gwasPhenotypeCoupling.keySet()) {
+				summaryStatisticsVcfDataMap.put(gwasPhenotypeCoupling.get(gwasSummaryStatisticsFilePrefix),
+						new VcfGwasSummaryStatistics(
+								traitSpecificGwasSummaryStatisiticsVcfPath.resolve(gwasSummaryStatisticsFilePrefix + ".vcf.gz").toFile(),
+								750000, 0.4));
+
+			}
+
+		} catch (IOException e) {
+			System.err.println("GWAS summary statistics data could not be loaded: " + e.getMessage());
+			System.err.println("See log file for stack trace");
+			LOGGER.fatal("GWAS summary statistics data could not be loaded: " + e.getMessage(), e);
+			System.exit(1);
+		}
+		return summaryStatisticsVcfDataMap;
 	}
 
 	private void getResults() {

@@ -61,6 +61,7 @@ public class PGSBasedMixupMapperOptions {
 //	private final boolean saveUsedVariantsPerGene;
 	private final double mafFilter;
 	private final String forceSeqName;
+	private final String gwasSummaryStatisticsPhenotypeCouplingFile;
 //	private final boolean quantileNormalizePermutations;
 
 	public boolean isDebugMode() {
@@ -146,7 +147,14 @@ public class PGSBasedMixupMapperOptions {
 		OptionBuilder.withDescription("GWAS summary statistics path");
 		OptionBuilder.withLongOpt("gwasStatsPath");
 		OptionBuilder.isRequired();
-		OPTIONS.addOption(OptionBuilder.create('t'));
+		OPTIONS.addOption(OptionBuilder.create('s'));
+
+		OptionBuilder.withArgName("path");
+		OptionBuilder.hasArg();
+		OptionBuilder.withDescription("CSV file representing the coupling between GWAS summary statistics files and phenotypes.");
+		OptionBuilder.withLongOpt("gwasStatsToPhenCoupling");
+		OptionBuilder.isRequired();
+		OPTIONS.addOption(OptionBuilder.create("gpc"));
 
 		OptionBuilder.withArgName("string");
 		OptionBuilder.hasArg();
@@ -339,7 +347,8 @@ public class PGSBasedMixupMapperOptions {
 		logFile = new File(outputBasePath + ".log");
 		debugMode = commandLine.hasOption('d');
 		forceSeqName = commandLine.hasOption('f') ? commandLine.getOptionValue('f') : null;
-		gwasSummaryStatisticsPath = commandLine.getOptionValue('t');
+		gwasSummaryStatisticsPath = commandLine.getOptionValue('s');
+		gwasSummaryStatisticsPhenotypeCouplingFile = commandLine.getOptionValue("gpc");
 		debugFolder = new File(outputBasePath + "_debugFiles");
 //		intermediateFolder = new File(outputBasePath + "_intermediates");
 //		ignoreGeneCorrelations = commandLine.hasOption("igc");
@@ -1011,6 +1020,10 @@ public class PGSBasedMixupMapperOptions {
 
 	public String getGwasSummaryStatisticsPath() {
 		return gwasSummaryStatisticsPath;
+	}
+
+	public String getGwasSummaryStatisticsPhenotypeCouplingFile() {
+		return gwasSummaryStatisticsPhenotypeCouplingFile;
 	}
 //
 //	public boolean isQuantileNormalizePermutations() {

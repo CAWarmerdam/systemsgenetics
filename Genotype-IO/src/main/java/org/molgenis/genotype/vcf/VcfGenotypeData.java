@@ -57,7 +57,7 @@ public class VcfGenotypeData extends AbstractRandomAccessGenotypeData implements
     private final TabixIndex tabixIndex;
     private final int sampleVariantProviderUniqueId;
     private final SampleVariantsProvider variantProvider;
-    private final VcfMeta vcfMeta;
+    protected final VcfMeta vcfMeta;
     private transient Map<String, Annotation> cachedSampleAnnotationsMap;
     private transient GeneticVariant cachedGeneticVariant;
     private transient VcfRecord cachedVcfRecord;
@@ -570,7 +570,7 @@ public class VcfGenotypeData extends AbstractRandomAccessGenotypeData implements
         };
     }
 
-    private VcfRecord getVcfRecord(GeneticVariant variant) {
+    protected VcfRecord getVcfRecord(GeneticVariant variant) {
         if (!variant.equals(cachedGeneticVariant)) {
             TabixIterator it;
             String line;

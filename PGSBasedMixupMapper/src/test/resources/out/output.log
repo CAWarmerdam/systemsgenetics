@@ -302,3 +302,35 @@ INFO - Supplied options:
 INFO -  * Ouput path: /Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/out/output
 INFO -  * Debug mode: off
 INFO - Done loading genotype data
+INFO - DEPICT2.0.51-SNAPSHOT
+INFO - Current date and time: 2020-01-17 17:20:18
+INFO - Supplied options:
+INFO -  * Ouput path: /Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/out/output
+INFO -  * Debug mode: off
+INFO - Done loading genotype data
+FATAL - GWAS summary statistics data could not be loaded: VCF file not found at /Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/summarystatistics/ukb-b-19953.vcf.gz
+java.io.FileNotFoundException: VCF file not found at /Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/summarystatistics/ukb-b-19953.vcf.gz
+	at org.molgenis.genotype.vcf.VcfGenotypeData.<init>(VcfGenotypeData.java:99)
+	at nl.systemsgenetics.gwassummarystatistics.VcfGwasSummaryStatistics.<init>(VcfGwasSummaryStatistics.java:61)
+	at nl.systemsgenetics.gwassummarystatistics.VcfGwasSummaryStatistics.<init>(VcfGwasSummaryStatistics.java:53)
+	at nl.systemsgenetics.pgsbasedmixupmapper.PGSBasedMixupMapper.loadGwasSummaryStatisticsMap(PGSBasedMixupMapper.java:462)
+	at nl.systemsgenetics.pgsbasedmixupmapper.PGSBasedMixupMapper.main(PGSBasedMixupMapper.java:349)
+INFO - DEPICT2.0.51-SNAPSHOT
+INFO - Current date and time: 2020-01-17 17:20:45
+INFO - Supplied options:
+INFO -  * Ouput path: /Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/out/output
+INFO -  * Debug mode: off
+INFO - Done loading genotype data
+FATAL - GWAS summary statistics data could not be loaded: VCF file not found at /Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/summarystatistics/ieu-a-780.vcf.gz/ukb-b-19953.vcf.gz
+java.io.FileNotFoundException: VCF file not found at /Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/summarystatistics/ieu-a-780.vcf.gz/ukb-b-19953.vcf.gz
+	at org.molgenis.genotype.vcf.VcfGenotypeData.<init>(VcfGenotypeData.java:99)
+	at nl.systemsgenetics.gwassummarystatistics.VcfGwasSummaryStatistics.<init>(VcfGwasSummaryStatistics.java:61)
+	at nl.systemsgenetics.gwassummarystatistics.VcfGwasSummaryStatistics.<init>(VcfGwasSummaryStatistics.java:53)
+	at nl.systemsgenetics.pgsbasedmixupmapper.PGSBasedMixupMapper.loadGwasSummaryStatisticsMap(PGSBasedMixupMapper.java:462)
+	at nl.systemsgenetics.pgsbasedmixupmapper.PGSBasedMixupMapper.main(PGSBasedMixupMapper.java:349)
+INFO - DEPICT2.0.51-SNAPSHOT
+INFO - Current date and time: 2020-01-17 17:21:22
+INFO - Supplied options:
+INFO -  * Ouput path: /Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/out/output
+INFO -  * Debug mode: off
+INFO - Done loading genotype data

@@ -120,18 +120,18 @@ public class VcfGwasSummaryStatistics extends VcfGenotypeData{
     }
 
     public float[][] getEffectSizeEstimates(GeneticVariant variant) throws VcfGwasSummaryStatisticsException {
-        return getSummaryStatistics(variant, getReservedKeyFormat("ES"));
+        return getSummaryStatisticsPerAlternativeAllele(variant, getReservedKeyFormat("ES"));
     }
 
     public float[][] getStandardErrorOfES(GeneticVariant variant) throws VcfGwasSummaryStatisticsException {
-        return getSummaryStatistics(variant, getReservedKeyFormat("SE"));
+        return getSummaryStatisticsPerAlternativeAllele(variant, getReservedKeyFormat("SE"));
     }
 
     public float[][] getPValues(GeneticVariant variant) throws VcfGwasSummaryStatisticsException {
-        return getSummaryStatistics(variant, getReservedKeyFormat("LP"));
+        return getSummaryStatisticsPerAlternativeAllele(variant, getReservedKeyFormat("LP"));
     }
 
-    public float[][] getSummaryStatistics(GeneticVariant variant, VcfMetaFormat fieldFormat)
+    public float[][] getSummaryStatisticsPerAlternativeAllele(GeneticVariant variant, VcfMetaFormat fieldFormat)
             throws VcfGwasSummaryStatisticsException {
         if (!fieldFormat.getType().equals(VcfMetaFormat.Type.FLOAT)) {
             throw new IllegalArgumentException(String.format("The '%s' field's type '%s' is not 'Float'",
@@ -152,10 +152,10 @@ public class VcfGwasSummaryStatistics extends VcfGenotypeData{
         }
 
         // Get the number of alleles
-        int alleleCount = variant.getAlternativeAlleles().getAlleleCount();
+        int alternativeAlleleCount = variant.getAlternativeAlleles().getAlleleCount();
 
         // Initialize values with zeros
-        float[][] values = new float[nrStudies][alleleCount];
+        float[][] values = new float[nrStudies][alternativeAlleleCount];
 
         // Get the index of the required field
         int idx = vcfRecord.getFormatIndex(fieldFormat.getId());
@@ -166,15 +166,21 @@ public class VcfGwasSummaryStatistics extends VcfGenotypeData{
                 String valueString = vcfSample.getData(idx);
                 if (valueString != null) {
                     String[] splitValuesString = StringUtils.split(valueString, ',');
-                    if (splitValuesString.length != alleleCount) {
+                    if (splitValuesString.length != alternativeAlleleCount) {
                         throw new VcfGwasSummaryStatisticsException(String.format(
-                                "Error in '%s' value for study [%s], found value: %s",
-                                fieldFormat.getId(), vcfMeta.getSampleName(i), valueString));
+                                "Error in '%s' value for study [%s], found %d value(s) (%s), " +
+                                        "while %d were expected based on the alternative allele count",
+                                fieldFormat.getId(), vcfMeta.getSampleName(i), splitValuesString.length,
+                                valueString, alternativeAlleleCount));
                     }
 
                     for (int j = 0; j < splitValuesString.length; j++) {
                         try {
-                            values[i][j] = valueString.equals(".") ? 0f : Float.parseFloat(valueString);
+                            if (splitValuesString[j].equals(".")) {
+                                values[i][j] = 0f;
+                            } else {
+                                values[i][j] = Float.parseFloat(splitValuesString[j]);
+                            }
                         } catch (NumberFormatException e) {
                             throw new VcfGwasSummaryStatisticsException(String.format(
                                     "Error in '%s' value for study [%s], found value: %s",

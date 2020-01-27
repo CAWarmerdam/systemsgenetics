@@ -2,6 +2,7 @@ package nl.systemsgenetics.gwassummarystatistics;
 
 import org.molgenis.genotype.Sample;
 import org.molgenis.genotype.variant.GeneticVariant;
+import org.molgenis.genotype.variantFilter.VariantIdIncludeFilter;
 import org.molgenis.vcf.meta.VcfMetaFormat;
 
 import java.io.File;
@@ -51,7 +52,7 @@ public class VcfGwasSummaryStatisticsTest {
         float[][] standardErrorOfES = summaryStatistics.getStandardErrorOfES(
                 variants.get(0));
         assertEquals(standardErrorOfES, new float[][]{{0.00443769f}});
-        float[][] pValues = summaryStatistics.getPValues(
+        float[][] pValues = summaryStatistics.getTransformedPValues(
                 variants.get(0));
         assertEquals(pValues, new float[][]{{0.522879f}});
         float[][] ncs = summaryStatistics.getSummaryStatisticsPerAlternativeAllele(
@@ -63,7 +64,7 @@ public class VcfGwasSummaryStatisticsTest {
         float[][] standardErrorOfESLastVar = summaryStatistics.getStandardErrorOfES(
                 variants.get(10));
         assertEquals(standardErrorOfESLastVar, new float[][]{{0.0152548f, 0.00492936f}});
-        float[][] pValuesLastVar = summaryStatistics.getPValues(
+        float[][] pValuesLastVar = summaryStatistics.getTransformedPValues(
                 variants.get(10));
         assertEquals(pValuesLastVar, new float[][]{{0.0757207f, 0.187087f}});
         float[][] accuracyScore = summaryStatistics.getSummaryStatisticsPerAlternativeAllele(
@@ -117,5 +118,32 @@ public class VcfGwasSummaryStatisticsTest {
 
         VcfMetaFormat actualFormatStandardError = VcfGwasSummaryStatistics.getReservedKeyFormat("SE");
         assertEquals(actualFormatStandardError, expectedFormatStandardError);
+    }
+
+    @org.testng.annotations.Test
+    public void testVariantFilterableGwasSummaryStatisticsDecorator() throws IOException {
+        Set<String> variantIdsToInclude = new HashSet<>(Arrays.asList(
+                "rs10399793", "rs8179466", "rs9442385"));
+        float[][][] effectSizes = {{{-0.00457955f}}, {{0.00336766f}}, {{0.00308509f, 0.00224527f}}};
+
+        VcfGwasSummaryStatistics summaryStatistics =
+                new VcfGwasSummaryStatistics(exampleGwasVcfFile,
+                        750000, // Represents the cache size in number of variants,
+                        // value copied from the GeneticRiskScoreCalculator module
+                        0.4);// Represents the minimum posterior probability to call,
+        // 0.4 is generally the default value);
+
+        MultiStudyGwasSummaryStatistics filteredVariants = new VariantFilterableGwasSummaryStatisticsDecorator(
+                summaryStatistics,
+                new VariantIdIncludeFilter(variantIdsToInclude));
+
+        int filteredVariantIndex = 0;
+        for (GeneticVariant variant : filteredVariants) {
+            assertTrue(variantIdsToInclude.contains(variant.getPrimaryVariantId()));
+            float[][] effectSizeEstimates = summaryStatistics.getEffectSizeEstimates(variant);
+            float[][] effectSizeEstimatesfiltered = filteredVariants.getEffectSizeEstimates(variant);
+            assertEquals(effectSizeEstimatesfiltered, effectSizeEstimates);
+            assertEquals(effectSizeEstimatesfiltered, effectSizes[filteredVariantIndex++]);
+        }
     }
 }

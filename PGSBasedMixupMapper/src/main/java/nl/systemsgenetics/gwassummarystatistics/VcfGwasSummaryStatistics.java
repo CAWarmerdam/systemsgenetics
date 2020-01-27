@@ -1,7 +1,11 @@
 package nl.systemsgenetics.gwassummarystatistics;
 
+import nl.systemsgenetics.polygenicscorecalculator.RiskEntry;
 import org.apache.commons.lang3.StringUtils;
+import org.molgenis.genotype.Allele;
+import org.molgenis.genotype.Alleles;
 import org.molgenis.genotype.variant.GeneticVariant;
+import org.molgenis.genotype.variantFilter.VariantFilter;
 import org.molgenis.genotype.vcf.VcfGenotypeData;
 import org.molgenis.vcf.VcfRecord;
 import org.molgenis.vcf.VcfSample;
@@ -10,11 +14,9 @@ import org.molgenis.vcf.meta.VcfMetaFormat;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.Map;
+import java.util.*;
 
-public class VcfGwasSummaryStatistics extends VcfGenotypeData{
+public class VcfGwasSummaryStatistics extends VcfGenotypeData implements MultiStudyGwasSummaryStatistics{
     private static final Map<String, VcfMetaFormat> RESERVED_KEYS = getReservedKeys();
 
     private static Map<String, VcfMetaFormat> getReservedKeys() {
@@ -49,15 +51,15 @@ public class VcfGwasSummaryStatistics extends VcfGenotypeData{
         return new VcfMetaFormat(properties);
     }
 
-    public VcfGwasSummaryStatistics(File bzipVcfFile, int cacheSize, double minimumPosteriorProbabilityToCall) throws FileNotFoundException, IOException, VcfGwasSummaryStatisticsException {
+    public VcfGwasSummaryStatistics(File bzipVcfFile, int cacheSize, double minimumPosteriorProbabilityToCall) throws IOException, VcfGwasSummaryStatisticsException {
         this(bzipVcfFile, new File(bzipVcfFile.getAbsolutePath() + ".tbi"), cacheSize, minimumPosteriorProbabilityToCall);
     }
 
-    public VcfGwasSummaryStatistics(File bzipVcfFile, File tabixIndexFile, double minimumPosteriorProbabilityToCall) throws FileNotFoundException, IOException, VcfGwasSummaryStatisticsException {
+    public VcfGwasSummaryStatistics(File bzipVcfFile, File tabixIndexFile, double minimumPosteriorProbabilityToCall) throws IOException, VcfGwasSummaryStatisticsException {
         this(bzipVcfFile, tabixIndexFile, 100, minimumPosteriorProbabilityToCall);
     }
 
-    public VcfGwasSummaryStatistics(File bzipVcfFile, File tabixIndexFile, int cacheSize, double minimumPosteriorProbabilityToCall) throws FileNotFoundException, IOException, VcfGwasSummaryStatisticsException {
+    public VcfGwasSummaryStatistics(File bzipVcfFile, File tabixIndexFile, int cacheSize, double minimumPosteriorProbabilityToCall) throws IOException, VcfGwasSummaryStatisticsException {
         super(bzipVcfFile, tabixIndexFile, cacheSize, minimumPosteriorProbabilityToCall);
 
         // Check the following
@@ -74,60 +76,38 @@ public class VcfGwasSummaryStatistics extends VcfGenotypeData{
         // NC 	Number of cases used to estimate genetic effect 	NO
         // ID 	Study variant identifier 	NO
 
-        // Check if variant IDs are unique
-//        long numberOfUniqueVariantIds = StreamSupport.stream(
-//                Spliterators.spliteratorUnknownSize(vcfGwasSummaryStatistics.iterator(), Spliterator.ORDERED),
-//                false).map(GeneticVariant::getPrimaryVariantId).distinct().count();
-//        int numberOfVariants = Iterators.size(vcfGwasSummaryStatistics.iterator());
-//        if (numberOfUniqueVariantIds != numberOfVariants) {
-//            throw new GwasSummaryStatisticsVcfDataException(String.format("Encountered an error in the VCF file, " +
-//                    "VCF file does not contain exclusively unique variant identifiers. (%d vs %d)",
-//                    numberOfUniqueVariantIds, numberOfVariants));
-//        }
-
         // Check if required fields ES and SE are in the format column
         assertReservedKeyValidity();
     }
 
     private void assertReservedKeyValidity() throws VcfGwasSummaryStatisticsException {
-        if (this.vcfMeta.getFormatMeta("ES") == null) {
-            throw new VcfGwasSummaryStatisticsException("Required field ES not present");
+        for (String reservedKey : RESERVED_KEYS.keySet()) {
+            assertVcfMetaValidity(reservedKey);
         }
-        if (!this.vcfMeta.getFormatMeta("ES").equals(RESERVED_KEYS.get("ES"))) {
-            throw new VcfGwasSummaryStatisticsException("Required format field ES not according to specifications");
-        }
-        if (this.vcfMeta.getFormatMeta("SE") == null) {
-            throw new VcfGwasSummaryStatisticsException("Required field SE not present");
-        }
-        if (!this.vcfMeta.getFormatMeta("SE").equals(RESERVED_KEYS.get("SE"))) {
-            throw new VcfGwasSummaryStatisticsException("Requried format field SE not according to specifications");
-        }
-        assertVcfMetaValidity("LP");
-        assertVcfMetaValidity("AF");
-        assertVcfMetaValidity("SS");
-        assertVcfMetaValidity("EZ");
-        assertVcfMetaValidity("SI");
-        assertVcfMetaValidity("NC");
-        assertVcfMetaValidity("ID");
     }
 
     private void assertVcfMetaValidity(String formatFieldKey) throws VcfGwasSummaryStatisticsException {
-        if (this.vcfMeta.getFormatMeta(formatFieldKey) != null &&
-                !this.vcfMeta.getFormatMeta(formatFieldKey).equals(RESERVED_KEYS.get(formatFieldKey))) {
+        if (this.vcfMeta.getFormatMeta(formatFieldKey) == null) {
+            throw new VcfGwasSummaryStatisticsException(String.format(
+                    "Reserved format field '%s' not in format declerations", formatFieldKey));
+        }
+        if (!this.vcfMeta.getFormatMeta(formatFieldKey).equals(RESERVED_KEYS.get(formatFieldKey))) {
             throw new VcfGwasSummaryStatisticsException(String.format(
                     "Reserved format field '%s' not according to specifications", formatFieldKey));
         }
     }
 
-    public float[][] getEffectSizeEstimates(GeneticVariant variant) throws VcfGwasSummaryStatisticsException {
+    @Override
+    public float[][] getEffectSizeEstimates(GeneticVariant variant) {
         return getSummaryStatisticsPerAlternativeAllele(variant, getReservedKeyFormat("ES"));
     }
 
-    public float[][] getStandardErrorOfES(GeneticVariant variant) throws VcfGwasSummaryStatisticsException {
+    public float[][] getStandardErrorOfES(GeneticVariant variant) {
         return getSummaryStatisticsPerAlternativeAllele(variant, getReservedKeyFormat("SE"));
     }
 
-    public float[][] getPValues(GeneticVariant variant) throws VcfGwasSummaryStatisticsException {
+    @Override
+    public float[][] getTransformedPValues(GeneticVariant variant) {
         return getSummaryStatisticsPerAlternativeAllele(variant, getReservedKeyFormat("LP"));
     }
 
@@ -159,13 +139,18 @@ public class VcfGwasSummaryStatistics extends VcfGenotypeData{
 
         // Get the index of the required field
         int idx = vcfRecord.getFormatIndex(fieldFormat.getId());
+        // Check if the field is present
         if (idx != -1) {
             // retrieve values from sample info
             int i = 0;
+            // Get the value for every sample
             for (VcfSample vcfSample : vcfRecord.getSamples()) {
                 String valueString = vcfSample.getData(idx);
                 if (valueString != null) {
+                    // There should be the same number of values as alleles. These should be split by a comma (",")
                     String[] splitValuesString = StringUtils.split(valueString, ',');
+                    // Check if the expected number of values corresponds to the actual number of values,
+                    // and throw an exception if this is not the case.
                     if (splitValuesString.length != alternativeAlleleCount) {
                         throw new VcfGwasSummaryStatisticsException(String.format(
                                 "Error in '%s' value for study [%s], found %d value(s) (%s), " +
@@ -174,8 +159,10 @@ public class VcfGwasSummaryStatistics extends VcfGenotypeData{
                                 valueString, alternativeAlleleCount));
                     }
 
+                    // For every value, try to convert it to a float
                     for (int j = 0; j < splitValuesString.length; j++) {
                         try {
+                            // A dot (".") represents a missing value, we replace this with zero.
                             if (splitValuesString[j].equals(".")) {
                                 values[i][j] = 0f;
                             } else {
@@ -196,5 +183,10 @@ public class VcfGwasSummaryStatistics extends VcfGenotypeData{
 
     public static VcfMetaFormat getReservedKeyFormat(String reservedKey) {
         return RESERVED_KEYS.get(reservedKey);
+    }
+
+    @Override
+    public Iterator<EffectAllele> effectAlleles(String studyName) {
+        return EffectAllele.effectAlleles(this.iterator(), this, Arrays.asList(getSampleNames()).indexOf(studyName));
     }
 }

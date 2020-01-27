@@ -22,7 +22,7 @@ import org.molgenis.genotype.variant.GeneticVariant;
  */
 public class VariantFilterableGenotypeDataDecorator extends AbstractRandomAccessGenotypeData implements VariantFilterableGenotypeData {
 	
-	private final RandomAccessGenotypeData originalGenotypeData;
+	protected final RandomAccessGenotypeData originalGenotypeData;
 	private final VariantFilter variantFilter;
 
 	public VariantFilterableGenotypeDataDecorator(RandomAccessGenotypeData originalGenotypeData, VariantFilter variantFilter) {

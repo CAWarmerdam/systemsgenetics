@@ -6,10 +6,13 @@ import nl.systemsgenetics.gwassummarystatistics.VcfGwasSummaryStatistics;
 import org.molgenis.genotype.GenotypeData;
 import org.molgenis.genotype.RandomAccessGenotypeData;
 import org.molgenis.genotype.Sample;
+import org.molgenis.genotype.util.LdCalculator;
+import org.molgenis.genotype.util.LdCalculatorException;
 import org.molgenis.genotype.variant.GeneticVariant;
 import umcg.genetica.math.matrix2.DoubleMatrixDataset;
 import org.apache.log4j.Logger;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;

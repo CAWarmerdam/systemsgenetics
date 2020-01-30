@@ -3,6 +3,7 @@ package nl.systemsgenetics.gwassummarystatistics;
 import org.molgenis.genotype.variant.GeneticVariant;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class EffectAllele implements Comparable<EffectAllele> {
     private final int alleleIndex;
@@ -123,14 +124,14 @@ public class EffectAllele implements Comparable<EffectAllele> {
                 if (!cachedSortedEffectAlleles.isEmpty()) {
                     // There is still at least one effect allele in the cache,
                     // We can just return this now
-                    return cachedSortedEffectAlleles.first();
+                    return cachedSortedEffectAlleles.pollFirst();
 
                 } else if (unorderedIterator.hasNext() || futureAllele != null) {
                     // The cache is empty!
                     // Fill the cache for the upcoming sequence.
                     cachedSortedEffectAlleles = getCachedSortedEffectAlleles(
                             futureAllele.variant.getSequenceName());
-                    return cachedSortedEffectAlleles.first();
+                    return cachedSortedEffectAlleles.pollFirst();
                 } else {
                     throw new NoSuchElementException();
                 }
@@ -157,11 +158,11 @@ public class EffectAllele implements Comparable<EffectAllele> {
     @Override
     public int compareTo(EffectAllele other) {
         if (this.getLogTransformedPValue() > other.getLogTransformedPValue()){
-            return 1;
+            return -1;
         } else if (this.getLogTransformedPValue() == other.getLogTransformedPValue()) {
             return Double.compare(Math.abs(this.getEffectSize()), Math.abs(other.getEffectSize()));
         } else {
-            return -1;
+            return 1;
         }
     }
 }

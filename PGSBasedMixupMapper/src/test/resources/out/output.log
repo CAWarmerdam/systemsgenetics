@@ -334,3 +334,1220 @@ INFO - Supplied options:
 INFO -  * Ouput path: /Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/out/output
 INFO -  * Debug mode: off
 INFO - Done loading genotype data
+INFO - PGSBasedMixupMapper2.0.51-SNAPSHOT
+INFO - Current date and time: 2020-01-28 09:45:18
+INFO - Supplied options:
+INFO -  * Ouput path: /Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/out/output
+INFO -  * Debug mode: off
+INFO - Loaded a genotype to phenotype sample coupling map for 403 samples
+INFO - Loaded genotype data (VCF file) from '[/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/genotypedata/1000G.gwasstats_filtered]'.
+INFO - 403 samples and 58919 variants present after filtering
+INFO - Loaded phenotype data for 403 samples
+INFO - Loaded GWAS summary statistics from '/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/summarystatistics/ieu-a-780.vcf.gz'
+INFO - 120318 variants present prior to filtering
+INFO - Removing 118453 variants not present in the genotype data, keeping 1865
+INFO - Loaded GWAS summary statistics from '/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/summarystatistics/ieu-a-781.vcf.gz'
+INFO - 119898 variants present prior to filtering
+INFO - Removing 118136 variants not present in the genotype data, keeping 1762
+INFO - PGSBasedMixupMapper2.0.51-SNAPSHOT
+INFO - Current date and time: 2020-01-28 15:00:44
+INFO - Supplied options:
+INFO -  * Ouput path: /Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/out/output
+INFO -  * Debug mode: off
+INFO - Loaded a genotype to phenotype sample coupling map for 403 samples
+INFO - Loaded genotype data (VCF file) from '[/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/genotypedata/1000G.gwasstats_filtered-biallelic]'.
+INFO - 403 samples and 58919 variants present after filtering
+INFO - Loaded phenotype data for 403 samples
+INFO - PGSBasedMixupMapper2.0.51-SNAPSHOT
+INFO - Current date and time: 2020-01-28 15:03:08
+INFO - Supplied options:
+INFO -  * Ouput path: /Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/out/output
+INFO -  * Debug mode: off
+INFO - Loaded a genotype to phenotype sample coupling map for 403 samples
+INFO - Loaded genotype data (VCF file) from '[/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/genotypedata/1000G.gwasstats_filtered-biallelic]'.
+INFO - 403 samples and 58919 variants present after filtering
+INFO - Loaded phenotype data for 403 samples
+INFO - Loaded GWAS summary statistics from '/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/summarystatistics/ieu-a-780.vcf.gz'
+INFO - 120318 variants present prior to filtering
+INFO - Removing 118453 variants not present in the genotype data, keeping 1865
+INFO - Loaded GWAS summary statistics from '/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/summarystatistics/ieu-a-781.vcf.gz'
+INFO - 119898 variants present prior to filtering
+INFO - Removing 118136 variants not present in the genotype data, keeping 1762
+INFO - PGSBasedMixupMapper2.0.51-SNAPSHOT
+INFO - Current date and time: 2020-01-28 15:13:24
+INFO - Supplied options:
+INFO -  * Ouput path: /Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/out/output
+INFO -  * Debug mode: off
+INFO - Loaded a genotype to phenotype sample coupling map for 403 samples
+INFO - Loaded genotype data (VCF file) from '[/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/genotypedata/1000G.gwasstats_filtered-biallelic]'.
+INFO - 403 samples and 58919 variants present after filtering
+INFO - Loaded phenotype data for 403 samples
+INFO - Loaded GWAS summary statistics from '/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/summarystatistics/ieu-a-780.vcf.gz'
+INFO - 120318 variants present prior to filtering
+INFO - Removing 118453 variants not present in the genotype data, keeping 1865
+INFO - Loaded GWAS summary statistics from '/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/summarystatistics/ieu-a-781.vcf.gz'
+INFO - 119898 variants present prior to filtering
+INFO - Removing 118136 variants not present in the genotype data, keeping 1762
+INFO - PGSBasedMixupMapper2.0.51-SNAPSHOT
+INFO - Current date and time: 2020-01-28 15:17:05
+INFO - Supplied options:
+INFO -  * Ouput path: /Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/out/output
+INFO -  * Debug mode: off
+INFO - Loaded a genotype to phenotype sample coupling map for 403 samples
+INFO - Loaded genotype data (VCF file) from '[/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/genotypedata/1000G.gwasstats_filtered-biallelic]'.
+INFO - 403 samples and 58919 variants present after filtering
+INFO - Loaded phenotype data for 403 samples
+INFO - Loaded GWAS summary statistics from '/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/summarystatistics/ieu-a-780.vcf.gz'
+INFO - 120318 variants present prior to filtering
+INFO - Removing 118453 variants not present in the genotype data, keeping 1865
+INFO - Loaded GWAS summary statistics from '/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/summarystatistics/ieu-a-781.vcf.gz'
+INFO - 119898 variants present prior to filtering
+INFO - Removing 118136 variants not present in the genotype data, keeping 1762
+INFO - PGSBasedMixupMapper2.0.51-SNAPSHOT
+INFO - Current date and time: 2020-01-28 15:19:07
+INFO - Supplied options:
+INFO -  * Ouput path: /Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/out/output
+INFO -  * Debug mode: off
+INFO - Loaded a genotype to phenotype sample coupling map for 403 samples
+INFO - Loaded genotype data (VCF file) from '[/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/genotypedata/1000G.gwasstats_filtered-biallelic]'.
+INFO - 403 samples and 58919 variants present after filtering
+INFO - Loaded phenotype data for 403 samples
+INFO - Loaded GWAS summary statistics from '/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/summarystatistics/ieu-a-780.vcf.gz'
+INFO - 120318 variants present prior to filtering
+INFO - Removing 118453 variants not present in the genotype data, keeping 1865
+INFO - Loaded GWAS summary statistics from '/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/summarystatistics/ieu-a-781.vcf.gz'
+INFO - 119898 variants present prior to filtering
+INFO - Removing 118136 variants not present in the genotype data, keeping 1762
+INFO - PGSBasedMixupMapper2.0.51-SNAPSHOT
+INFO - Current date and time: 2020-01-28 15:31:01
+INFO - Supplied options:
+INFO -  * Ouput path: /Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/out/output
+INFO -  * Debug mode: off
+INFO - Loaded a genotype to phenotype sample coupling map for 403 samples
+INFO - Loaded genotype data (VCF file) from '[/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/genotypedata/1000G.gwasstats_filtered-biallelic]'.
+INFO - 403 samples and 58919 variants present after filtering
+INFO - Loaded phenotype data for 403 samples
+INFO - Loaded GWAS summary statistics from '/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/summarystatistics/ieu-a-780.vcf.gz'
+INFO - 120318 variants present prior to filtering
+INFO - Removing 118453 variants not present in the genotype data, keeping 1865
+INFO - Loaded GWAS summary statistics from '/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/summarystatistics/ieu-a-781.vcf.gz'
+INFO - 119898 variants present prior to filtering
+INFO - Removing 118136 variants not present in the genotype data, keeping 1762
+INFO - PGSBasedMixupMapper2.0.51-SNAPSHOT
+INFO - Current date and time: 2020-01-28 15:33:08
+INFO - Supplied options:
+INFO -  * Ouput path: /Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/out/output
+INFO -  * Debug mode: off
+INFO - Loaded a genotype to phenotype sample coupling map for 403 samples
+INFO - Loaded genotype data (VCF file) from '[/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/genotypedata/1000G.gwasstats_filtered-biallelic]'.
+INFO - 403 samples and 58919 variants present after filtering
+INFO - Loaded phenotype data for 403 samples
+INFO - Loaded GWAS summary statistics from '/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/summarystatistics/ieu-a-780.vcf.gz'
+INFO - 120318 variants present prior to filtering
+INFO - Removing 118453 variants not present in the genotype data, keeping 1865
+INFO - Loaded GWAS summary statistics from '/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/summarystatistics/ieu-a-781.vcf.gz'
+INFO - 119898 variants present prior to filtering
+INFO - Removing 118136 variants not present in the genotype data, keeping 1762
+INFO - PGSBasedMixupMapper2.0.51-SNAPSHOT
+INFO - Current date and time: 2020-01-28 15:51:28
+INFO - Supplied options:
+INFO -  * Ouput path: /Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/out/output
+INFO -  * Debug mode: off
+INFO - Loaded a genotype to phenotype sample coupling map for 403 samples
+INFO - Loaded genotype data (VCF file) from '[/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/genotypedata/1000G.gwasstats_filtered-biallelic]'.
+INFO - 403 samples and 58919 variants present after filtering
+INFO - Loaded phenotype data for 403 samples
+INFO - Loaded GWAS summary statistics from '/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/summarystatistics/ieu-a-780.vcf.gz'
+INFO - 120318 variants present prior to filtering
+INFO - Removing 118453 variants not present in the genotype data, keeping 1865
+INFO - Loaded GWAS summary statistics from '/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/summarystatistics/ieu-a-781.vcf.gz'
+INFO - 119898 variants present prior to filtering
+INFO - Removing 118136 variants not present in the genotype data, keeping 1762
+INFO - PGSBasedMixupMapper2.0.51-SNAPSHOT
+INFO - Current date and time: 2020-01-28 15:53:23
+INFO - Supplied options:
+INFO -  * Ouput path: /Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/out/output
+INFO -  * Debug mode: off
+INFO - Loaded a genotype to phenotype sample coupling map for 403 samples
+INFO - Loaded genotype data (VCF file) from '[/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/genotypedata/1000G.gwasstats_filtered-biallelic]'.
+INFO - 403 samples and 58919 variants present after filtering
+INFO - Loaded phenotype data for 403 samples
+INFO - Loaded GWAS summary statistics from '/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/summarystatistics/ieu-a-780.vcf.gz'
+INFO - 120318 variants present prior to filtering
+INFO - Removing 118453 variants not present in the genotype data, keeping 1865
+INFO - Loaded GWAS summary statistics from '/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/summarystatistics/ieu-a-781.vcf.gz'
+INFO - 119898 variants present prior to filtering
+INFO - Removing 118136 variants not present in the genotype data, keeping 1762
+INFO - PGSBasedMixupMapper2.0.51-SNAPSHOT
+INFO - Current date and time: 2020-01-28 15:55:51
+INFO - Supplied options:
+INFO -  * Ouput path: /Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/out/output
+INFO -  * Debug mode: off
+INFO - Loaded a genotype to phenotype sample coupling map for 403 samples
+INFO - Loaded genotype data (VCF file) from '[/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/genotypedata/1000G.gwasstats_filtered-biallelic]'.
+INFO - 403 samples and 58919 variants present after filtering
+INFO - Loaded phenotype data for 403 samples
+INFO - Loaded GWAS summary statistics from '/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/summarystatistics/ieu-a-780.vcf.gz'
+INFO - 120318 variants present prior to filtering
+INFO - Removing 118453 variants not present in the genotype data, keeping 1865
+INFO - Loaded GWAS summary statistics from '/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/summarystatistics/ieu-a-781.vcf.gz'
+INFO - 119898 variants present prior to filtering
+INFO - Removing 118136 variants not present in the genotype data, keeping 1762
+INFO - PGSBasedMixupMapper2.0.51-SNAPSHOT
+INFO - Current date and time: 2020-01-28 15:59:01
+INFO - Supplied options:
+INFO -  * Ouput path: /Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/out/output
+INFO -  * Debug mode: off
+INFO - Loaded a genotype to phenotype sample coupling map for 403 samples
+INFO - Loaded genotype data (VCF file) from '[/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/genotypedata/1000G.gwasstats_filtered-biallelic]'.
+INFO - 403 samples and 58919 variants present after filtering
+INFO - Loaded phenotype data for 403 samples
+INFO - Loaded GWAS summary statistics from '/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/summarystatistics/ieu-a-780.vcf.gz'
+INFO - 120318 variants present prior to filtering
+INFO - Removing 118453 variants not present in the genotype data, keeping 1865
+INFO - Loaded GWAS summary statistics from '/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/summarystatistics/ieu-a-781.vcf.gz'
+INFO - 119898 variants present prior to filtering
+INFO - Removing 118136 variants not present in the genotype data, keeping 1762
+INFO - PGSBasedMixupMapper2.0.51-SNAPSHOT
+INFO - Current date and time: 2020-01-28 16:07:19
+INFO - Supplied options:
+INFO -  * Ouput path: /Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/out/output
+INFO -  * Debug mode: off
+INFO - Loaded a genotype to phenotype sample coupling map for 403 samples
+INFO - Loaded genotype data (VCF file) from '[/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/genotypedata/1000G.gwasstats_filtered-biallelic-403]'.
+INFO - 403 samples and 58919 variants present after filtering
+INFO - Loaded phenotype data for 403 samples
+INFO - Loaded GWAS summary statistics from '/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/summarystatistics/ieu-a-780.vcf.gz'
+INFO - 120318 variants present prior to filtering
+INFO - Removing 118453 variants not present in the genotype data, keeping 1865
+INFO - Loaded GWAS summary statistics from '/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/summarystatistics/ieu-a-781.vcf.gz'
+INFO - 119898 variants present prior to filtering
+INFO - Removing 118136 variants not present in the genotype data, keeping 1762
+INFO - PGSBasedMixupMapper2.0.51-SNAPSHOT
+INFO - Current date and time: 2020-01-28 16:18:12
+INFO - Supplied options:
+INFO -  * Ouput path: /Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/out/output
+INFO -  * Debug mode: off
+INFO - Loaded a genotype to phenotype sample coupling map for 403 samples
+INFO - Loaded genotype data (VCF file) from '[/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/genotypedata/1000G.gwasstats_filtered-biallelic-403]'.
+INFO - 403 samples and 58919 variants present after filtering
+INFO - Loaded phenotype data for 403 samples
+INFO - Loaded GWAS summary statistics from '/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/summarystatistics/ieu-a-780.vcf.gz'
+INFO - 120318 variants present prior to filtering
+INFO - Removing 118453 variants not present in the genotype data, keeping 1865
+INFO - Loaded GWAS summary statistics from '/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/summarystatistics/ieu-a-781.vcf.gz'
+INFO - 119898 variants present prior to filtering
+INFO - Removing 118136 variants not present in the genotype data, keeping 1762
+INFO - PGSBasedMixupMapper2.0.51-SNAPSHOT
+INFO - Current date and time: 2020-01-29 14:54:49
+INFO - Supplied options:
+INFO -  * Ouput path: /Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/out/output
+INFO -  * Debug mode: off
+INFO - Loaded a genotype to phenotype sample coupling map for 403 samples
+INFO - Loaded genotype data (VCF file) from '[/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/genotypedata/1000G.gwasstats_filtered-biallelic-403]'.
+INFO - 403 samples and 58919 variants present after filtering
+INFO - Loaded phenotype data for 403 samples
+INFO - Loaded GWAS summary statistics from '/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/summarystatistics/ieu-a-780.vcf.gz'
+INFO - 120318 variants present prior to filtering
+INFO - Removing 118453 variants not present in the genotype data, keeping 1865
+INFO - Loaded GWAS summary statistics from '/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/summarystatistics/ieu-a-781.vcf.gz'
+INFO - 119898 variants present prior to filtering
+INFO - Removing 118136 variants not present in the genotype data, keeping 1762
+INFO - PGSBasedMixupMapper2.0.51-SNAPSHOT
+INFO - Current date and time: 2020-01-29 14:57:24
+INFO - Supplied options:
+INFO -  * Ouput path: /Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/out/output
+INFO -  * Debug mode: off
+INFO - Loaded a genotype to phenotype sample coupling map for 403 samples
+INFO - Loaded genotype data (VCF file) from '[/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/genotypedata/1000G.gwasstats_filtered-biallelic-403]'.
+INFO - 403 samples and 58919 variants present after filtering
+INFO - Loaded phenotype data for 403 samples
+INFO - Loaded GWAS summary statistics from '/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/summarystatistics/ieu-a-780.vcf.gz'
+INFO - 120318 variants present prior to filtering
+INFO - Removing 118453 variants not present in the genotype data, keeping 1865
+INFO - Loaded GWAS summary statistics from '/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/summarystatistics/ieu-a-781.vcf.gz'
+INFO - 119898 variants present prior to filtering
+INFO - Removing 118136 variants not present in the genotype data, keeping 1762
+INFO - PGSBasedMixupMapper2.0.51-SNAPSHOT
+INFO - Current date and time: 2020-01-29 15:03:50
+INFO - Supplied options:
+INFO -  * Ouput path: /Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/out/output
+INFO -  * Debug mode: off
+INFO - Loaded a genotype to phenotype sample coupling map for 403 samples
+INFO - Loaded genotype data (VCF file) from '[/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/genotypedata/1000G.gwasstats_filtered-biallelic-403]'.
+INFO - 403 samples and 58919 variants present after filtering
+INFO - Loaded phenotype data for 403 samples
+INFO - Loaded GWAS summary statistics from '/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/summarystatistics/ieu-a-780.vcf.gz'
+INFO - 120318 variants present prior to filtering
+INFO - Removing 118453 variants not present in the genotype data, keeping 1865
+INFO - Loaded GWAS summary statistics from '/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/summarystatistics/ieu-a-781.vcf.gz'
+INFO - 119898 variants present prior to filtering
+INFO - Removing 118136 variants not present in the genotype data, keeping 1762
+INFO - PGSBasedMixupMapper2.0.51-SNAPSHOT
+INFO - Current date and time: 2020-01-29 15:04:05
+INFO - Supplied options:
+INFO -  * Ouput path: /Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/out/output
+INFO -  * Debug mode: off
+INFO - Loaded a genotype to phenotype sample coupling map for 403 samples
+INFO - Loaded genotype data (VCF file) from '[/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/genotypedata/1000G.gwasstats_filtered-biallelic-403]'.
+INFO - 403 samples and 58919 variants present after filtering
+INFO - Loaded phenotype data for 403 samples
+INFO - Loaded GWAS summary statistics from '/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/summarystatistics/ieu-a-780.vcf.gz'
+INFO - 120318 variants present prior to filtering
+INFO - Removing 118453 variants not present in the genotype data, keeping 1865
+INFO - Loaded GWAS summary statistics from '/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/summarystatistics/ieu-a-781.vcf.gz'
+INFO - 119898 variants present prior to filtering
+INFO - Removing 118136 variants not present in the genotype data, keeping 1762
+INFO - PGSBasedMixupMapper2.0.51-SNAPSHOT
+INFO - Current date and time: 2020-01-29 15:10:31
+INFO - Supplied options:
+INFO -  * Ouput path: /Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/out/output
+INFO -  * Debug mode: off
+INFO - Loaded a genotype to phenotype sample coupling map for 403 samples
+INFO - Loaded genotype data (VCF file) from '[/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/genotypedata/1000G.gwasstats_filtered-biallelic-403]'.
+INFO - 403 samples and 58919 variants present after filtering
+INFO - Loaded phenotype data for 403 samples
+INFO - Loaded GWAS summary statistics from '/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/summarystatistics/ieu-a-780.vcf.gz'
+INFO - 120318 variants present prior to filtering
+INFO - Removing 118453 variants not present in the genotype data, keeping 1865
+INFO - Loaded GWAS summary statistics from '/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/summarystatistics/ieu-a-781.vcf.gz'
+INFO - 119898 variants present prior to filtering
+INFO - Removing 118136 variants not present in the genotype data, keeping 1762
+INFO - PGSBasedMixupMapper2.0.51-SNAPSHOT
+INFO - Current date and time: 2020-01-29 15:14:15
+INFO - Supplied options:
+INFO -  * Ouput path: /Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/out/output
+INFO -  * Debug mode: off
+INFO - Loaded a genotype to phenotype sample coupling map for 403 samples
+INFO - Loaded genotype data (VCF file) from '[/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/genotypedata/1000G.gwasstats_filtered-biallelic-403]'.
+INFO - 403 samples and 58919 variants present after filtering
+INFO - Loaded phenotype data for 403 samples
+INFO - Loaded GWAS summary statistics from '/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/summarystatistics/ieu-a-780.vcf.gz'
+INFO - 120318 variants present prior to filtering
+INFO - Removing 118453 variants not present in the genotype data, keeping 1865
+INFO - Loaded GWAS summary statistics from '/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/summarystatistics/ieu-a-781.vcf.gz'
+INFO - 119898 variants present prior to filtering
+INFO - Removing 118136 variants not present in the genotype data, keeping 1762
+INFO - PGSBasedMixupMapper2.0.51-SNAPSHOT
+INFO - Current date and time: 2020-01-29 15:26:53
+INFO - Supplied options:
+INFO -  * Ouput path: /Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/out/output
+INFO -  * Debug mode: off
+INFO - Loaded a genotype to phenotype sample coupling map for 403 samples
+INFO - Loaded genotype data (VCF file) from '[/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/genotypedata/1000G.gwasstats_filtered-biallelic-403]'.
+INFO - 403 samples and 58919 variants present after filtering
+INFO - Loaded phenotype data for 403 samples
+INFO - Loaded GWAS summary statistics from '/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/summarystatistics/ieu-a-780.vcf.gz'
+INFO - 120318 variants present prior to filtering
+INFO - Removing 118453 variants not present in the genotype data, keeping 1865
+INFO - Loaded GWAS summary statistics from '/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/summarystatistics/ieu-a-781.vcf.gz'
+INFO - 119898 variants present prior to filtering
+INFO - Removing 118136 variants not present in the genotype data, keeping 1762
+INFO - PGSBasedMixupMapper2.0.51-SNAPSHOT
+INFO - Current date and time: 2020-01-29 15:55:48
+INFO - Supplied options:
+INFO -  * Ouput path: /Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/out/output
+INFO -  * Debug mode: off
+INFO - Loaded a genotype to phenotype sample coupling map for 403 samples
+INFO - Loaded genotype data (VCF file) from '[/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/genotypedata/1000G.gwasstats_filtered-biallelic-403]'.
+INFO - 403 samples and 58919 variants present after filtering
+INFO - Loaded phenotype data for 403 samples
+INFO - Loaded GWAS summary statistics from '/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/summarystatistics/ieu-a-780.vcf.gz'
+INFO - 120318 variants present prior to filtering
+INFO - Removing 118453 variants not present in the genotype data, keeping 1865
+INFO - Loaded GWAS summary statistics from '/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/summarystatistics/ieu-a-781.vcf.gz'
+INFO - 119898 variants present prior to filtering
+INFO - Removing 118136 variants not present in the genotype data, keeping 1762
+INFO - PGSBasedMixupMapper2.0.51-SNAPSHOT
+INFO - Current date and time: 2020-01-29 16:17:08
+INFO - Supplied options:
+INFO -  * Ouput path: /Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/out/output
+INFO -  * Debug mode: off
+INFO - Loaded a genotype to phenotype sample coupling map for 403 samples
+INFO - Loaded genotype data (VCF file) from '[/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/genotypedata/1000G.gwasstats_filtered-biallelic-403]'.
+INFO - 403 samples and 58919 variants present after filtering
+INFO - Loaded phenotype data for 403 samples
+INFO - Loaded GWAS summary statistics from '/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/summarystatistics/ieu-a-780.vcf.gz'
+INFO - 120318 variants present prior to filtering
+INFO - Removing 118453 variants not present in the genotype data, keeping 1865
+INFO - Loaded GWAS summary statistics from '/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/summarystatistics/ieu-a-781.vcf.gz'
+INFO - 119898 variants present prior to filtering
+INFO - Removing 118136 variants not present in the genotype data, keeping 1762
+INFO - PGSBasedMixupMapper2.0.51-SNAPSHOT
+INFO - Current date and time: 2020-01-29 16:26:41
+INFO - Supplied options:
+INFO -  * Ouput path: /Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/out/output
+INFO -  * Debug mode: off
+INFO - Loaded a genotype to phenotype sample coupling map for 403 samples
+INFO - Loaded genotype data (VCF file) from '[/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/genotypedata/1000G.gwasstats_filtered-biallelic-403]'.
+INFO - 403 samples and 58919 variants present after filtering
+INFO - Loaded phenotype data for 403 samples
+INFO - Loaded GWAS summary statistics from '/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/summarystatistics/ieu-a-780.vcf.gz'
+INFO - 120318 variants present prior to filtering
+INFO - Removing 118453 variants not present in the genotype data, keeping 1865
+INFO - Loaded GWAS summary statistics from '/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/summarystatistics/ieu-a-781.vcf.gz'
+INFO - 119898 variants present prior to filtering
+INFO - Removing 118136 variants not present in the genotype data, keeping 1762
+INFO - PGSBasedMixupMapper2.0.51-SNAPSHOT
+INFO - Current date and time: 2020-01-29 16:31:12
+INFO - Supplied options:
+INFO -  * Ouput path: /Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/out/output
+INFO -  * Debug mode: off
+INFO - Loaded a genotype to phenotype sample coupling map for 403 samples
+INFO - Loaded genotype data (VCF file) from '[/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/genotypedata/1000G.gwasstats_filtered-biallelic-403]'.
+INFO - 403 samples and 58919 variants present after filtering
+INFO - Loaded phenotype data for 403 samples
+INFO - Loaded GWAS summary statistics from '/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/summarystatistics/ieu-a-780.vcf.gz'
+INFO - 120318 variants present prior to filtering
+INFO - Removing 118453 variants not present in the genotype data, keeping 1865
+INFO - Loaded GWAS summary statistics from '/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/summarystatistics/ieu-a-781.vcf.gz'
+INFO - 119898 variants present prior to filtering
+INFO - Removing 118136 variants not present in the genotype data, keeping 1762
+INFO - PGSBasedMixupMapper2.0.51-SNAPSHOT
+INFO - Current date and time: 2020-01-29 16:39:21
+INFO - Supplied options:
+INFO -  * Ouput path: /Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/out/output
+INFO -  * Debug mode: off
+INFO - Loaded a genotype to phenotype sample coupling map for 403 samples
+INFO - Loaded genotype data (VCF file) from '[/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/genotypedata/1000G.gwasstats_filtered-biallelic-403]'.
+INFO - 403 samples and 58919 variants present after filtering
+INFO - Loaded phenotype data for 403 samples
+INFO - Loaded GWAS summary statistics from '/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/summarystatistics/ieu-a-780.vcf.gz'
+INFO - 120318 variants present prior to filtering
+INFO - Removing 118453 variants not present in the genotype data, keeping 1865
+INFO - Loaded GWAS summary statistics from '/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/summarystatistics/ieu-a-781.vcf.gz'
+INFO - 119898 variants present prior to filtering
+INFO - Removing 118136 variants not present in the genotype data, keeping 1762
+INFO - PGSBasedMixupMapper2.0.51-SNAPSHOT
+INFO - Current date and time: 2020-01-29 16:41:27
+INFO - Supplied options:
+INFO -  * Ouput path: /Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/out/output
+INFO -  * Debug mode: off
+INFO - Loaded a genotype to phenotype sample coupling map for 403 samples
+INFO - Loaded genotype data (VCF file) from '[/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/genotypedata/1000G.gwasstats_filtered-biallelic-403]'.
+INFO - 403 samples and 58919 variants present after filtering
+INFO - Loaded phenotype data for 403 samples
+INFO - Loaded GWAS summary statistics from '/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/summarystatistics/ieu-a-780.vcf.gz'
+INFO - 120318 variants present prior to filtering
+INFO - Removing 118453 variants not present in the genotype data, keeping 1865
+INFO - Loaded GWAS summary statistics from '/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/summarystatistics/ieu-a-781.vcf.gz'
+INFO - 119898 variants present prior to filtering
+INFO - Removing 118136 variants not present in the genotype data, keeping 1762
+INFO - PGSBasedMixupMapper2.0.51-SNAPSHOT
+INFO - Current date and time: 2020-01-29 16:48:36
+INFO - Supplied options:
+INFO -  * Ouput path: /Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/out/output
+INFO -  * Debug mode: off
+INFO - Loaded a genotype to phenotype sample coupling map for 403 samples
+INFO - Loaded genotype data (VCF file) from '[/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/genotypedata/1000G.gwasstats_filtered-biallelic-403]'.
+INFO - 403 samples and 58919 variants present after filtering
+INFO - Loaded phenotype data for 403 samples
+INFO - Loaded GWAS summary statistics from '/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/summarystatistics/ieu-a-780.vcf.gz'
+INFO - 120318 variants present prior to filtering
+INFO - Removing 118453 variants not present in the genotype data, keeping 1865
+INFO - Loaded GWAS summary statistics from '/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/summarystatistics/ieu-a-781.vcf.gz'
+INFO - 119898 variants present prior to filtering
+INFO - Removing 118136 variants not present in the genotype data, keeping 1762
+INFO - PGSBasedMixupMapper2.0.51-SNAPSHOT
+INFO - Current date and time: 2020-01-29 16:53:47
+INFO - Supplied options:
+INFO -  * Ouput path: /Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/out/output
+INFO -  * Debug mode: off
+INFO - Loaded a genotype to phenotype sample coupling map for 403 samples
+INFO - Loaded genotype data (VCF file) from '[/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/genotypedata/1000G.gwasstats_filtered-biallelic-403]'.
+INFO - 403 samples and 58919 variants present after filtering
+INFO - Loaded phenotype data for 403 samples
+INFO - Loaded GWAS summary statistics from '/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/summarystatistics/ieu-a-780.vcf.gz'
+INFO - 120318 variants present prior to filtering
+INFO - Removing 118453 variants not present in the genotype data, keeping 1865
+INFO - Loaded GWAS summary statistics from '/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/summarystatistics/ieu-a-781.vcf.gz'
+INFO - 119898 variants present prior to filtering
+INFO - Removing 118136 variants not present in the genotype data, keeping 1762
+INFO - PGSBasedMixupMapper2.0.51-SNAPSHOT
+INFO - Current date and time: 2020-01-29 17:03:21
+INFO - Supplied options:
+INFO -  * Ouput path: /Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/out/output
+INFO -  * Debug mode: off
+INFO - Loaded a genotype to phenotype sample coupling map for 403 samples
+INFO - Loaded genotype data (VCF file) from '[/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/genotypedata/1000G.gwasstats_filtered-biallelic-403]'.
+INFO - 403 samples and 58919 variants present after filtering
+INFO - Loaded phenotype data for 403 samples
+INFO - Loaded GWAS summary statistics from '/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/summarystatistics/ieu-a-780.vcf.gz'
+INFO - 120318 variants present prior to filtering
+INFO - Removing 118453 variants not present in the genotype data, keeping 1865
+INFO - Loaded GWAS summary statistics from '/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/summarystatistics/ieu-a-781.vcf.gz'
+INFO - 119898 variants present prior to filtering
+INFO - Removing 118136 variants not present in the genotype data, keeping 1762
+INFO - PGSBasedMixupMapper2.0.51-SNAPSHOT
+INFO - Current date and time: 2020-01-29 17:04:39
+INFO - Supplied options:
+INFO -  * Ouput path: /Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/out/output
+INFO -  * Debug mode: off
+INFO - Loaded a genotype to phenotype sample coupling map for 403 samples
+INFO - Loaded genotype data (VCF file) from '[/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/genotypedata/1000G.gwasstats_filtered-biallelic-403]'.
+INFO - 403 samples and 58919 variants present after filtering
+INFO - Loaded phenotype data for 403 samples
+INFO - Loaded GWAS summary statistics from '/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/summarystatistics/ieu-a-780.vcf.gz'
+INFO - 120318 variants present prior to filtering
+INFO - Removing 118453 variants not present in the genotype data, keeping 1865
+INFO - Loaded GWAS summary statistics from '/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/summarystatistics/ieu-a-781.vcf.gz'
+INFO - 119898 variants present prior to filtering
+INFO - Removing 118136 variants not present in the genotype data, keeping 1762
+INFO - PGSBasedMixupMapper2.0.51-SNAPSHOT
+INFO - Current date and time: 2020-01-29 17:06:47
+INFO - Supplied options:
+INFO -  * Ouput path: /Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/out/output
+INFO -  * Debug mode: off
+INFO - Loaded a genotype to phenotype sample coupling map for 403 samples
+INFO - Loaded genotype data (VCF file) from '[/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/genotypedata/1000G.gwasstats_filtered-biallelic-403]'.
+INFO - 403 samples and 58919 variants present after filtering
+INFO - Loaded phenotype data for 403 samples
+INFO - Loaded GWAS summary statistics from '/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/summarystatistics/ieu-a-780.vcf.gz'
+INFO - 120318 variants present prior to filtering
+INFO - Removing 118453 variants not present in the genotype data, keeping 1865
+INFO - Loaded GWAS summary statistics from '/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/summarystatistics/ieu-a-781.vcf.gz'
+INFO - 119898 variants present prior to filtering
+INFO - Removing 118136 variants not present in the genotype data, keeping 1762
+INFO - PGSBasedMixupMapper2.0.51-SNAPSHOT
+INFO - Current date and time: 2020-01-30 09:14:57
+INFO - Supplied options:
+INFO -  * Ouput path: /Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/out/output
+INFO -  * Debug mode: off
+INFO - Loaded a genotype to phenotype sample coupling map for 403 samples
+INFO - Loaded genotype data (VCF file) from '[/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/genotypedata/1000G.gwasstats_filtered-biallelic-403]'.
+INFO - 403 samples and 58919 variants present after filtering
+INFO - Loaded phenotype data for 403 samples
+INFO - Loaded GWAS summary statistics from '/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/summarystatistics/ieu-a-780.vcf.gz'
+INFO - 120318 variants present prior to filtering
+INFO - Removing 118453 variants not present in the genotype data, keeping 1865
+INFO - Loaded GWAS summary statistics from '/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/summarystatistics/ieu-a-781.vcf.gz'
+INFO - 119898 variants present prior to filtering
+INFO - Removing 118136 variants not present in the genotype data, keeping 1762
+INFO - PGSBasedMixupMapper2.0.51-SNAPSHOT
+INFO - Current date and time: 2020-01-30 09:19:29
+INFO - Supplied options:
+INFO -  * Ouput path: /Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/out/output
+INFO -  * Debug mode: off
+INFO - Loaded a genotype to phenotype sample coupling map for 403 samples
+INFO - Loaded genotype data (VCF file) from '[/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/genotypedata/1000G.gwasstats_filtered-biallelic-403]'.
+INFO - 403 samples and 58919 variants present after filtering
+INFO - Loaded phenotype data for 403 samples
+INFO - Loaded GWAS summary statistics from '/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/summarystatistics/ieu-a-780.vcf.gz'
+INFO - 120318 variants present prior to filtering
+INFO - Removing 118453 variants not present in the genotype data, keeping 1865
+INFO - Loaded GWAS summary statistics from '/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/summarystatistics/ieu-a-781.vcf.gz'
+INFO - 119898 variants present prior to filtering
+INFO - Removing 118136 variants not present in the genotype data, keeping 1762
+INFO - PGSBasedMixupMapper2.0.51-SNAPSHOT
+INFO - Current date and time: 2020-01-30 09:22:31
+INFO - Supplied options:
+INFO -  * Ouput path: /Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/out/output
+INFO -  * Debug mode: off
+INFO - Loaded a genotype to phenotype sample coupling map for 403 samples
+INFO - Loaded genotype data (VCF file) from '[/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/genotypedata/1000G.gwasstats_filtered-biallelic-403]'.
+INFO - 403 samples and 58919 variants present after filtering
+INFO - Loaded phenotype data for 403 samples
+INFO - Loaded GWAS summary statistics from '/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/summarystatistics/ieu-a-780.vcf.gz'
+INFO - 120318 variants present prior to filtering
+INFO - Removing 118453 variants not present in the genotype data, keeping 1865
+INFO - Loaded GWAS summary statistics from '/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/summarystatistics/ieu-a-781.vcf.gz'
+INFO - 119898 variants present prior to filtering
+INFO - Removing 118136 variants not present in the genotype data, keeping 1762
+INFO - PGSBasedMixupMapper2.0.51-SNAPSHOT
+INFO - Current date and time: 2020-01-30 09:26:44
+INFO - Supplied options:
+INFO -  * Ouput path: /Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/out/output
+INFO -  * Debug mode: off
+INFO - Loaded a genotype to phenotype sample coupling map for 403 samples
+INFO - Loaded genotype data (VCF file) from '[/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/genotypedata/1000G.gwasstats_filtered-biallelic-403]'.
+INFO - 403 samples and 58919 variants present after filtering
+INFO - Loaded phenotype data for 403 samples
+INFO - Loaded GWAS summary statistics from '/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/summarystatistics/ieu-a-780.vcf.gz'
+INFO - 120318 variants present prior to filtering
+INFO - Removing 118453 variants not present in the genotype data, keeping 1865
+INFO - Loaded GWAS summary statistics from '/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/summarystatistics/ieu-a-781.vcf.gz'
+INFO - 119898 variants present prior to filtering
+INFO - Removing 118136 variants not present in the genotype data, keeping 1762
+INFO - PGSBasedMixupMapper2.0.51-SNAPSHOT
+INFO - Current date and time: 2020-01-30 09:28:22
+INFO - Supplied options:
+INFO -  * Ouput path: /Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/out/output
+INFO -  * Debug mode: off
+INFO - Loaded a genotype to phenotype sample coupling map for 403 samples
+INFO - Loaded genotype data (VCF file) from '[/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/genotypedata/1000G.gwasstats_filtered-biallelic-403]'.
+INFO - 403 samples and 58919 variants present after filtering
+INFO - Loaded phenotype data for 403 samples
+INFO - Loaded GWAS summary statistics from '/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/summarystatistics/ieu-a-780.vcf.gz'
+INFO - 120318 variants present prior to filtering
+INFO - Removing 118453 variants not present in the genotype data, keeping 1865
+INFO - Loaded GWAS summary statistics from '/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/summarystatistics/ieu-a-781.vcf.gz'
+INFO - 119898 variants present prior to filtering
+INFO - Removing 118136 variants not present in the genotype data, keeping 1762
+INFO - PGSBasedMixupMapper2.0.51-SNAPSHOT
+INFO - Current date and time: 2020-01-30 09:28:37
+INFO - Supplied options:
+INFO -  * Ouput path: /Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/out/output
+INFO -  * Debug mode: off
+INFO - Loaded a genotype to phenotype sample coupling map for 403 samples
+INFO - Loaded genotype data (VCF file) from '[/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/genotypedata/1000G.gwasstats_filtered-biallelic-403]'.
+INFO - 403 samples and 58919 variants present after filtering
+INFO - Loaded phenotype data for 403 samples
+INFO - Loaded GWAS summary statistics from '/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/summarystatistics/ieu-a-780.vcf.gz'
+INFO - 120318 variants present prior to filtering
+INFO - Removing 118453 variants not present in the genotype data, keeping 1865
+INFO - Loaded GWAS summary statistics from '/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/summarystatistics/ieu-a-781.vcf.gz'
+INFO - 119898 variants present prior to filtering
+INFO - Removing 118136 variants not present in the genotype data, keeping 1762
+INFO - PGSBasedMixupMapper2.0.51-SNAPSHOT
+INFO - Current date and time: 2020-01-30 09:29:49
+INFO - Supplied options:
+INFO -  * Ouput path: /Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/out/output
+INFO -  * Debug mode: off
+INFO - Loaded a genotype to phenotype sample coupling map for 403 samples
+INFO - Loaded genotype data (VCF file) from '[/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/genotypedata/1000G.gwasstats_filtered-biallelic-403]'.
+INFO - 403 samples and 58919 variants present after filtering
+INFO - Loaded phenotype data for 403 samples
+INFO - Loaded GWAS summary statistics from '/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/summarystatistics/ieu-a-780.vcf.gz'
+INFO - 120318 variants present prior to filtering
+INFO - Removing 118453 variants not present in the genotype data, keeping 1865
+INFO - Loaded GWAS summary statistics from '/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/summarystatistics/ieu-a-781.vcf.gz'
+INFO - 119898 variants present prior to filtering
+INFO - Removing 118136 variants not present in the genotype data, keeping 1762
+INFO - PGSBasedMixupMapper2.0.51-SNAPSHOT
+INFO - Current date and time: 2020-01-30 09:46:45
+INFO - Supplied options:
+INFO -  * Ouput path: /Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/out/output
+INFO -  * Debug mode: off
+INFO - Loaded a genotype to phenotype sample coupling map for 403 samples
+INFO - Loaded genotype data (VCF file) from '[/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/genotypedata/1000G.gwasstats_filtered-biallelic-403]'.
+INFO - PGSBasedMixupMapper2.0.51-SNAPSHOT
+INFO - Current date and time: 2020-01-30 09:47:56
+INFO - Supplied options:
+INFO -  * Ouput path: /Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/out/output
+INFO -  * Debug mode: off
+INFO - Loaded a genotype to phenotype sample coupling map for 403 samples
+INFO - Loaded genotype data (VCF file) from '[/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/genotypedata/1000G.gwasstats_filtered-biallelic-403]'.
+INFO - 403 samples and 58919 variants present after filtering
+INFO - Loaded phenotype data for 403 samples
+INFO - Loaded GWAS summary statistics from '/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/summarystatistics/ieu-a-780.vcf.gz'
+INFO - 120318 variants present prior to filtering
+INFO - Removing 118453 variants not present in the genotype data, keeping 1865
+INFO - Loaded GWAS summary statistics from '/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/summarystatistics/ieu-a-781.vcf.gz'
+INFO - 119898 variants present prior to filtering
+INFO - Removing 118136 variants not present in the genotype data, keeping 1762
+INFO - PGSBasedMixupMapper2.0.51-SNAPSHOT
+INFO - Current date and time: 2020-01-30 14:03:14
+INFO - Supplied options:
+INFO -  * Ouput path: /Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/out/output
+INFO -  * Debug mode: off
+INFO - Loaded a genotype to phenotype sample coupling map for 403 samples
+INFO - Loaded genotype data (VCF file) from '[/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/genotypedata/1000G.gwasstats_filtered-biallelic-403]'.
+INFO - PGSBasedMixupMapper2.0.51-SNAPSHOT
+INFO - Current date and time: 2020-01-30 14:03:43
+INFO - Supplied options:
+INFO -  * Ouput path: /Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/out/output
+INFO -  * Debug mode: off
+INFO - Loaded a genotype to phenotype sample coupling map for 403 samples
+INFO - Loaded genotype data (VCF file) from '[/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/genotypedata/1000G.gwasstats_filtered-biallelic-403]'.
+INFO - 403 samples and 58919 variants present after filtering
+INFO - Loaded phenotype data for 403 samples
+INFO - Loaded GWAS summary statistics from '/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/summarystatistics/ieu-a-780.vcf.gz'
+INFO - 120318 variants present prior to filtering
+INFO - Removing 118453 variants not present in the genotype data, keeping 1865
+INFO - Loaded GWAS summary statistics from '/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/summarystatistics/ieu-a-781.vcf.gz'
+INFO - 119898 variants present prior to filtering
+INFO - Removing 118136 variants not present in the genotype data, keeping 1762
+INFO - PGSBasedMixupMapper2.0.51-SNAPSHOT
+INFO - Current date and time: 2020-01-30 14:10:36
+INFO - Supplied options:
+INFO -  * Ouput path: /Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/out/output
+INFO -  * Debug mode: off
+INFO - Loaded a genotype to phenotype sample coupling map for 403 samples
+INFO - Loaded genotype data (VCF file) from '[/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/genotypedata/1000G.gwasstats_filtered-biallelic-403]'.
+INFO - 403 samples and 58919 variants present after filtering
+INFO - Loaded phenotype data for 403 samples
+INFO - Loaded GWAS summary statistics from '/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/summarystatistics/ieu-a-780.vcf.gz'
+INFO - 120318 variants present prior to filtering
+INFO - Removing 118453 variants not present in the genotype data, keeping 1865
+INFO - Loaded GWAS summary statistics from '/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/summarystatistics/ieu-a-781.vcf.gz'
+INFO - 119898 variants present prior to filtering
+INFO - Removing 118136 variants not present in the genotype data, keeping 1762
+INFO - PGSBasedMixupMapper2.0.51-SNAPSHOT
+INFO - Current date and time: 2020-01-30 14:14:36
+INFO - Supplied options:
+INFO -  * Ouput path: /Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/out/output
+INFO -  * Debug mode: off
+INFO - Loaded a genotype to phenotype sample coupling map for 403 samples
+INFO - Loaded genotype data (VCF file) from '[/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/genotypedata/1000G.gwasstats_filtered-biallelic-403]'.
+INFO - 403 samples and 58919 variants present after filtering
+INFO - Loaded phenotype data for 403 samples
+INFO - Loaded GWAS summary statistics from '/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/summarystatistics/ieu-a-780.vcf.gz'
+INFO - 120318 variants present prior to filtering
+INFO - Removing 118453 variants not present in the genotype data, keeping 1865
+INFO - Loaded GWAS summary statistics from '/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/summarystatistics/ieu-a-781.vcf.gz'
+INFO - 119898 variants present prior to filtering
+INFO - Removing 118136 variants not present in the genotype data, keeping 1762
+INFO - PGSBasedMixupMapper2.0.51-SNAPSHOT
+INFO - Current date and time: 2020-01-30 14:22:04
+INFO - Supplied options:
+INFO -  * Ouput path: /Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/out/output
+INFO -  * Debug mode: off
+INFO - Loaded a genotype to phenotype sample coupling map for 403 samples
+INFO - Loaded genotype data (VCF file) from '[/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/genotypedata/1000G.gwasstats_filtered-biallelic-403]'.
+INFO - 403 samples and 58919 variants present after filtering
+INFO - Loaded GWAS summary statistics from '/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/summarystatistics/ieu-a-780.vcf.gz'
+INFO - 120318 variants present prior to filtering
+INFO - Removing 118453 variants not present in the genotype data, keeping 1865
+INFO - Loaded GWAS summary statistics from '/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/summarystatistics/ieu-a-781.vcf.gz'
+INFO - 119898 variants present prior to filtering
+INFO - Removing 118136 variants not present in the genotype data, keeping 1762
+INFO - Using window size of [5000] for phenotype generation
+INFO - Using a pvalue threshold of 2,000000 for phenotype generation
+INFO - Using r2 size of 0,200000 for phenotype generation
+INFO - Using gr to exclude '[6:25000000-35000000]' for phenotype generation
+INFO - Using window size of [5000] for phenotype generation
+INFO - Using a pvalue threshold of 2,000000 for phenotype generation
+INFO - Using r2 size of 0,200000 for phenotype generation
+INFO - Using gr to exclude '[6:25000000-35000000]' for phenotype generation
+INFO - PGSBasedMixupMapper2.0.51-SNAPSHOT
+INFO - Current date and time: 2020-01-30 14:23:42
+INFO - Supplied options:
+INFO -  * Ouput path: /Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/out/output
+INFO -  * Debug mode: off
+INFO - Loaded a genotype to phenotype sample coupling map for 403 samples
+INFO - Loaded genotype data (VCF file) from '[/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/genotypedata/1000G.gwasstats_filtered-biallelic-403]'.
+INFO - 403 samples and 58919 variants present after filtering
+INFO - Loaded phenotype data for 403 samples
+INFO - Loaded GWAS summary statistics from '/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/summarystatistics/ieu-a-780.vcf.gz'
+INFO - 120318 variants present prior to filtering
+INFO - Removing 118453 variants not present in the genotype data, keeping 1865
+INFO - Loaded GWAS summary statistics from '/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/summarystatistics/ieu-a-781.vcf.gz'
+INFO - 119898 variants present prior to filtering
+INFO - Removing 118136 variants not present in the genotype data, keeping 1762
+INFO - PGSBasedMixupMapper2.0.51-SNAPSHOT
+INFO - Current date and time: 2020-01-30 14:24:33
+INFO - Supplied options:
+INFO -  * Ouput path: /Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/out/output
+INFO -  * Debug mode: off
+INFO - Loaded a genotype to phenotype sample coupling map for 403 samples
+INFO - Loaded genotype data (VCF file) from '[/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/genotypedata/1000G.gwasstats_filtered-biallelic-403]'.
+INFO - 403 samples and 58919 variants present after filtering
+INFO - Loaded phenotype data for 403 samples
+INFO - Loaded GWAS summary statistics from '/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/summarystatistics/ieu-a-780.vcf.gz'
+INFO - 120318 variants present prior to filtering
+INFO - Removing 118453 variants not present in the genotype data, keeping 1865
+INFO - Loaded GWAS summary statistics from '/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/summarystatistics/ieu-a-781.vcf.gz'
+INFO - 119898 variants present prior to filtering
+INFO - Removing 118136 variants not present in the genotype data, keeping 1762
+INFO - PGSBasedMixupMapper2.0.51-SNAPSHOT
+INFO - Current date and time: 2020-01-30 14:34:31
+INFO - Supplied options:
+INFO -  * Ouput path: /Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/out/output
+INFO -  * Debug mode: off
+INFO - Loaded a genotype to phenotype sample coupling map for 403 samples
+INFO - Loaded genotype data (VCF file) from '[/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/genotypedata/1000G.gwasstats_filtered-biallelic-403]'.
+INFO - 403 samples and 58919 variants present after filtering
+INFO - Loaded phenotype data for 403 samples
+INFO - Loaded GWAS summary statistics from '/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/summarystatistics/ieu-a-780.vcf.gz'
+INFO - 120318 variants present prior to filtering
+INFO - Removing 118453 variants not present in the genotype data, keeping 1865
+INFO - Loaded GWAS summary statistics from '/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/summarystatistics/ieu-a-781.vcf.gz'
+INFO - 119898 variants present prior to filtering
+INFO - Removing 118136 variants not present in the genotype data, keeping 1762
+INFO - PGSBasedMixupMapper2.0.51-SNAPSHOT
+INFO - Current date and time: 2020-01-30 14:36:54
+INFO - Supplied options:
+INFO -  * Ouput path: /Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/out/output
+INFO -  * Debug mode: off
+INFO - Loaded a genotype to phenotype sample coupling map for 403 samples
+INFO - Loaded genotype data (VCF file) from '[/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/genotypedata/1000G.gwasstats_filtered-biallelic-403]'.
+INFO - 403 samples and 58919 variants present after filtering
+INFO - Loaded phenotype data for 403 samples
+INFO - Loaded GWAS summary statistics from '/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/summarystatistics/ieu-a-780.vcf.gz'
+INFO - 120318 variants present prior to filtering
+INFO - Removing 118453 variants not present in the genotype data, keeping 1865
+INFO - Loaded GWAS summary statistics from '/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/summarystatistics/ieu-a-781.vcf.gz'
+INFO - 119898 variants present prior to filtering
+INFO - Removing 118136 variants not present in the genotype data, keeping 1762
+INFO - PGSBasedMixupMapper2.0.51-SNAPSHOT
+INFO - Current date and time: 2020-01-30 14:40:52
+INFO - Supplied options:
+INFO -  * Ouput path: /Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/out/output
+INFO -  * Debug mode: off
+INFO - Loaded a genotype to phenotype sample coupling map for 403 samples
+INFO - Loaded genotype data (VCF file) from '[/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/genotypedata/1000G.gwasstats_filtered-biallelic-403]'.
+INFO - 403 samples and 58919 variants present after filtering
+INFO - Loaded phenotype data for 403 samples
+INFO - Loaded GWAS summary statistics from '/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/summarystatistics/ieu-a-780.vcf.gz'
+INFO - 120318 variants present prior to filtering
+INFO - Removing 118453 variants not present in the genotype data, keeping 1865
+INFO - Loaded GWAS summary statistics from '/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/summarystatistics/ieu-a-781.vcf.gz'
+INFO - 119898 variants present prior to filtering
+INFO - Removing 118136 variants not present in the genotype data, keeping 1762
+INFO - PGSBasedMixupMapper2.0.51-SNAPSHOT
+INFO - Current date and time: 2020-01-30 14:42:49
+INFO - Supplied options:
+INFO -  * Ouput path: /Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/out/output
+INFO -  * Debug mode: off
+INFO - Loaded a genotype to phenotype sample coupling map for 403 samples
+INFO - Loaded genotype data (VCF file) from '[/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/genotypedata/1000G.gwasstats_filtered-biallelic-403]'.
+INFO - 403 samples and 58919 variants present after filtering
+INFO - Loaded phenotype data for 403 samples
+INFO - Loaded GWAS summary statistics from '/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/summarystatistics/ieu-a-780.vcf.gz'
+INFO - 120318 variants present prior to filtering
+INFO - Removing 118453 variants not present in the genotype data, keeping 1865
+INFO - Loaded GWAS summary statistics from '/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/summarystatistics/ieu-a-781.vcf.gz'
+INFO - 119898 variants present prior to filtering
+INFO - Removing 118136 variants not present in the genotype data, keeping 1762
+INFO - PGSBasedMixupMapper2.0.51-SNAPSHOT
+INFO - Current date and time: 2020-01-30 14:46:23
+INFO - Supplied options:
+INFO -  * Ouput path: /Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/out/output
+INFO -  * Debug mode: off
+INFO - Loaded a genotype to phenotype sample coupling map for 403 samples
+INFO - Loaded genotype data (VCF file) from '[/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/genotypedata/1000G.gwasstats_filtered-biallelic-403]'.
+INFO - 403 samples and 58919 variants present after filtering
+INFO - Loaded phenotype data for 403 samples
+INFO - Loaded GWAS summary statistics from '/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/summarystatistics/ieu-a-780.vcf.gz'
+INFO - 120318 variants present prior to filtering
+INFO - Removing 118453 variants not present in the genotype data, keeping 1865
+INFO - Loaded GWAS summary statistics from '/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/summarystatistics/ieu-a-781.vcf.gz'
+INFO - 119898 variants present prior to filtering
+INFO - Removing 118136 variants not present in the genotype data, keeping 1762
+INFO - PGSBasedMixupMapper2.0.51-SNAPSHOT
+INFO - Current date and time: 2020-01-30 14:47:28
+INFO - Supplied options:
+INFO -  * Ouput path: /Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/out/output
+INFO -  * Debug mode: off
+INFO - Loaded a genotype to phenotype sample coupling map for 403 samples
+INFO - Loaded genotype data (VCF file) from '[/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/genotypedata/1000G.gwasstats_filtered-biallelic-403]'.
+INFO - 403 samples and 58919 variants present after filtering
+INFO - Loaded phenotype data for 403 samples
+INFO - Loaded GWAS summary statistics from '/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/summarystatistics/ieu-a-780.vcf.gz'
+INFO - 120318 variants present prior to filtering
+INFO - Removing 118453 variants not present in the genotype data, keeping 1865
+INFO - Loaded GWAS summary statistics from '/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/summarystatistics/ieu-a-781.vcf.gz'
+INFO - 119898 variants present prior to filtering
+INFO - Removing 118136 variants not present in the genotype data, keeping 1762
+INFO - PGSBasedMixupMapper2.0.51-SNAPSHOT
+INFO - Current date and time: 2020-01-30 14:48:04
+INFO - Supplied options:
+INFO -  * Ouput path: /Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/out/output
+INFO -  * Debug mode: off
+INFO - Loaded a genotype to phenotype sample coupling map for 403 samples
+INFO - Loaded genotype data (VCF file) from '[/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/genotypedata/1000G.gwasstats_filtered-biallelic-403]'.
+INFO - 403 samples and 58919 variants present after filtering
+INFO - Loaded phenotype data for 403 samples
+INFO - Loaded GWAS summary statistics from '/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/summarystatistics/ieu-a-780.vcf.gz'
+INFO - 120318 variants present prior to filtering
+INFO - Removing 118453 variants not present in the genotype data, keeping 1865
+INFO - Loaded GWAS summary statistics from '/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/summarystatistics/ieu-a-781.vcf.gz'
+INFO - 119898 variants present prior to filtering
+INFO - Removing 118136 variants not present in the genotype data, keeping 1762
+INFO - PGSBasedMixupMapper2.0.51-SNAPSHOT
+INFO - Current date and time: 2020-01-30 14:49:42
+INFO - Supplied options:
+INFO -  * Ouput path: /Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/out/output
+INFO -  * Debug mode: off
+INFO - Loaded a genotype to phenotype sample coupling map for 403 samples
+INFO - Loaded genotype data (VCF file) from '[/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/genotypedata/1000G.gwasstats_filtered-biallelic-403]'.
+INFO - 403 samples and 58919 variants present after filtering
+INFO - Loaded phenotype data for 403 samples
+INFO - Loaded GWAS summary statistics from '/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/summarystatistics/ieu-a-780.vcf.gz'
+INFO - 120318 variants present prior to filtering
+INFO - Removing 118453 variants not present in the genotype data, keeping 1865
+INFO - Loaded GWAS summary statistics from '/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/summarystatistics/ieu-a-781.vcf.gz'
+INFO - 119898 variants present prior to filtering
+INFO - Removing 118136 variants not present in the genotype data, keeping 1762
+INFO - PGSBasedMixupMapper2.0.51-SNAPSHOT
+INFO - Current date and time: 2020-01-30 14:50:34
+INFO - Supplied options:
+INFO -  * Ouput path: /Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/out/output
+INFO -  * Debug mode: off
+INFO - Loaded a genotype to phenotype sample coupling map for 403 samples
+INFO - Loaded genotype data (VCF file) from '[/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/genotypedata/1000G.gwasstats_filtered-biallelic-403]'.
+INFO - 403 samples and 58919 variants present after filtering
+INFO - Loaded phenotype data for 403 samples
+INFO - Loaded GWAS summary statistics from '/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/summarystatistics/ieu-a-780.vcf.gz'
+INFO - 120318 variants present prior to filtering
+INFO - Removing 118453 variants not present in the genotype data, keeping 1865
+INFO - Loaded GWAS summary statistics from '/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/summarystatistics/ieu-a-781.vcf.gz'
+INFO - 119898 variants present prior to filtering
+INFO - Removing 118136 variants not present in the genotype data, keeping 1762
+INFO - PGSBasedMixupMapper2.0.51-SNAPSHOT
+INFO - Current date and time: 2020-01-30 14:51:41
+INFO - Supplied options:
+INFO -  * Ouput path: /Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/out/output
+INFO -  * Debug mode: off
+INFO - Loaded a genotype to phenotype sample coupling map for 403 samples
+INFO - Loaded genotype data (VCF file) from '[/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/genotypedata/1000G.gwasstats_filtered-biallelic-403]'.
+INFO - 403 samples and 58919 variants present after filtering
+INFO - Loaded phenotype data for 403 samples
+INFO - Loaded GWAS summary statistics from '/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/summarystatistics/ieu-a-780.vcf.gz'
+INFO - 120318 variants present prior to filtering
+INFO - Removing 118453 variants not present in the genotype data, keeping 1865
+INFO - Loaded GWAS summary statistics from '/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/summarystatistics/ieu-a-781.vcf.gz'
+INFO - 119898 variants present prior to filtering
+INFO - Removing 118136 variants not present in the genotype data, keeping 1762
+INFO - PGSBasedMixupMapper2.0.51-SNAPSHOT
+INFO - Current date and time: 2020-01-30 14:53:08
+INFO - Supplied options:
+INFO -  * Ouput path: /Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/out/output
+INFO -  * Debug mode: off
+INFO - Loaded a genotype to phenotype sample coupling map for 403 samples
+INFO - Loaded genotype data (VCF file) from '[/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/genotypedata/1000G.gwasstats_filtered-biallelic-403]'.
+INFO - 403 samples and 58919 variants present after filtering
+INFO - Loaded phenotype data for 403 samples
+INFO - Loaded GWAS summary statistics from '/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/summarystatistics/ieu-a-780.vcf.gz'
+INFO - 120318 variants present prior to filtering
+INFO - Removing 118453 variants not present in the genotype data, keeping 1865
+INFO - Loaded GWAS summary statistics from '/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/summarystatistics/ieu-a-781.vcf.gz'
+INFO - 119898 variants present prior to filtering
+INFO - Removing 118136 variants not present in the genotype data, keeping 1762
+INFO - PGSBasedMixupMapper2.0.51-SNAPSHOT
+INFO - Current date and time: 2020-01-30 15:06:08
+INFO - Supplied options:
+INFO -  * Ouput path: /Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/out/output
+INFO -  * Debug mode: off
+INFO - Loaded a genotype to phenotype sample coupling map for 403 samples
+INFO - Loaded genotype data (VCF file) from '[/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/genotypedata/1000G.gwasstats_filtered-biallelic-403]'.
+INFO - 403 samples and 58919 variants present after filtering
+INFO - Loaded phenotype data for 403 samples
+INFO - Loaded GWAS summary statistics from '/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/summarystatistics/ieu-a-780.vcf.gz'
+INFO - 120318 variants present prior to filtering
+INFO - Removing 118453 variants not present in the genotype data, keeping 1865
+INFO - Loaded GWAS summary statistics from '/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/summarystatistics/ieu-a-781.vcf.gz'
+INFO - 119898 variants present prior to filtering
+INFO - Removing 118136 variants not present in the genotype data, keeping 1762
+WARN - Skipping trait, Z-scores could not be calculated: Residuals are zero, cannot calculate Z-scores.
+nl.systemsgenetics.pgsbasedmixupmapper.PGSBasedMixupMapperException: Residuals are zero, cannot calculate Z-scores.
+	at nl.systemsgenetics.pgsbasedmixupmapper.PGSBasedMixupMapper.calculateZScoreMatrix(PGSBasedMixupMapper.java:286)
+	at nl.systemsgenetics.pgsbasedmixupmapper.PGSBasedMixupMapper.<init>(PGSBasedMixupMapper.java:122)
+	at nl.systemsgenetics.pgsbasedmixupmapper.PGSBasedMixupMapper.main(PGSBasedMixupMapper.java:560)
+WARN - Skipping trait, Z-scores could not be calculated: Residuals are zero, cannot calculate Z-scores.
+nl.systemsgenetics.pgsbasedmixupmapper.PGSBasedMixupMapperException: Residuals are zero, cannot calculate Z-scores.
+	at nl.systemsgenetics.pgsbasedmixupmapper.PGSBasedMixupMapper.calculateZScoreMatrix(PGSBasedMixupMapper.java:286)
+	at nl.systemsgenetics.pgsbasedmixupmapper.PGSBasedMixupMapper.<init>(PGSBasedMixupMapper.java:122)
+	at nl.systemsgenetics.pgsbasedmixupmapper.PGSBasedMixupMapper.main(PGSBasedMixupMapper.java:560)
+INFO - PGSBasedMixupMapper2.0.51-SNAPSHOT
+INFO - Current date and time: 2020-01-30 15:19:31
+INFO - Supplied options:
+INFO -  * Ouput path: /Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/out/output
+INFO -  * Debug mode: off
+INFO - Loaded a genotype to phenotype sample coupling map for 403 samples
+INFO - Loaded genotype data (VCF file) from '[/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/genotypedata/1000G.gwasstats_filtered-biallelic-403]'.
+INFO - 403 samples and 58919 variants present after filtering
+INFO - Loaded phenotype data for 403 samples
+INFO - Loaded GWAS summary statistics from '/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/summarystatistics/ieu-a-780.vcf.gz'
+INFO - 120318 variants present prior to filtering
+INFO - Removing 118453 variants not present in the genotype data, keeping 1865
+INFO - Loaded GWAS summary statistics from '/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/summarystatistics/ieu-a-781.vcf.gz'
+INFO - 119898 variants present prior to filtering
+INFO - Removing 118136 variants not present in the genotype data, keeping 1762
+WARN - Skipping trait, Z-scores could not be calculated: Residuals are zero, cannot calculate Z-scores.
+nl.systemsgenetics.pgsbasedmixupmapper.PGSBasedMixupMapperException: Residuals are zero, cannot calculate Z-scores.
+	at nl.systemsgenetics.pgsbasedmixupmapper.PGSBasedMixupMapper.calculateZScoreMatrix(PGSBasedMixupMapper.java:289)
+	at nl.systemsgenetics.pgsbasedmixupmapper.PGSBasedMixupMapper.<init>(PGSBasedMixupMapper.java:122)
+	at nl.systemsgenetics.pgsbasedmixupmapper.PGSBasedMixupMapper.main(PGSBasedMixupMapper.java:563)
+WARN - Skipping trait, Z-scores could not be calculated: Residuals are zero, cannot calculate Z-scores.
+nl.systemsgenetics.pgsbasedmixupmapper.PGSBasedMixupMapperException: Residuals are zero, cannot calculate Z-scores.
+	at nl.systemsgenetics.pgsbasedmixupmapper.PGSBasedMixupMapper.calculateZScoreMatrix(PGSBasedMixupMapper.java:289)
+	at nl.systemsgenetics.pgsbasedmixupmapper.PGSBasedMixupMapper.<init>(PGSBasedMixupMapper.java:122)
+	at nl.systemsgenetics.pgsbasedmixupmapper.PGSBasedMixupMapper.main(PGSBasedMixupMapper.java:563)
+INFO - PGSBasedMixupMapper2.0.51-SNAPSHOT
+INFO - Current date and time: 2020-01-30 15:20:50
+INFO - Supplied options:
+INFO -  * Ouput path: /Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/out/output
+INFO -  * Debug mode: off
+INFO - Loaded a genotype to phenotype sample coupling map for 403 samples
+INFO - Loaded genotype data (VCF file) from '[/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/genotypedata/1000G.gwasstats_filtered-biallelic-403]'.
+INFO - 403 samples and 58919 variants present after filtering
+INFO - Loaded phenotype data for 403 samples
+INFO - Loaded GWAS summary statistics from '/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/summarystatistics/ieu-a-780.vcf.gz'
+INFO - 120318 variants present prior to filtering
+INFO - Removing 118453 variants not present in the genotype data, keeping 1865
+INFO - Loaded GWAS summary statistics from '/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/summarystatistics/ieu-a-781.vcf.gz'
+INFO - 119898 variants present prior to filtering
+INFO - Removing 118136 variants not present in the genotype data, keeping 1762
+WARN - Skipping trait, Z-scores could not be calculated: Residuals are zero, cannot calculate Z-scores.
+nl.systemsgenetics.pgsbasedmixupmapper.PGSBasedMixupMapperException: Residuals are zero, cannot calculate Z-scores.
+	at nl.systemsgenetics.pgsbasedmixupmapper.PGSBasedMixupMapper.calculateZScoreMatrix(PGSBasedMixupMapper.java:289)
+	at nl.systemsgenetics.pgsbasedmixupmapper.PGSBasedMixupMapper.<init>(PGSBasedMixupMapper.java:122)
+	at nl.systemsgenetics.pgsbasedmixupmapper.PGSBasedMixupMapper.main(PGSBasedMixupMapper.java:563)
+INFO - PGSBasedMixupMapper2.0.51-SNAPSHOT
+INFO - Current date and time: 2020-01-30 15:21:18
+INFO - Supplied options:
+INFO -  * Ouput path: /Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/out/output
+INFO -  * Debug mode: off
+INFO - Loaded a genotype to phenotype sample coupling map for 403 samples
+INFO - Loaded genotype data (VCF file) from '[/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/genotypedata/1000G.gwasstats_filtered-biallelic-403]'.
+INFO - 403 samples and 58919 variants present after filtering
+INFO - Loaded phenotype data for 403 samples
+INFO - Loaded GWAS summary statistics from '/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/summarystatistics/ieu-a-780.vcf.gz'
+INFO - 120318 variants present prior to filtering
+INFO - Removing 118453 variants not present in the genotype data, keeping 1865
+INFO - Loaded GWAS summary statistics from '/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/summarystatistics/ieu-a-781.vcf.gz'
+INFO - 119898 variants present prior to filtering
+INFO - Removing 118136 variants not present in the genotype data, keeping 1762
+WARN - Skipping trait, Z-scores could not be calculated: Residuals are zero, cannot calculate Z-scores.
+nl.systemsgenetics.pgsbasedmixupmapper.PGSBasedMixupMapperException: Residuals are zero, cannot calculate Z-scores.
+	at nl.systemsgenetics.pgsbasedmixupmapper.PGSBasedMixupMapper.calculateZScoreMatrix(PGSBasedMixupMapper.java:289)
+	at nl.systemsgenetics.pgsbasedmixupmapper.PGSBasedMixupMapper.<init>(PGSBasedMixupMapper.java:122)
+	at nl.systemsgenetics.pgsbasedmixupmapper.PGSBasedMixupMapper.main(PGSBasedMixupMapper.java:563)
+INFO - PGSBasedMixupMapper2.0.51-SNAPSHOT
+INFO - Current date and time: 2020-01-30 15:21:40
+INFO - Supplied options:
+INFO -  * Ouput path: /Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/out/output
+INFO -  * Debug mode: off
+INFO - Loaded a genotype to phenotype sample coupling map for 403 samples
+INFO - Loaded genotype data (VCF file) from '[/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/genotypedata/1000G.gwasstats_filtered-biallelic-403]'.
+INFO - 403 samples and 58919 variants present after filtering
+INFO - Loaded phenotype data for 403 samples
+INFO - Loaded GWAS summary statistics from '/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/summarystatistics/ieu-a-780.vcf.gz'
+INFO - 120318 variants present prior to filtering
+INFO - Removing 118453 variants not present in the genotype data, keeping 1865
+INFO - Loaded GWAS summary statistics from '/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/summarystatistics/ieu-a-781.vcf.gz'
+INFO - 119898 variants present prior to filtering
+INFO - Removing 118136 variants not present in the genotype data, keeping 1762
+WARN - Skipping trait, Z-scores could not be calculated: Residuals are zero, cannot calculate Z-scores.
+nl.systemsgenetics.pgsbasedmixupmapper.PGSBasedMixupMapperException: Residuals are zero, cannot calculate Z-scores.
+	at nl.systemsgenetics.pgsbasedmixupmapper.PGSBasedMixupMapper.calculateZScoreMatrix(PGSBasedMixupMapper.java:289)
+	at nl.systemsgenetics.pgsbasedmixupmapper.PGSBasedMixupMapper.<init>(PGSBasedMixupMapper.java:122)
+	at nl.systemsgenetics.pgsbasedmixupmapper.PGSBasedMixupMapper.main(PGSBasedMixupMapper.java:563)
+WARN - Skipping trait, Z-scores could not be calculated: Residuals are zero, cannot calculate Z-scores.
+nl.systemsgenetics.pgsbasedmixupmapper.PGSBasedMixupMapperException: Residuals are zero, cannot calculate Z-scores.
+	at nl.systemsgenetics.pgsbasedmixupmapper.PGSBasedMixupMapper.calculateZScoreMatrix(PGSBasedMixupMapper.java:289)
+	at nl.systemsgenetics.pgsbasedmixupmapper.PGSBasedMixupMapper.<init>(PGSBasedMixupMapper.java:122)
+	at nl.systemsgenetics.pgsbasedmixupmapper.PGSBasedMixupMapper.main(PGSBasedMixupMapper.java:563)
+INFO - PGSBasedMixupMapper2.0.51-SNAPSHOT
+INFO - Current date and time: 2020-01-30 15:24:54
+INFO - Supplied options:
+INFO -  * Ouput path: /Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/out/output
+INFO -  * Debug mode: off
+INFO - Loaded a genotype to phenotype sample coupling map for 403 samples
+INFO - Loaded genotype data (VCF file) from '[/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/genotypedata/1000G.gwasstats_filtered-biallelic-403]'.
+INFO - 403 samples and 58919 variants present after filtering
+INFO - Loaded phenotype data for 403 samples
+INFO - Loaded GWAS summary statistics from '/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/summarystatistics/ieu-a-780.vcf.gz'
+INFO - 120318 variants present prior to filtering
+INFO - PGSBasedMixupMapper2.0.51-SNAPSHOT
+INFO - Current date and time: 2020-01-30 15:25:24
+INFO - Supplied options:
+INFO -  * Ouput path: /Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/out/output
+INFO -  * Debug mode: off
+INFO - Loaded a genotype to phenotype sample coupling map for 403 samples
+INFO - Loaded genotype data (VCF file) from '[/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/genotypedata/1000G.gwasstats_filtered-biallelic-403]'.
+INFO - 403 samples and 58919 variants present after filtering
+INFO - Loaded phenotype data for 403 samples
+INFO - Loaded GWAS summary statistics from '/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/summarystatistics/ieu-a-780.vcf.gz'
+INFO - 120318 variants present prior to filtering
+INFO - Removing 118453 variants not present in the genotype data, keeping 1865
+INFO - Loaded GWAS summary statistics from '/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/summarystatistics/ieu-a-781.vcf.gz'
+INFO - 119898 variants present prior to filtering
+INFO - Removing 118136 variants not present in the genotype data, keeping 1762
+WARN - Skipping trait, Z-scores could not be calculated: Residuals are zero, cannot calculate Z-scores.
+nl.systemsgenetics.pgsbasedmixupmapper.PGSBasedMixupMapperException: Residuals are zero, cannot calculate Z-scores.
+	at nl.systemsgenetics.pgsbasedmixupmapper.PGSBasedMixupMapper.calculateZScoreMatrix(PGSBasedMixupMapper.java:296)
+	at nl.systemsgenetics.pgsbasedmixupmapper.PGSBasedMixupMapper.<init>(PGSBasedMixupMapper.java:124)
+	at nl.systemsgenetics.pgsbasedmixupmapper.PGSBasedMixupMapper.main(PGSBasedMixupMapper.java:570)
+WARN - Skipping trait, Z-scores could not be calculated: Residuals are zero, cannot calculate Z-scores.
+nl.systemsgenetics.pgsbasedmixupmapper.PGSBasedMixupMapperException: Residuals are zero, cannot calculate Z-scores.
+	at nl.systemsgenetics.pgsbasedmixupmapper.PGSBasedMixupMapper.calculateZScoreMatrix(PGSBasedMixupMapper.java:296)
+	at nl.systemsgenetics.pgsbasedmixupmapper.PGSBasedMixupMapper.<init>(PGSBasedMixupMapper.java:124)
+	at nl.systemsgenetics.pgsbasedmixupmapper.PGSBasedMixupMapper.main(PGSBasedMixupMapper.java:570)
+FATAL - Error running PGS Based Mixup Mapper: No traits used for Z-score calculations. Cannot determine matching samples.
+nl.systemsgenetics.pgsbasedmixupmapper.PGSBasedMixupMapperException: No traits used for Z-score calculations. Cannot determine matching samples.
+	at nl.systemsgenetics.pgsbasedmixupmapper.PGSBasedMixupMapper.<init>(PGSBasedMixupMapper.java:139)
+	at nl.systemsgenetics.pgsbasedmixupmapper.PGSBasedMixupMapper.main(PGSBasedMixupMapper.java:570)
+INFO - PGSBasedMixupMapper2.0.51-SNAPSHOT
+INFO - Current date and time: 2020-01-30 15:26:22
+INFO - Supplied options:
+INFO -  * Ouput path: /Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/out/output
+INFO -  * Debug mode: off
+INFO - Loaded a genotype to phenotype sample coupling map for 403 samples
+INFO - Loaded genotype data (VCF file) from '[/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/genotypedata/1000G.gwasstats_filtered-biallelic-403]'.
+INFO - 403 samples and 58919 variants present after filtering
+INFO - Loaded phenotype data for 403 samples
+INFO - Loaded GWAS summary statistics from '/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/summarystatistics/ieu-a-780.vcf.gz'
+INFO - 120318 variants present prior to filtering
+INFO - Removing 118453 variants not present in the genotype data, keeping 1865
+INFO - Loaded GWAS summary statistics from '/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/summarystatistics/ieu-a-781.vcf.gz'
+INFO - 119898 variants present prior to filtering
+INFO - Removing 118136 variants not present in the genotype data, keeping 1762
+WARN - Skipping trait, Z-scores could not be calculated: Residuals are zero, cannot calculate Z-scores.
+nl.systemsgenetics.pgsbasedmixupmapper.PGSBasedMixupMapperException: Residuals are zero, cannot calculate Z-scores.
+	at nl.systemsgenetics.pgsbasedmixupmapper.PGSBasedMixupMapper.calculateZScoreMatrix(PGSBasedMixupMapper.java:296)
+	at nl.systemsgenetics.pgsbasedmixupmapper.PGSBasedMixupMapper.<init>(PGSBasedMixupMapper.java:124)
+	at nl.systemsgenetics.pgsbasedmixupmapper.PGSBasedMixupMapper.main(PGSBasedMixupMapper.java:570)
+WARN - Skipping trait, Z-scores could not be calculated: Residuals are zero, cannot calculate Z-scores.
+nl.systemsgenetics.pgsbasedmixupmapper.PGSBasedMixupMapperException: Residuals are zero, cannot calculate Z-scores.
+	at nl.systemsgenetics.pgsbasedmixupmapper.PGSBasedMixupMapper.calculateZScoreMatrix(PGSBasedMixupMapper.java:296)
+	at nl.systemsgenetics.pgsbasedmixupmapper.PGSBasedMixupMapper.<init>(PGSBasedMixupMapper.java:124)
+	at nl.systemsgenetics.pgsbasedmixupmapper.PGSBasedMixupMapper.main(PGSBasedMixupMapper.java:570)
+FATAL - Error running PGS Based Mixup Mapper: No traits used for Z-score calculations. Cannot determine matching samples.
+nl.systemsgenetics.pgsbasedmixupmapper.PGSBasedMixupMapperException: No traits used for Z-score calculations. Cannot determine matching samples.
+	at nl.systemsgenetics.pgsbasedmixupmapper.PGSBasedMixupMapper.<init>(PGSBasedMixupMapper.java:139)
+	at nl.systemsgenetics.pgsbasedmixupmapper.PGSBasedMixupMapper.main(PGSBasedMixupMapper.java:570)
+INFO - PGSBasedMixupMapper2.0.51-SNAPSHOT
+INFO - Current date and time: 2020-01-30 15:26:42
+INFO - Supplied options:
+INFO -  * Ouput path: /Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/out/output
+INFO -  * Debug mode: off
+INFO - Loaded a genotype to phenotype sample coupling map for 403 samples
+INFO - Loaded genotype data (VCF file) from '[/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/genotypedata/1000G.gwasstats_filtered-biallelic-403]'.
+INFO - 403 samples and 58919 variants present after filtering
+INFO - Loaded phenotype data for 403 samples
+INFO - Loaded GWAS summary statistics from '/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/summarystatistics/ieu-a-780.vcf.gz'
+INFO - 120318 variants present prior to filtering
+INFO - Removing 118453 variants not present in the genotype data, keeping 1865
+INFO - Loaded GWAS summary statistics from '/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/summarystatistics/ieu-a-781.vcf.gz'
+INFO - 119898 variants present prior to filtering
+INFO - Removing 118136 variants not present in the genotype data, keeping 1762
+WARN - Skipping trait, Z-scores could not be calculated: Residuals are zero, cannot calculate Z-scores.
+nl.systemsgenetics.pgsbasedmixupmapper.PGSBasedMixupMapperException: Residuals are zero, cannot calculate Z-scores.
+	at nl.systemsgenetics.pgsbasedmixupmapper.PGSBasedMixupMapper.calculateZScoreMatrix(PGSBasedMixupMapper.java:296)
+	at nl.systemsgenetics.pgsbasedmixupmapper.PGSBasedMixupMapper.<init>(PGSBasedMixupMapper.java:124)
+	at nl.systemsgenetics.pgsbasedmixupmapper.PGSBasedMixupMapper.main(PGSBasedMixupMapper.java:570)
+WARN - Skipping trait, Z-scores could not be calculated: Residuals are zero, cannot calculate Z-scores.
+nl.systemsgenetics.pgsbasedmixupmapper.PGSBasedMixupMapperException: Residuals are zero, cannot calculate Z-scores.
+	at nl.systemsgenetics.pgsbasedmixupmapper.PGSBasedMixupMapper.calculateZScoreMatrix(PGSBasedMixupMapper.java:296)
+	at nl.systemsgenetics.pgsbasedmixupmapper.PGSBasedMixupMapper.<init>(PGSBasedMixupMapper.java:124)
+	at nl.systemsgenetics.pgsbasedmixupmapper.PGSBasedMixupMapper.main(PGSBasedMixupMapper.java:570)
+FATAL - Error running PGS Based Mixup Mapper: No traits used for Z-score calculations. Cannot determine matching samples.
+nl.systemsgenetics.pgsbasedmixupmapper.PGSBasedMixupMapperException: No traits used for Z-score calculations. Cannot determine matching samples.
+	at nl.systemsgenetics.pgsbasedmixupmapper.PGSBasedMixupMapper.<init>(PGSBasedMixupMapper.java:139)
+	at nl.systemsgenetics.pgsbasedmixupmapper.PGSBasedMixupMapper.main(PGSBasedMixupMapper.java:570)
+INFO - PGSBasedMixupMapper2.0.51-SNAPSHOT
+INFO - Current date and time: 2020-01-30 15:46:13
+INFO - Supplied options:
+INFO -  * Ouput path: /Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/out/output
+INFO -  * Debug mode: off
+INFO - Loaded a genotype to phenotype sample coupling map for 403 samples
+INFO - Loaded genotype data (VCF file) from '[/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/genotypedata/1000G.gwasstats_filtered-biallelic-403]'.
+INFO - 403 samples and 58919 variants present after filtering
+INFO - Loaded phenotype data for 403 samples
+INFO - Loaded GWAS summary statistics from '/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/summarystatistics/ieu-a-780.vcf.gz'
+INFO - 120318 variants present prior to filtering
+INFO - Removing 118453 variants not present in the genotype data, keeping 1865
+INFO - Loaded GWAS summary statistics from '/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/summarystatistics/ieu-a-781.vcf.gz'
+INFO - 119898 variants present prior to filtering
+INFO - Removing 118136 variants not present in the genotype data, keeping 1762
+INFO - PGSBasedMixupMapper2.0.51-SNAPSHOT
+INFO - Current date and time: 2020-01-30 15:49:19
+INFO - Supplied options:
+INFO -  * Ouput path: /Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/out/output
+INFO -  * Debug mode: off
+INFO - Loaded a genotype to phenotype sample coupling map for 403 samples
+INFO - Loaded genotype data (VCF file) from '[/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/genotypedata/1000G.gwasstats_filtered-biallelic-403]'.
+INFO - 403 samples and 58919 variants present after filtering
+INFO - Loaded phenotype data for 403 samples
+INFO - Loaded GWAS summary statistics from '/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/summarystatistics/ieu-a-780.vcf.gz'
+INFO - 120318 variants present prior to filtering
+INFO - Removing 118453 variants not present in the genotype data, keeping 1865
+INFO - Loaded GWAS summary statistics from '/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/summarystatistics/ieu-a-781.vcf.gz'
+INFO - 119898 variants present prior to filtering
+INFO - Removing 118136 variants not present in the genotype data, keeping 1762
+INFO - PGSBasedMixupMapper2.0.51-SNAPSHOT
+INFO - Current date and time: 2020-01-30 15:50:38
+INFO - Supplied options:
+INFO -  * Ouput path: /Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/out/output
+INFO -  * Debug mode: off
+INFO - Loaded a genotype to phenotype sample coupling map for 403 samples
+INFO - Loaded genotype data (VCF file) from '[/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/genotypedata/1000G.gwasstats_filtered-biallelic-403]'.
+INFO - 403 samples and 58919 variants present after filtering
+INFO - Loaded phenotype data for 403 samples
+INFO - Loaded GWAS summary statistics from '/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/summarystatistics/ieu-a-780.vcf.gz'
+INFO - 120318 variants present prior to filtering
+INFO - Removing 118453 variants not present in the genotype data, keeping 1865
+INFO - Loaded GWAS summary statistics from '/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/summarystatistics/ieu-a-781.vcf.gz'
+INFO - 119898 variants present prior to filtering
+INFO - Removing 118136 variants not present in the genotype data, keeping 1762
+WARN - Skipping trait, Z-scores could not be calculated: No variance in residuals
+nl.systemsgenetics.pgsbasedmixupmapper.PGSBasedMixupMapperException: No variance in residuals
+	at nl.systemsgenetics.pgsbasedmixupmapper.PGSBasedMixupMapper.calculateZScoreMatrix(PGSBasedMixupMapper.java:301)
+	at nl.systemsgenetics.pgsbasedmixupmapper.PGSBasedMixupMapper.<init>(PGSBasedMixupMapper.java:124)
+	at nl.systemsgenetics.pgsbasedmixupmapper.PGSBasedMixupMapper.main(PGSBasedMixupMapper.java:570)
+WARN - Skipping trait, Z-scores could not be calculated: No variance in residuals
+nl.systemsgenetics.pgsbasedmixupmapper.PGSBasedMixupMapperException: No variance in residuals
+	at nl.systemsgenetics.pgsbasedmixupmapper.PGSBasedMixupMapper.calculateZScoreMatrix(PGSBasedMixupMapper.java:301)
+	at nl.systemsgenetics.pgsbasedmixupmapper.PGSBasedMixupMapper.<init>(PGSBasedMixupMapper.java:124)
+	at nl.systemsgenetics.pgsbasedmixupmapper.PGSBasedMixupMapper.main(PGSBasedMixupMapper.java:570)
+FATAL - Error running PGS Based Mixup Mapper: No traits used for Z-score calculations. Cannot determine matching samples.
+nl.systemsgenetics.pgsbasedmixupmapper.PGSBasedMixupMapperException: No traits used for Z-score calculations. Cannot determine matching samples.
+	at nl.systemsgenetics.pgsbasedmixupmapper.PGSBasedMixupMapper.<init>(PGSBasedMixupMapper.java:139)
+	at nl.systemsgenetics.pgsbasedmixupmapper.PGSBasedMixupMapper.main(PGSBasedMixupMapper.java:570)
+INFO - PGSBasedMixupMapper2.0.51-SNAPSHOT
+INFO - Current date and time: 2020-01-30 15:51:05
+INFO - Supplied options:
+INFO -  * Ouput path: /Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/out/output
+INFO -  * Debug mode: off
+INFO - Loaded a genotype to phenotype sample coupling map for 403 samples
+INFO - Loaded genotype data (VCF file) from '[/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/genotypedata/1000G.gwasstats_filtered-biallelic-403]'.
+INFO - 403 samples and 58919 variants present after filtering
+INFO - Loaded phenotype data for 403 samples
+INFO - Loaded GWAS summary statistics from '/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/summarystatistics/ieu-a-780.vcf.gz'
+INFO - 120318 variants present prior to filtering
+INFO - Removing 118453 variants not present in the genotype data, keeping 1865
+INFO - Loaded GWAS summary statistics from '/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/summarystatistics/ieu-a-781.vcf.gz'
+INFO - 119898 variants present prior to filtering
+INFO - Removing 118136 variants not present in the genotype data, keeping 1762
+INFO - PGSBasedMixupMapper2.0.51-SNAPSHOT
+INFO - Current date and time: 2020-01-30 15:52:45
+INFO - Supplied options:
+INFO -  * Ouput path: /Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/out/output
+INFO -  * Debug mode: off
+INFO - Loaded a genotype to phenotype sample coupling map for 403 samples
+INFO - Loaded genotype data (VCF file) from '[/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/genotypedata/1000G.gwasstats_filtered-biallelic-403]'.
+INFO - 403 samples and 58919 variants present after filtering
+INFO - Loaded phenotype data for 403 samples
+INFO - Loaded GWAS summary statistics from '/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/summarystatistics/ieu-a-780.vcf.gz'
+INFO - 120318 variants present prior to filtering
+INFO - Removing 118453 variants not present in the genotype data, keeping 1865
+INFO - Loaded GWAS summary statistics from '/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/summarystatistics/ieu-a-781.vcf.gz'
+INFO - 119898 variants present prior to filtering
+INFO - Removing 118136 variants not present in the genotype data, keeping 1762
+INFO - PGSBasedMixupMapper2.0.51-SNAPSHOT
+INFO - Current date and time: 2020-01-30 16:00:51
+INFO - Supplied options:
+INFO -  * Ouput path: /Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/out/output
+INFO -  * Debug mode: off
+INFO - Loaded a genotype to phenotype sample coupling map for 403 samples
+INFO - Loaded genotype data (VCF file) from '[/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/genotypedata/1000G.gwasstats_filtered-biallelic-403]'.
+INFO - 403 samples and 58919 variants present after filtering
+INFO - Loaded phenotype data for 403 samples
+INFO - Loaded GWAS summary statistics from '/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/summarystatistics/ieu-a-780.vcf.gz'
+INFO - 120318 variants present prior to filtering
+INFO - Removing 118453 variants not present in the genotype data, keeping 1865
+INFO - Loaded GWAS summary statistics from '/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/summarystatistics/ieu-a-781.vcf.gz'
+INFO - 119898 variants present prior to filtering
+INFO - Removing 118136 variants not present in the genotype data, keeping 1762
+INFO - PGSBasedMixupMapper2.0.51-SNAPSHOT
+INFO - Current date and time: 2020-01-30 16:17:40
+INFO - Supplied options:
+INFO -  * Ouput path: /Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/out/output
+INFO -  * Debug mode: off
+INFO - Loaded a genotype to phenotype sample coupling map for 403 samples
+INFO - Loaded genotype data (VCF file) from '[/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/genotypedata/1000G.gwasstats_filtered-biallelic-403]'.
+INFO - 403 samples and 58919 variants present after filtering
+INFO - Loaded phenotype data for 403 samples
+INFO - Loaded GWAS summary statistics from '/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/summarystatistics/ieu-a-780.vcf.gz'
+INFO - 120318 variants present prior to filtering
+INFO - Removing 118453 variants not present in the genotype data, keeping 1865
+INFO - Loaded GWAS summary statistics from '/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/summarystatistics/ieu-a-781.vcf.gz'
+INFO - 119898 variants present prior to filtering
+INFO - Removing 118136 variants not present in the genotype data, keeping 1762
+INFO - PGSBasedMixupMapper2.0.51-SNAPSHOT
+INFO - Current date and time: 2020-01-30 16:23:03
+INFO - Supplied options:
+INFO -  * Ouput path: /Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/out/output
+INFO -  * Debug mode: off
+INFO - Loaded a genotype to phenotype sample coupling map for 403 samples
+INFO - Loaded genotype data (VCF file) from '[/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/genotypedata/1000G.gwasstats_filtered-biallelic-403]'.
+INFO - 403 samples and 58919 variants present after filtering
+INFO - Loaded phenotype data for 403 samples
+INFO - Loaded GWAS summary statistics from '/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/summarystatistics/ieu-a-780.vcf.gz'
+INFO - 120318 variants present prior to filtering
+INFO - Removing 118453 variants not present in the genotype data, keeping 1865
+INFO - Loaded GWAS summary statistics from '/Users/cawarmerdam/Documents/systemsgenetics/PGSBasedMixupMapper/src/test/resources/summarystatistics/ieu-a-781.vcf.gz'
+INFO - 119898 variants present prior to filtering
+INFO - Removing 118136 variants not present in the genotype data, keeping 1762

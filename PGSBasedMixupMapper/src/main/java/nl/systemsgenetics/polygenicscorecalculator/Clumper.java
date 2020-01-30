@@ -10,19 +10,19 @@ import java.util.*;
 
 public class Clumper implements LDHandler {
 
-    private Map<Set<GeneticVariant>, Double> ldMatrix;
+    private Map<Set<ComparableGeneticVariant>, Double> ldMatrix;
     private int windowSize;
     private double rSquaredThreshold;
     private double indexVariantPValueThreshold;
-    private List<GeneticVariant> indexVariants;
+    private List<ComparableGeneticVariant> indexVariants;
 
     public Clumper(RandomAccessGenotypeData genotypeData,
-                   int windowSize, double rSquared, double indexVariantPValueThreshold) throws LdCalculatorException {
+                   int windowSize, double rSquared, double indexVariantPValueThreshold) throws LdCalculatorException, LDHandlerException {
 
         this(calculateLDMatrix(genotypeData, windowSize, rSquared), windowSize, rSquared, indexVariantPValueThreshold);
     }
 
-    public Clumper(Map<Set<GeneticVariant>, Double> ldMatrix, int windowSize, double rSquared, double indexVariantPValueThreshold) {
+    public Clumper(Map<Set<ComparableGeneticVariant>, Double> ldMatrix, int windowSize, double rSquared, double indexVariantPValueThreshold) {
         this.ldMatrix = ldMatrix;
         this.windowSize = windowSize;
         this.rSquaredThreshold = rSquared;
@@ -34,18 +34,17 @@ public class Clumper implements LDHandler {
         return new Iterator<EffectAllele>() {
             private EffectAllele nextEffectAllele = null;
             private EffectAllele lastReturnedEffectAllele = null;
-            private boolean nextCalled = false;
 
             private boolean setNextRiskEntry() {
                 // While there are more risk entries, loop through them to check if
                 // one could be the next risk entry
-                while (!riskEntries.hasNext()) {
+                while (riskEntries.hasNext()) {
                     nextEffectAllele = riskEntries.next();
                     if (nextEffectAllele == null) {
                         return false;
-                    } else if (canFormChunk(nextEffectAllele.getVariant())) {
+                    } else if (canFormChunk(nextEffectAllele)) {
                         // If the a chunk can be formed, return true.
-                        indexVariants.add(nextEffectAllele.getVariant());
+                        indexVariants.add(new ComparableGeneticVariant(nextEffectAllele.getVariant()));
                         return true;
                     }
                 }
@@ -57,7 +56,7 @@ public class Clumper implements LDHandler {
             @Override
             public boolean hasNext() {
                 // Check if there if the next riskEntry exists and if it can form its own chunk
-                if (!nextCalled && !riskEntries.hasNext()) {
+                if (nextEffectAllele != null && !lastReturnedEffectAllele.equals(nextEffectAllele)) {
                     return true;
                 }
                 return setNextRiskEntry();
@@ -65,15 +64,13 @@ public class Clumper implements LDHandler {
 
             @Override
             public EffectAllele next() {
-                if (lastReturnedEffectAllele.equals(nextEffectAllele)) {
-                    if (!hasNext()) {
+                if (nextEffectAllele == null ||
+                        lastReturnedEffectAllele == null ||
+                        lastReturnedEffectAllele.equals(nextEffectAllele)) {
+                    if (!setNextRiskEntry()) {
                         throw new NoSuchElementException();
                     }
                 }
-                if (nextEffectAllele == null) {
-                    throw new NoSuchElementException();
-                }
-                nextCalled = true;
                 lastReturnedEffectAllele = nextEffectAllele;
                 return nextEffectAllele;
             }
@@ -85,28 +82,34 @@ public class Clumper implements LDHandler {
         };
     }
 
-    private boolean canFormChunk(GeneticVariant newVariant) {
+    private boolean canFormChunk(EffectAllele effectAllele) {
+        if (effectAllele.getLogTransformedPValue() < indexVariantPValueThreshold) {
+            return false;
+        }
 
-        for (GeneticVariant indexVariant :
+        ComparableGeneticVariant newVariant = new ComparableGeneticVariant(effectAllele.getVariant());
+
+        for (ComparableGeneticVariant indexVariant :
                 indexVariants) {
             // Check if the LD should be calculated on the spot
             // If the LD should be calculated on the spot, to this.
-            Set<GeneticVariant> geneticVariantPair = Collections.unmodifiableSet(
+            Set<ComparableGeneticVariant> geneticVariantPair = Collections.unmodifiableSet(
                     new HashSet<>(Arrays.asList(indexVariant, newVariant)));
-            if (ldMatrix.containsKey(geneticVariantPair)) {
+            if (ldMatrix.containsKey(geneticVariantPair) && ldMatrix.get(geneticVariantPair) >= rSquaredThreshold) {
                 return false;
             }
         }
         return true;
     }
 
-    private static Map<Set<GeneticVariant>, Double> calculateLDMatrix(
-            RandomAccessGenotypeData genotypeData, int windowSize, double rSquaredThreshold) throws LdCalculatorException {
-        HashMap<Set<GeneticVariant>, Double> ldMatrix = new HashMap<>();
-        return ldMatrix;
+    private static Map<Set<ComparableGeneticVariant>, Double> calculateLDMatrix(
+            RandomAccessGenotypeData genotypeData, int windowSize, double rSquaredThreshold) throws LdCalculatorException, LDHandlerException {
+        HashMap<Set<ComparableGeneticVariant>, Double> ldMatrix = new HashMap<>();
 
-//        // Get the chromosomes / sequences in the genotype data
+        // Get the chromosomes / sequences in the genotype data
 //        for (String sequence : genotypeData.getSeqNames()) {
+//            System.out.println("sequence = " + sequence);
+//            int lastStartPos = 0;
 //
 //            // Loop through the variants in this sequence in order (low bp to high bp)
 //            Iterable<GeneticVariant> sequenceVariants = genotypeData.getSequenceGeneticVariants(sequence);
@@ -114,6 +117,11 @@ public class Clumper implements LDHandler {
 //
 //            for (GeneticVariant variant : sequenceVariants) {
 //                int startPos = variant.getStartPos();
+//                if (lastStartPos > startPos) {
+//                    throw new LDHandlerException(
+//                            "Genetic variants in the genotype data should be ordered by position");
+//                }
+//                lastStartPos = startPos;
 //                // Now loop through the variants starting from the current variant stopping at the variant
 //                // for which the starting position difference with the current startpos does not exceed the window size.
 //                for (GeneticVariant otherVariant : genotypeData.getVariantsByRange(
@@ -124,17 +132,19 @@ public class Clumper implements LDHandler {
 //                        // If the R2 is above the required threshold, put this pair in the map / matrix
 //                        if (rSquared >= rSquaredThreshold) {
 //                            ldMatrix.put( // Create a set as a key because order is not important this way
-//                                    Collections.unmodifiableSet(new HashSet<>(Arrays.asList(variant, otherVariant))),
+//                                    Collections.unmodifiableSet(new HashSet<>(Arrays.asList(
+//                                            new ComparableGeneticVariant(variant),
+//                                            new ComparableGeneticVariant(otherVariant)))),
 //                                    rSquared);
 //                        }
 //                    }
 //                }
 //            }
 //        }
-//        return ldMatrix;
+        return ldMatrix;
     }
 
-    public Map<Set<GeneticVariant>, Double> getLdMatrix() {
+    public Map<Set<ComparableGeneticVariant>, Double> getLdMatrix() {
         return ldMatrix;
     }
 
@@ -142,7 +152,7 @@ public class Clumper implements LDHandler {
         return indexVariantPValueThreshold;
     }
 
-    public List<GeneticVariant> getIndexVariants() {
+    public List<ComparableGeneticVariant> getIndexVariants() {
         return indexVariants;
     }
 
@@ -154,5 +164,70 @@ public class Clumper implements LDHandler {
     @Override
     public double getRSquaredThreshold() {
         return rSquaredThreshold;
+    }
+
+    private static class ComparableGeneticVariant {
+        private final GeneticVariant originalVariant;
+
+        private ComparableGeneticVariant(GeneticVariant variant) {
+            this.originalVariant = variant;
+        }
+
+        GeneticVariant getOriginalVariant() {
+            return originalVariant;
+        }
+
+        /*
+         * (non-Javadoc)
+         *
+         * @see java.lang.Object#hashCode()
+         */
+        @Override
+        public int hashCode() {
+            final int prime = 31;
+            int result = 0;
+            result = prime * result + ((originalVariant.getSequenceName() == null) ? 0 : originalVariant.getSequenceName().hashCode());
+            result = prime * result + originalVariant.getStartPos();
+            return result;
+        }
+
+        /*
+         * (non-Javadoc)
+         *
+         * @see java.lang.Object#equals(java.lang.Object)
+         */
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj) {
+                return true;
+            }
+            if (!(obj instanceof ComparableGeneticVariant)) {
+                return false;
+            }
+            ComparableGeneticVariant otherComparableGeneticVariant = (ComparableGeneticVariant) obj;
+            GeneticVariant other = otherComparableGeneticVariant.getOriginalVariant();
+
+            if (originalVariant.getSequenceName() == null) {
+                if (other.getSequenceName() != null) {
+                    return false;
+                }
+            } else if (!originalVariant.getSequenceName().equals(other.getSequenceName())) {
+                return false;
+            }
+            if (originalVariant.getStartPos() != other.getStartPos()) {
+                return false;
+            }
+
+            // If we get here pos and sequence are identical
+
+            if (originalVariant.getVariantAlleles() == null) {
+                if (other.getVariantAlleles() != null) {
+                    return false;
+                }
+            } else if (!originalVariant.getVariantAlleles().equals(other.getVariantAlleles())) {
+                return false;
+            }
+            return true;
+        }
     }
 }

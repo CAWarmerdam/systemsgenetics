@@ -21,6 +21,10 @@ import java.util.List;
  */
 public class PGSBasedMixupMapperOptions {
 
+	private static final String[] chromosomes =
+			{"1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11",
+					"12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "22"};
+
 	private static final Options OPTIONS;
 	private static int numberOfThreadsToUse = Runtime.getRuntime().availableProcessors();//Might be changed
 	private static final Logger LOGGER = Logger.getLogger(PGSBasedMixupMapperOptions.class);
@@ -30,7 +34,7 @@ public class PGSBasedMixupMapperOptions {
 	private final String[] inputGenotypePath;
 	private final RandomAccessGenotypeDataReaderFormats inputGenotypeType;
 	private final File outputBasePath;
-	private final String inputPhenotypePath;
+	private final File inputPhenotypePath;
 	private final String gwasSummaryStatisticsPath;
 	private final File logFile;
 	private final boolean debugMode;
@@ -43,10 +47,6 @@ public class PGSBasedMixupMapperOptions {
 	private final List<Double> pValueThresholds;
 	private final String[] genomicRangesToExclude;
 	private String genotypeToPhenotypeSampleCouplingFile;
-
-	public boolean isDebugMode() {
-		return debugMode;
-	}
 
 	static {
 
@@ -61,7 +61,7 @@ public class PGSBasedMixupMapperOptions {
 
 		OptionBuilder.withArgName("basePath");
 		OptionBuilder.hasArgs();
-		OptionBuilder.withDescription("The input genotype file");
+		OptionBuilder.withDescription("The input genotype file(s)");
 		OptionBuilder.withLongOpt("input");
 		OPTIONS.addOption(OptionBuilder.create("i"));
 
@@ -225,11 +225,7 @@ public class PGSBasedMixupMapperOptions {
 			genomicRangesToExclude = new String[]{};
 		}
 
-		if (!commandLine.hasOption("inputPhenotype")) {
-			throw new ParseException("--inputPhenotype not specified");
-		} else {
-			inputPhenotypePath = commandLine.getOptionValue("inputPhenotype");
-		}
+		this.inputPhenotypePath = getInputPhenotypePath(commandLine);
 
 		if (commandLine.hasOption("maf")) {
 			try {
@@ -239,6 +235,19 @@ public class PGSBasedMixupMapperOptions {
 			}
 		} else {
 			mafFilter = 0;
+		}
+	}
+
+	private File getInputPhenotypePath(CommandLine commandLine) throws ParseException {
+		if (!commandLine.hasOption("inputPhenotype")) {
+			throw new ParseException("--inputPhenotype not specified");
+		} else {
+			File inputPhenotypePath = new File(commandLine.getOptionValue("inputPhenotype"));
+			if (inputPhenotypePath.exists()) {
+				return inputPhenotypePath;
+			}
+			throw new ParseException(String.format("Input phenotype file \"%s\"does not exist",
+					commandLine.getOptionValue("inputPhenotype")));
 		}
 	}
 
@@ -347,7 +356,7 @@ public class PGSBasedMixupMapperOptions {
 		return logFile;
 	}
 
-	public String getInputPhenotypePath() {
+	public File getInputPhenotypePath() {
 		return inputPhenotypePath;
 	}
 
@@ -393,6 +402,10 @@ public class PGSBasedMixupMapperOptions {
 
 	public String[] getGenomicRangesToExclude() {
 		return genomicRangesToExclude;
+	}
+
+	public boolean isDebugMode() {
+		return debugMode;
 	}
 
 }

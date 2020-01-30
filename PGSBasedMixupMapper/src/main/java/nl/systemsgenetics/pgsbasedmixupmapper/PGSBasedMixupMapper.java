@@ -13,7 +13,6 @@ import nl.systemsgenetics.gwassummarystatistics.VcfGwasSummaryStatistics;
 import nl.systemsgenetics.gwassummarystatistics.VcfGwasSummaryStatisticsException;
 import nl.systemsgenetics.polygenicscorecalculator.*;
 import org.apache.commons.cli.ParseException;
-import org.apache.commons.compress.archivers.sevenz.SevenZOutputFile;
 import org.apache.commons.math3.stat.StatUtils;
 import org.apache.commons.math3.stat.ranking.NaNStrategy;
 import org.apache.commons.math3.stat.ranking.NaturalRanking;
@@ -42,6 +41,8 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static java.lang.Double.NaN;
+
 /**
  * @author Robert Warmerdam
  */
@@ -64,6 +65,7 @@ public class PGSBasedMixupMapper {
     private final DoubleMatrixDataset<String, String> phenotypeMatrix;
     private final DoubleMatrixDataset<String, String> zScoreMatrix;
     private final Map<String, DoubleMatrixDataset<String, String>> zScoresMap;
+    private final Map<String, DoubleMatrixDataset<String, String>> polyGenicScoresMap;
     private List<String> genotypeSampleIdentifiers;
     private List<String> phenotypeSampleIdentifiers;
 
@@ -112,16 +114,34 @@ public class PGSBasedMixupMapper {
         rankPhenotypes();
         zScoreMatrix = initializeStandardScoreMatrix();
         zScoresMap = new HashMap<>();
+        polyGenicScoresMap = new HashMap<>();
+        int numberOfPhenotypes = 0;
 
         for (String phenotype : phenotypeMatrix.getColObjects()) {
+            System.out.println(String.format("Calculating PGSs and corresponding Z-scores for trait '%s'", phenotype));
             // Calculate the Z scores for every phenotype
-            DoubleMatrixDataset<String, String> phenotypeSpecificZScoreMatrix = calculateZscoreMatrix(phenotype);
-            zScoresMap.put(phenotype, phenotypeSpecificZScoreMatrix);
-            // Sum the Z score.
-            zScoreMatrix.getMatrix()
-                    .assign(phenotypeSpecificZScoreMatrix.getMatrix(), DoubleFunctions.plus);
+            try {
+                DoubleMatrixDataset<String, String> phenotypeSpecificZScoreMatrix = calculateZScoreMatrix(phenotype);
+                zScoresMap.put(phenotype, phenotypeSpecificZScoreMatrix);
+                // Sum the Z score.
+                zScoreMatrix.getMatrix()
+                        .assign(phenotypeSpecificZScoreMatrix.getMatrix(), DoubleFunctions.plus);
+                numberOfPhenotypes++;
+            } catch (PGSBasedMixupMapperException e) {
+                System.err.println("Skipping trait, Z-scores could not be calculated: " + e.getMessage());
+                System.err.println("See log file for stack trace");
+                LOGGER.warn("Skipping trait, Z-scores could not be calculated: " + e.getMessage(), e);
+            }
         }
-        zScoreMatrix.getMatrix().assign(DoubleFunctions.div(phenotypeMatrix.getColObjects().size()));
+        zScoreMatrix.getMatrix().assign(DoubleFunctions.div(numberOfPhenotypes));
+
+        if (numberOfPhenotypes == 0) {
+            throw new PGSBasedMixupMapperException("No traits used for Z-score calculations. " +
+                    "Cannot determine matching samples.");
+        }
+        if (Double.isNaN(zScoreMatrix.getMatrix().zSum())) {
+            throw new PGSBasedMixupMapperException("Overall Z-scores are 0. Cannot determine matching samples.");
+        }
 
         // Get the samples
         Map<String, String> bestMatchingPhenotypeSamplePerGenotype = new HashMap<>();
@@ -222,12 +242,13 @@ public class PGSBasedMixupMapper {
      * @param phenotype The phenotype to calculate the standard (Z) score for.
      * @return The Z score matrix.
      */
-    private DoubleMatrixDataset<String, String> calculateZscoreMatrix(String phenotype) {
+    private DoubleMatrixDataset<String, String> calculateZScoreMatrix(String phenotype) throws PGSBasedMixupMapperException {
         DoubleMatrixDataset<String, String> zScoreMatrixOfPolyGenicScoreDeviations =
                 initializeStandardScoreMatrix();
 
         // Initialize polygenic scores
         DoubleMatrixDataset<String, String> polyGenicScores = calculatePolyGenicScores(phenotype);
+        polyGenicScoresMap.put(phenotype, polyGenicScores.duplicate());
 
         // Initialize a matrix of residuals
         DoubleMatrixDataset<String, String> residualsMatrix = new DoubleMatrixDataset<>(
@@ -260,7 +281,8 @@ public class PGSBasedMixupMapper {
                     DoubleFunctions.minus);
 
             // Determine if the current row is the lowest
-            double absoluteSumOfResiduals = Math.abs(residualsMatrix.viewRow(rowIndex).zSum());
+            double absoluteSumOfResiduals = Math.abs(residualsMatrix.viewRow(rowIndex)
+                    .copy().assign(DoubleFunctions.abs).zSum());
             if (absoluteSumOfResiduals < absoluteMinimumResiduals) {
                 // If so, update the minimum
                 minimumResidualsIndex = rowIndex;
@@ -275,6 +297,10 @@ public class PGSBasedMixupMapper {
         double variance = StatUtils.populationVariance(residuals);
         double sd = Math.sqrt(variance);
         double mean = StatUtils.mean(residuals);
+
+        if (variance == 0) {
+            throw new PGSBasedMixupMapperException("No variance in residuals");
+        }
 
         System.out.println(residualsMatrix.getRow(minimumResidualsIndex));
 
@@ -516,7 +542,6 @@ public class PGSBasedMixupMapper {
                 options.getGwasSummaryStatisticsPhenotypeCouplingFile(), CSV_DELIMITER);
         Map<String, List<MultiStudyGwasSummaryStatistics>> gwasSummaryStatisticsMap = loadGwasSummaryStatisticsMap(
                 options.getGwasSummaryStatisticsPath(), gwasPhenotypeCoupling, variantFilter);
-        System.out.println("gwasSummaryStatisticsMap.hashCode() = " + gwasSummaryStatisticsMap.hashCode());
 
         // Get the P-value thresholds to use in PGS calculation
         List<Double> pValueThresholds = options.getpValueThresholds();
@@ -536,21 +561,20 @@ public class PGSBasedMixupMapper {
                     options.getGenomicRangesToExclude());
             pgsCalculator.setPValueThresholds(pValueThresholds);
 
+//            DoubleMatrixDataset<String, Double> hdl_cholesterol = pgsCalculator.calculate(genotypeData,
+//                    gwasSummaryStatisticsMap.get("HDL cholesterol").get(0));
+//
+//            hdl_cholesterol.save(String.format("%s_PGSs_test_%s.tsv",
+//                    options.getOutputBasePath(), "hdl_cholesterol"));
+
             // Initialize the Mix-up mapper
             PGSBasedMixupMapper pgsBasedMixupMapper = new PGSBasedMixupMapper(
                     genotypeData, phenotypeData, genotypeToPhenotypeSampleCoupling,
                     gwasSummaryStatisticsMap, pgsCalculator);
             // Report results
-            for (Map.Entry<String, DoubleMatrixDataset<String, String>> zScores : pgsBasedMixupMapper.getZScoresMap().entrySet()) {
-                zScores.getValue().save(String.format("%s_zScoreMatrix_%s.tsv",
-                        options.getOutputBasePath(), zScores.getKey().replace(' ', '-')));
-            }
+            reportResults(options, pgsBasedMixupMapper);
 
-            pgsBasedMixupMapper.getZScoreMatrix().save(
-                    String.format("%s_zScoreMatrix_%s.tsv",
-                            options.getOutputBasePath(), "overall"));
-
-        } catch (PGSBasedMixupMapperException | LdCalculatorException | PolyGenicScoreCalculatorException e) {
+        } catch (PGSBasedMixupMapperException | PolyGenicScoreCalculatorException e) {
             System.err.println("Error running PGS Based Mixup Mapper: " + e.getMessage());
             System.err.println("See log file for stack trace");
             LOGGER.fatal("Error running PGS Based Mixup Mapper: " + e.getMessage(), e);
@@ -560,7 +584,27 @@ public class PGSBasedMixupMapper {
             System.err.println("See log file for stack trace");
             LOGGER.fatal("Error saving output from PGS Based Mixup Mapper: " + e.getMessage(), e);
             System.exit(1);
+        } catch (LDHandlerException | LdCalculatorException e) {
+            System.err.println("Error calculating LD matrix: " + e.getMessage());
+            System.err.println("See log file for stack trace");
+            LOGGER.fatal("Error calculating LD matrix: " + e.getMessage(), e);
+            System.exit(1);
         }
+    }
+
+    private static void reportResults(PGSBasedMixupMapperOptions options, PGSBasedMixupMapper pgsBasedMixupMapper) throws IOException {
+        for (Map.Entry<String, DoubleMatrixDataset<String, String>> zScores : pgsBasedMixupMapper.getZScoresMap().entrySet()) {
+            zScores.getValue().save(String.format("%s_zScoreMatrix_%s.tsv",
+                    options.getOutputBasePath(), zScores.getKey().replace(' ', '-')));
+            DoubleMatrixDataset<String, String> polyGenicScores = pgsBasedMixupMapper
+                    .polyGenicScoresMap.get(zScores.getKey());
+            polyGenicScores.save(String.format("%s_PGSs_%s.tsv",
+                    options.getOutputBasePath(), zScores.getKey().replace(' ', '-')));
+        }
+
+        pgsBasedMixupMapper.getZScoreMatrix().save(
+                String.format("%s_zScoreMatrix_%s.tsv",
+                        options.getOutputBasePath(), "overall"));
     }
 
     /**
@@ -770,10 +814,6 @@ public class PGSBasedMixupMapper {
         return summaryStatisticsMap;
     }
 
-    void getResults() {
-
-    }
-
     /**
      * Load the phenotype data.
      *
@@ -899,7 +939,7 @@ public class PGSBasedMixupMapper {
      * @return A List of samples with the phenotypes annotated within these samples.
      * @throws IOException If an I/O error occurs while reading the phenotype data.
      */
-    private static ArrayList<Sample> loadPhenotypeMatrix(String inputPhenotypePath,
+    private static ArrayList<Sample> loadPhenotypeMatrix(File inputPhenotypePath,
                                                          Set<String> phenotypeSampleIdentifiersToInclude,
                                                          char delimiter) throws IOException {
 

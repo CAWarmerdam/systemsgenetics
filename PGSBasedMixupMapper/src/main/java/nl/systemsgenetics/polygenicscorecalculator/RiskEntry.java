@@ -76,7 +76,7 @@ public class RiskEntry implements Comparable<RiskEntry>  {
 
     @Override
     public int compareTo(RiskEntry o) {
-        if(this.pValue<o.getpValue()){
+        if(this.pValue>o.getpValue()){
             return -1;
         } else if (this.pValue == o.getpValue()) {
             if(Math.abs(this.or)>Math.abs(o.getOr())){

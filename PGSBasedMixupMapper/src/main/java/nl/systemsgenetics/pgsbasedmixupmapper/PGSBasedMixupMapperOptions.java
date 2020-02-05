@@ -21,7 +21,7 @@ import java.util.List;
  */
 public class PGSBasedMixupMapperOptions {
 
-	private static final String[] chromosomes =
+	private static final String[] SEQUENCES =
 			{"1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11",
 					"12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "22"};
 
@@ -43,7 +43,7 @@ public class PGSBasedMixupMapperOptions {
 	private final String forceSeqName;
 	private final String gwasSummaryStatisticsPhenotypeCouplingFile;
 	private final double rSquared;
-	private final int windowSize;
+	private final List<Integer> windowSize = new ArrayList<>();
 	private final List<Double> pValueThresholds;
 	private final String[] genomicRangesToExclude;
 	private String genotypeToPhenotypeSampleCouplingFile;
@@ -159,7 +159,7 @@ public class PGSBasedMixupMapperOptions {
 		OptionBuilder.withLongOpt("pValueThresholds");
 		OPTIONS.addOption(OptionBuilder.create("pv"));
 
-		OptionBuilder.withArgName("integer");
+		OptionBuilder.withArgName("integer[:integer]");
 		OptionBuilder.hasArg();
 		OptionBuilder.withDescription("Window size for clumping, if given two window-sizes (colon separated), " +
 				"a two step window approach is used.");
@@ -200,11 +200,16 @@ public class PGSBasedMixupMapperOptions {
 					commandLine.getOptionValue("r2")));
 		}
 
-		try {
-			windowSize = Integer.parseInt(commandLine.getOptionValue("bp", String.valueOf(500000)));
-		} catch (NumberFormatException e) {
-			throw new ParseException(String.format("Error parsing --bp \"%s\" is not a valid integer",
-					commandLine.getOptionValue("bp")));
+		String windowSizeArgument = commandLine.getOptionValue("bp", String.valueOf(500000));
+		String[] split = windowSizeArgument.split(":");
+		for (String splitWindowSize :
+				split) {
+			try {
+				windowSize.add(Integer.parseInt(splitWindowSize));
+			} catch (NumberFormatException e) {
+				throw new ParseException(String.format("Error parsing --bp \"%s\" is not a valid integer",
+						splitWindowSize));
+			}
 		}
 
 		try {
@@ -340,10 +345,6 @@ public class PGSBasedMixupMapperOptions {
 
 	}
 
-	public String[] getInputGenotypePath() {
-		return inputGenotypePath;
-	}
-
 	public RandomAccessGenotypeDataReaderFormats getInputGenotypeType() {
 		return inputGenotypeType;
 	}
@@ -392,7 +393,7 @@ public class PGSBasedMixupMapperOptions {
 		return rSquared;
 	}
 
-	public int getWindowSize() {
+	public List<Integer> getWindowSize() {
 		return windowSize;
 	}
 
@@ -408,4 +409,25 @@ public class PGSBasedMixupMapperOptions {
 		return debugMode;
 	}
 
+	public String[] getInputGenotypePath() {
+		return inputGenotypePath;
+	}
+
+//	public String[][] getInputGenotypePaths() {
+//
+//		String[] sequences = SEQUENCES;
+//		String[][] expandedInputGenotypePaths = new String[sequences.length][inputGenotypePath.length];
+//
+//		for (String filepath : inputGenotypePath) {
+//			if (filepath.contains("#")) {
+//				// Expand filepath
+//				for (int i = 0; i < sequences.length; i++) {
+//					String sequence = sequences[i];
+//					expandedInputGenotypePaths[i] = new String[]
+//				}
+//			}
+//		}
+//
+//		return
+//	}
 }

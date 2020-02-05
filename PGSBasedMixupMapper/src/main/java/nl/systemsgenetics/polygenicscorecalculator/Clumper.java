@@ -11,18 +11,18 @@ import java.util.*;
 public class Clumper implements LDHandler {
 
     private Map<Set<ComparableGeneticVariant>, Double> ldMatrix;
-    private int windowSize;
+    private List<Integer> windowSize;
     private double rSquaredThreshold;
     private double indexVariantPValueThreshold;
     private List<ComparableGeneticVariant> indexVariants;
 
     public Clumper(RandomAccessGenotypeData genotypeData,
-                   int windowSize, double rSquared, double indexVariantPValueThreshold) throws LdCalculatorException, LDHandlerException {
+                   List<Integer> windowSize, double rSquared, double indexVariantPValueThreshold) throws LdCalculatorException, LDHandlerException {
 
         this(calculateLDMatrix(genotypeData, windowSize, rSquared), windowSize, rSquared, indexVariantPValueThreshold);
     }
 
-    public Clumper(Map<Set<ComparableGeneticVariant>, Double> ldMatrix, int windowSize, double rSquared, double indexVariantPValueThreshold) {
+    public Clumper(Map<Set<ComparableGeneticVariant>, Double> ldMatrix, List<Integer> windowSize, double rSquared, double indexVariantPValueThreshold) {
         this.ldMatrix = ldMatrix;
         this.windowSize = windowSize;
         this.rSquaredThreshold = rSquared;
@@ -95,15 +95,23 @@ public class Clumper implements LDHandler {
             // If the LD should be calculated on the spot, to this.
             Set<ComparableGeneticVariant> geneticVariantPair = Collections.unmodifiableSet(
                     new HashSet<>(Arrays.asList(indexVariant, newVariant)));
-            if (ldMatrix.containsKey(geneticVariantPair) && ldMatrix.get(geneticVariantPair) >= rSquaredThreshold) {
+            if (ldMatrix.containsKey(geneticVariantPair) && ldMatrix.get(geneticVariantPair) >= rSquaredThreshold &&
+                    areLocatedWithinOrEqualToWindowSize(newVariant, indexVariant)) {
                 return false;
             }
         }
         return true;
     }
 
+    private boolean areLocatedWithinOrEqualToWindowSize(ComparableGeneticVariant firstVariant,
+                                                        ComparableGeneticVariant secondVariant) {
+        int startPositionOfFirstVariant = secondVariant.getOriginalVariant().getStartPos();
+        int startPositionOfSecondVariant = firstVariant.getOriginalVariant().getStartPos();
+        return Math.abs(startPositionOfFirstVariant - startPositionOfSecondVariant) <= windowSize.get(0);
+    }
+
     private static Map<Set<ComparableGeneticVariant>, Double> calculateLDMatrix(
-            RandomAccessGenotypeData genotypeData, int windowSize, double rSquaredThreshold) throws LdCalculatorException, LDHandlerException {
+            RandomAccessGenotypeData genotypeData, List<Integer> windowSize, double rSquaredThreshold) throws LdCalculatorException, LDHandlerException {
         HashMap<Set<ComparableGeneticVariant>, Double> ldMatrix = new HashMap<>();
 
         // Get the chromosomes / sequences in the genotype data
@@ -125,7 +133,7 @@ public class Clumper implements LDHandler {
 //                // Now loop through the variants starting from the current variant stopping at the variant
 //                // for which the starting position difference with the current startpos does not exceed the window size.
 //                for (GeneticVariant otherVariant : genotypeData.getVariantsByRange(
-//                        sequence, startPos + 1, startPos + windowSize + 1)) {
+//                        sequence, startPos + 1, startPos + windowSize.get(0) + 1)) {
 //                    if (!variant.equals(otherVariant)) {
 //                        // Calculate the R2
 //                        double rSquared = LdCalculator.calculateRsquare(variant, otherVariant);
@@ -157,7 +165,7 @@ public class Clumper implements LDHandler {
     }
 
     @Override
-    public int getWindowSize() {
+    public List<Integer> getWindowSize() {
         return windowSize;
     }
 

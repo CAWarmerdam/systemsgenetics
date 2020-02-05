@@ -101,7 +101,7 @@ public class PhenotypeGenerator {
                                                     PGSBasedMixupMapperOptions options) {
         DoubleMatrixDataset<String, String> scores = calculatePolyGenicScores(
                 vcfGwasSummaryStatistics, genotypeData, options);
-        DoubleMatrix1D row = scores.getRow(0);
+        DoubleMatrix1D row = scores.getRow(0).assign(DoubleFunctions.mult(4));
 //        double[] errorArray = getErrorArray(genotypeData.getSamples().size());
 //        row.assign(new DenseDoubleMatrix1D(errorArray), DoubleFunctions.plus);
         return row;
@@ -122,7 +122,7 @@ public class PhenotypeGenerator {
             List<MultiStudyGwasSummaryStatistics> summaryStatistics,
             RandomAccessGenotypeData genotypeData, PGSBasedMixupMapperOptions options) {
 
-        int[] windowSize = new int[]{options.getWindowSize()};
+        int[] windowSize = new int[]{options.getWindowSize().get(0)};
         LOGGER.info(String.format("Using window size of %s for phenotype generation", Arrays.toString(windowSize)));
 
         boolean sumRisks = false;

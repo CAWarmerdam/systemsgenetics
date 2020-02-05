@@ -1,14 +1,12 @@
 package nl.systemsgenetics.pgsbasedmixupmapper;
 
 import cern.colt.matrix.tdouble.DoubleMatrix1D;
-import cern.colt.matrix.tdouble.impl.DenseDoubleMatrix1D;
 import cern.jet.math.tdouble.DoubleFunctions;
 import gnu.trove.map.hash.THashMap;
 import nl.systemsgenetics.gwassummarystatistics.MultiStudyGwasSummaryStatistics;
 import nl.systemsgenetics.polygenicscorecalculator.*;
 import org.apache.log4j.Logger;
 import org.molgenis.genotype.RandomAccessGenotypeData;
-import org.molgenis.genotype.Sample;
 import org.molgenis.genotype.variantFilter.VariantFilter;
 import umcg.genetica.math.matrix2.DoubleMatrixDataset;
 
@@ -69,7 +67,7 @@ public class PhenotypeGenerator {
                 options.getGenotypeToPhenotypeSampleCouplingFile(), CSV_DELIMITER);
 
         // Load Genotype and trait data
-        RandomAccessGenotypeData genotypeData = getGenotypeData(options, genotypeToPhenotypeSampleCoupling.keySet());
+        RandomAccessGenotypeData genotypeData = loadGenotypeData(options, genotypeToPhenotypeSampleCoupling.keySet());
         VariantFilter variantFilter = getVariantFilter(genotypeData);
 
         // Load GWAS summary statistics

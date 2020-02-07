@@ -10,18 +10,18 @@ import nl.systemsgenetics.polygenicscorecalculator.PolyGenicScoreCalculatorMode;
 import org.apache.commons.cli.*;
 import org.apache.log4j.Logger;
 import org.molgenis.genotype.GenotypeDataException;
+import org.molgenis.genotype.GenotypeFileType;
 import org.molgenis.genotype.RandomAccessGenotypeDataReaderFormats;
 
 import java.io.File;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 /**
  * @author patri
  */
 public class PGSBasedMixupMapperOptions {
 
-	private static final String[] SEQUENCES =
+	private static final String[] HSA_DEFAULT_SEQUENCES =
 			{"1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11",
 					"12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "22"};
 
@@ -30,7 +30,6 @@ public class PGSBasedMixupMapperOptions {
 	private static final Logger LOGGER = Logger.getLogger(PGSBasedMixupMapperOptions.class);
 
 	private final PolyGenicScoreCalculatorMode pgsMode;
-
 	private final String[] inputGenotypePath;
 	private final RandomAccessGenotypeDataReaderFormats inputGenotypeType;
 	private final File outputBasePath;
@@ -46,6 +45,7 @@ public class PGSBasedMixupMapperOptions {
 	private final List<Integer> windowSize = new ArrayList<>();
 	private final List<Double> pValueThresholds;
 	private final String[] genomicRangesToExclude;
+	private final String[] sequences;
 	private String genotypeToPhenotypeSampleCouplingFile;
 
 	static {
@@ -171,6 +171,12 @@ public class PGSBasedMixupMapperOptions {
 		OptionBuilder.withDescription("R2 for clumping.");
 		OptionBuilder.withLongOpt("rSquared");
 		OPTIONS.addOption(OptionBuilder.create("r2"));
+
+		OptionBuilder.withArgName("strings");
+		OptionBuilder.hasArgs();
+		OptionBuilder.withDescription("Chromosome identifiers to expand genotype input with");
+		OptionBuilder.withLongOpt("chromosomes");
+		OPTIONS.addOption(OptionBuilder.create('c'));
 	}
 
 	public PGSBasedMixupMapperOptions(String... args) throws ParseException {
@@ -192,6 +198,9 @@ public class PGSBasedMixupMapperOptions {
 		inputGenotypeType = getInputGenotypeType(commandLine);
 
 		forceSeqName = getForceSeqName(commandLine);
+
+		// Parse the command line option representing sequence identifiers to expand the genotype input with.
+		sequences = getSequences(commandLine);
 
 		try {
 			rSquared = Double.parseDouble(commandLine.getOptionValue("r2", String.valueOf(0.2)));
@@ -241,6 +250,13 @@ public class PGSBasedMixupMapperOptions {
 		} else {
 			mafFilter = 0;
 		}
+	}
+
+	private String[] getSequences(CommandLine commandLine) {
+		if (commandLine.hasOption("chromosomes")) {
+			return commandLine.getOptionValues("chromosomes");
+		}
+		return HSA_DEFAULT_SEQUENCES;
 	}
 
 	private File getInputPhenotypePath(CommandLine commandLine) throws ParseException {
@@ -413,21 +429,24 @@ public class PGSBasedMixupMapperOptions {
 		return inputGenotypePath;
 	}
 
-//	public String[][] getInputGenotypePaths() {
-//
-//		String[] sequences = SEQUENCES;
-//		String[][] expandedInputGenotypePaths = new String[sequences.length][inputGenotypePath.length];
-//
-//		for (String filepath : inputGenotypePath) {
-//			if (filepath.contains("#")) {
-//				// Expand filepath
-//				for (int i = 0; i < sequences.length; i++) {
-//					String sequence = sequences[i];
-//					expandedInputGenotypePaths[i] = new String[]
-//				}
-//			}
-//		}
-//
-//		return
-//	}
+	public Set<String[]> getInputGenotypePaths() {
+
+		// Initialize the output 2d array
+		Set<String[]> expandedInputGenotypePaths = new LinkedHashSet<>();
+
+		if (Arrays.stream(inputGenotypePath).anyMatch(path -> path.contains("#"))) {
+			for (String sequence : sequences) {
+				String[] strings = new String[inputGenotypePath.length];
+				for (int i = 0; i < inputGenotypePath.length; i++) {
+					String filePath = inputGenotypePath[i];
+					strings[i] = filePath.replace("#", sequence);
+				}
+				expandedInputGenotypePaths.add(strings);
+			}
+		} else {
+			expandedInputGenotypePaths.add(inputGenotypePath);
+		}
+
+		return expandedInputGenotypePaths;
+	}
 }

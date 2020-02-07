@@ -148,10 +148,10 @@ public class SimplePolyGenicScoreCalculator {
 //                                System.out.println("or = " + or);
                                 for (int sample = 0; sample < var1.getSampleCalledDosages().length; sample++) {
                                     if (var1.getSampleCalledDosages()[sample] != -1) {
-                                        if (riskCodedAsTwo || effectAlleleMatchesAlleleOrComplement(riskE, var1RefAllele)) {
+                                        if (riskCodedAsTwo) {
                                             scores.getMatrix().setQuick(rowNr, sample, (scores.getMatrix().getQuick(rowNr, sample) + (or * var1.getSampleCalledDosages()[sample])));
 //                                                Genos2.append(or * var1.getSampleCalledDosages()[sample]).append(",");
-                                        } else if (effectAlleleMatchesAlleleOrComplement(riskE, alternativeAllele)) {
+                                        } else {
                                             scores.getMatrix().setQuick(rowNr, sample, (scores.getMatrix().getQuick(rowNr, sample) + (or * Math.abs(var1.getSampleCalledDosages()[sample] - 2))));
 //                                                Genos2.append(or * Math.abs(var1.getSampleCalledDosages()[sample]-2)).append(",");
                                         }
@@ -210,11 +210,6 @@ public class SimplePolyGenicScoreCalculator {
         p.close();
 
         return scores;
-    }
-
-    private static boolean effectAlleleMatchesAlleleOrComplement(RiskEntry riskE, Allele allele) {
-        return (riskE.getAllele() == allele.getAlleleAsSnp()
-                || riskE.getAllele() == allele.getComplement().getAlleleAsSnp());
     }
 
     public static DoubleMatrixDataset<String, String> calculateTwoStages(RandomAccessGenotypeData genotypeData, THashMap<String, THashMap<String, THashMap<String, ArrayList<RiskEntry>>>> risks, double rSquare, int[] windowSize, double[] pValueThreshold, boolean sumRisk) {
@@ -318,6 +313,8 @@ public class SimplePolyGenicScoreCalculator {
                                     alternativeAllele = var1.getAlternativeAlleles().get(0);
                                 }
 
+//                                System.out.println("p-value = " + riskE.getpValue() + " | beta = " + riskE.getOr());
+
                                 double or = riskE.getOr();
                                 boolean riskCodedAsTwo;
                                 if (sumRisk && or < 0) {
@@ -338,16 +335,16 @@ public class SimplePolyGenicScoreCalculator {
 //                                    StringBuilder Genos2 = new StringBuilder();
 //                                    StringBuilder Genos3 = new StringBuilder();
 
-                                for (int sample = 0; sample < var1.getSampleCalledDosages().length; sample++) {
-                                    if (var1.getSampleCalledDosages()[sample] != -1) {
-                                        if (riskCodedAsTwo || effectAlleleMatchesAlleleOrComplement(riskE, var1RefAllele)) {
-                                            scores.getMatrix().setQuick(rowNr, sample, (scores.getMatrix().getQuick(rowNr, sample) + (or * var1.getSampleCalledDosages()[sample])));
+                                // Sample called dosages
+                                byte[] sampleCalledDosages = var1.getSampleCalledDosages();
+                                for (int sample = 0; sample < sampleCalledDosages.length; sample++) {
+                                    if (sampleCalledDosages[sample] != -1) {
+                                        if (riskCodedAsTwo) {
+                                            scores.getMatrix().setQuick(rowNr, sample, (scores.getMatrix().getQuick(rowNr, sample) + (or * sampleCalledDosages[sample])));
 //                                                Genos2.append(or * var1.getSampleCalledDosages()[sample]).append(",");
-                                        } else if (effectAlleleMatchesAlleleOrComplement(riskE, alternativeAllele)) {
-                                            scores.getMatrix().setQuick(rowNr, sample, (scores.getMatrix().getQuick(rowNr, sample) + (or * Math.abs(var1.getSampleCalledDosages()[sample] - 2))));
-//                                                Genos2.append(or * Math.abs(var1.getSampleCalledDosages()[sample]-2)).append(",");
                                         } else {
-                                            System.out.println("NO matches");
+                                            scores.getMatrix().setQuick(rowNr, sample, (scores.getMatrix().getQuick(rowNr, sample) + (or * Math.abs(sampleCalledDosages[sample] - 2))));
+//                                                Genos2.append(or * Math.abs(var1.getSampleCalledDosages()[sample]-2)).append(",");
                                         }
 //                                            Genos.append(var1.getSampleCalledDosages()[sample]).append(",");
 //                                            Genos1.append(var1.getSampleVariants().get(sample).toString());Genos1.append(",");

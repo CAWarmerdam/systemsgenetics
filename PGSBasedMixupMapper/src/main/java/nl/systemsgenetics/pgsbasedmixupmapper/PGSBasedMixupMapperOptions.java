@@ -224,7 +224,7 @@ public class PGSBasedMixupMapperOptions {
 		try {
 			pValueThresholds = new ArrayList<>();
 			for (String pvalue : commandLine.getOptionValue("pv", String.valueOf(1e-5)).split(":")) {
-				double e = -Math.log10(Double.parseDouble(pvalue));
+				double e = Double.parseDouble(pvalue);
 				pValueThresholds.add(e);
 			}
 		} catch (NumberFormatException e) {

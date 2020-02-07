@@ -41,6 +41,8 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static nl.systemsgenetics.polygenicscorecalculator.Main.readRiskFiles;
+
 /**
  * @author Robert Warmerdam
  */
@@ -57,7 +59,7 @@ public class PGSBasedMixupMapper {
             + "  |  University Medical Center Groningen  |\n"
             + "  \\---------------------------------------/";
     private final RandomAccessGenotypeData genotypeData;
-    private Map<String, List<MultiStudyGwasSummaryStatistics>> gwasSummaryStatisticsMap;
+    private Map<String, String> gwasSummaryStatisticsMap;
     private final Map<String, String> genotypeSampleToPhenotypeSampleCoupling;
     private PolyGenicScoreCalculator polyGenicScoreCalculator;
     private final DoubleMatrixDataset<String, String> phenotypeMatrix;
@@ -84,7 +86,7 @@ public class PGSBasedMixupMapper {
     public PGSBasedMixupMapper(RandomAccessGenotypeData genotypeData,
                                DoubleMatrixDataset<String, String> phenotypeMatrix,
                                Map<String, String> genotypeSampleToPhenotypeSampleCoupling,
-                               Map<String, List<MultiStudyGwasSummaryStatistics>> gwasSummaryStatisticsMap,
+                               Map<String, String> gwasSummaryStatisticsMap,
                                PolyGenicScoreCalculator polyGenicScoreCalculator)
             throws PGSBasedMixupMapperException, PolyGenicScoreCalculatorException {
         this.genotypeData = genotypeData;
@@ -444,8 +446,7 @@ public class PGSBasedMixupMapper {
     }
 
     private DoubleMatrixDataset<String, String> calculatePolyGenicScores(String phenotype) {
-        List<MultiStudyGwasSummaryStatistics> summaryStatistics = gwasSummaryStatisticsMap.get(phenotype);
-
+        String summaryStatistics = gwasSummaryStatisticsMap.get(phenotype);
 
         List<Integer> windowSizeList = polyGenicScoreCalculator.getLdHandler().getWindowSize();
         int[] windowSize = windowSizeList.stream().mapToInt(i->i).toArray();
@@ -455,10 +456,14 @@ public class PGSBasedMixupMapper {
         double rSquare = polyGenicScoreCalculator.getLdHandler().getRSquaredThreshold();
         boolean unweighted = false;
         String[] genomicRangesToExclude = polyGenicScoreCalculator.getGenomicRangesToExclude();
-        THashMap<String, THashMap<String, THashMap<String, ArrayList<RiskEntry>>>> risks = SimplePolyGenicScoreCalculator
-                .summStatsToConvolutedDataStructure(genotypeData,
-                        summaryStatistics, pValThres, genomicRangesToExclude,
-                        unweighted, LOGGER.isDebugEnabled());
+//        THashMap<String, THashMap<String, THashMap<String, ArrayList<RiskEntry>>>> risks = SimplePolyGenicScoreCalculator
+//                .summStatsToConvolutedDataStructure(genotypeData,
+//                        summaryStatistics, pValThres, genomicRangesToExclude,
+//                        unweighted, LOGGER.isDebugEnabled());
+
+        THashMap<String, THashMap<String, THashMap<String, ArrayList<RiskEntry>>>> risks = readRiskFiles(genotypeData,
+                summaryStatistics, pValThres, genomicRangesToExclude,
+                unweighted, LOGGER.isDebugEnabled());
 
         DoubleMatrixDataset<String, String> geneticRiskScoreMatrix = null;
 
@@ -642,8 +647,12 @@ public class PGSBasedMixupMapper {
         VariantFilter variantFilter = getVariantFilter(genotypeData);
 
         // Load GWAS summary statistics applying the variant filter.
-        Map<String, List<MultiStudyGwasSummaryStatistics>> gwasSummaryStatisticsMap = loadGwasSummaryStatisticsMap(
-                options.getGwasSummaryStatisticsPath(), gwasPhenotypeCoupling, variantFilter);
+//        Map<String, List<MultiStudyGwasSummaryStatistics>> gwasSummaryStatisticsMap = loadGwasSummaryStatisticsMap(
+//                options.getGwasSummaryStatisticsPath(), gwasPhenotypeCoupling, variantFilter);
+        Map<String, String> phenotypeToGwasFolderCoupling =
+                gwasPhenotypeCoupling.entrySet()
+                        .stream()
+                        .collect(Collectors.toMap(Map.Entry::getValue, Map.Entry::getKey));
 
         // Get the P-value thresholds to use in PGS calculation
         List<Double> pValueThresholds = options.getpValueThresholds();
@@ -672,7 +681,7 @@ public class PGSBasedMixupMapper {
             // Initialize the Mix-up mapper
             PGSBasedMixupMapper pgsBasedMixupMapper = new PGSBasedMixupMapper(
                     genotypeData, phenotypeData.duplicate(), genotypeToPhenotypeSampleCoupling,
-                    gwasSummaryStatisticsMap, pgsCalculator);
+                    phenotypeToGwasFolderCoupling, pgsCalculator);
             // Report results
             reportResults(options, pgsBasedMixupMapper, phenotypeData);
 

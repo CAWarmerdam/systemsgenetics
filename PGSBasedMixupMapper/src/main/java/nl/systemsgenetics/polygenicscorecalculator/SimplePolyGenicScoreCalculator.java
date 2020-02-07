@@ -339,6 +339,7 @@ public class SimplePolyGenicScoreCalculator {
                                 byte[] sampleCalledDosages = var1.getSampleCalledDosages();
                                 for (int sample = 0; sample < sampleCalledDosages.length; sample++) {
                                     if (sampleCalledDosages[sample] != -1) {
+
                                         if (riskCodedAsTwo) {
                                             scores.getMatrix().setQuick(rowNr, sample, (scores.getMatrix().getQuick(rowNr, sample) + (or * sampleCalledDosages[sample])));
 //                                                Genos2.append(or * var1.getSampleCalledDosages()[sample]).append(",");
@@ -346,6 +347,36 @@ public class SimplePolyGenicScoreCalculator {
                                             scores.getMatrix().setQuick(rowNr, sample, (scores.getMatrix().getQuick(rowNr, sample) + (or * Math.abs(sampleCalledDosages[sample] - 2))));
 //                                                Genos2.append(or * Math.abs(var1.getSampleCalledDosages()[sample]-2)).append(",");
                                         }
+
+                                        // The above stuff does the following
+                                        // If the risk allele matches the reference allele, the first clause is entered
+                                        // If the risk allele does not match the reference allele, the alternative should match (biallelic)
+                                        // In this case the second clause is entered
+
+                                        // Imagine the following scenario
+                                        // -- Genotype:
+                                        // ID       REF ALT Dosage_1    Dosage_2    Dosage_3
+                                        // rs123    A   C   2           1           0
+
+                                        // With the following risk entry
+                                        // -- Risk entry:
+                                        // ID       ALT ES
+                                        // rs123    C   0.05
+
+                                        // Resulting scores
+                                        // Sample_1: |2 - 2| = 0 -> 0 * 0.05 = 0.00
+                                        // Sample_2: |2 - 1| = 1 -> 1 * 0.05 = 0.05
+                                        // Sample_3: |2 - 0| = 2 -> 2 * 0.05 = 0.10
+
+                                        // OR
+                                        // -- Risk entry:
+                                        // ID       ALT ES
+                                        // rs123    A   -0.05
+
+                                        // -- Resulting scores
+                                        // Sample_1: 2 -> 2 * -0.05 = -0.10
+                                        // Sample_2: 1 -> 1 * -0.05 = -0.05
+                                        // Sample_3: 0 -> 0 * -0.05 = 0.00
 //                                            Genos.append(var1.getSampleCalledDosages()[sample]).append(",");
 //                                            Genos1.append(var1.getSampleVariants().get(sample).toString());Genos1.append(",");
 //                                            Genos3.append(scores.getMatrix().getQuick(rowNr, sample)).append(",");

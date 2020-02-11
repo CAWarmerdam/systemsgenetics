@@ -35,7 +35,7 @@ public class RiskEntry implements Comparable<RiskEntry>  {
         this(rsName, chr, pos, allele, Double.parseDouble(or), pValue);
     }
 
-    RiskEntry(String rsName, String chr, int pos, char allele, double or, double pValue) {
+    public RiskEntry(String rsName, String chr, int pos, char allele, double or, double pValue) {
         this.rsName = rsName;
         this.pos = pos;
         this.allele = allele;

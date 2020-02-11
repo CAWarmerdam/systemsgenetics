@@ -27,17 +27,17 @@ public class VariantFilterExcludeRange implements VariantFilter {
                 int startBasePosition;
                 int endBasePosition;
                 try {
-                    startBasePosition = Integer.parseInt(matcher.group(1));
+                    startBasePosition = Integer.parseInt(matcher.group(2));
                 } catch (NumberFormatException e) {
                     throw new IllegalArgumentException(String.format(
-                            "Start position %s cannot be parsed to an integer", matcher.group(1)));
+                            "Start position %s cannot be parsed to an integer", matcher.group(2)));
                 }
 
                 try {
-                    endBasePosition = Integer.parseInt(matcher.group(2));
+                    endBasePosition = Integer.parseInt(matcher.group(3));
                 } catch (NumberFormatException e) {
                     throw new IllegalArgumentException(String.format(
-                            "End position %s cannot be parsed to an integer", matcher.group(2)));
+                            "End position %s cannot be parsed to an integer", matcher.group(3)));
                 }
 
                 if (startBasePosition > endBasePosition) {
@@ -49,7 +49,7 @@ public class VariantFilterExcludeRange implements VariantFilter {
                 Pair<Integer, Integer> immutablePair = new ImmutablePair<>(
                         startBasePosition, endBasePosition);
 
-                String sequenceName = matcher.group(0);
+                String sequenceName = matcher.group(1);
                 if (rangeMap.containsKey(sequenceName)) {
                     rangeMap.get(sequenceName).add(immutablePair);
                 } else {

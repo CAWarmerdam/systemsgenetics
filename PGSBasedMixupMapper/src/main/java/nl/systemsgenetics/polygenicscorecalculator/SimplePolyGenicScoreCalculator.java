@@ -429,7 +429,7 @@ public class SimplePolyGenicScoreCalculator {
     }
 
     public static THashMap<String, THashMap<String, THashMap<String, ArrayList<RiskEntry>>>> summStatsToConvolutedDataStructure(
-            RandomAccessGenotypeData genotypeData, List<MultiStudyGwasSummaryStatistics> summaryStatisticsMap,
+            RandomAccessGenotypeData genotypeData, MultiStudyGwasSummaryStatistics summaryStatistics,
             double[] pValueThreshold, String[] genomicRangesToExclude, boolean unweighted, boolean debugMode) {
         THashMap<String, ArrayList<Pair<Integer, Integer>>> exclussionRanges = new THashMap<>();
 
@@ -454,111 +454,107 @@ public class SimplePolyGenicScoreCalculator {
         // A risk entry (value?) per variant? per sequence? per pval threshold? per file?
         THashMap<String, THashMap<String, THashMap<String, ArrayList<RiskEntry>>>> risks = new THashMap<String, THashMap<String, THashMap<String, ArrayList<RiskEntry>>>>();
 
-        IntStream.range(0, summaryStatisticsMap.size()).parallel().forEach(fi -> {
-            THashSet<String> chromosomesExcluded = new THashSet<>();
-            int snpsExcluded = 0;
-            try {
-                MultiStudyGwasSummaryStatistics summaryStatistics = summaryStatisticsMap.get(fi);
-                List<Sample> samples = summaryStatistics.getSamples();
-                assert(samples.size() == 1);
-                String name = samples.get(0).getId();
+        THashSet<String> chromosomesExcluded = new THashSet<>();
+        int snpsExcluded = 0;
+        try {
+            List<Sample> samples = summaryStatistics.getSamples();
+            assert(samples.size() == 1);
+            String name = samples.get(0).getId();
 
-                THashMap<String, THashMap<String, ArrayList<RiskEntry>>> filehash = new THashMap<>();
+            THashMap<String, THashMap<String, ArrayList<RiskEntry>>> filehash = new THashMap<>();
 
-                for (double p : pValueThreshold) {
-                    String name2 = "_P" + p;
-                    if (!filehash.containsKey(name2)) {
-                        filehash.put(name2, new THashMap<>());
-                    }
+            for (double p : pValueThreshold) {
+                String name2 = "_P" + p;
+                if (!filehash.containsKey(name2)) {
+                    filehash.put(name2, new THashMap<>());
+                }
+            }
+
+            int numberOfVariantsWithoutSameAlleles = 0;
+            int numberOfVariantsWithoutSameAllelesComplement = 0;
+
+            for (GeneticVariant variant : summaryStatistics) {
+                // Check if there is a variant in the genotype data corresponding to this variant
+                GeneticVariant snpVariantByPos = genotypeData.getSnpVariantByPos(
+                        variant.getSequenceName(),
+                        variant.getStartPos());
+
+                if (snpVariantByPos == null ||
+                        !snpVariantByPos.getPrimaryVariantId().equals(variant.getPrimaryVariantId())) {
+                    continue;
                 }
 
-                int numberOfVariantsWithoutSameAlleles = 0;
-                int numberOfVariantsWithoutSameAllelesComplement = 0;
+                if (!snpVariantByPos.getVariantAlleles().sameAlleles(variant.getVariantAlleles())) {
+                    numberOfVariantsWithoutSameAlleles++;
+                    Alleles complement = snpVariantByPos.getVariantAlleles().getComplement();
 
-                for (GeneticVariant variant : summaryStatistics) {
-                    // Check if there is a variant in the genotype data corresponding to this variant
-                    GeneticVariant snpVariantByPos = genotypeData.getSnpVariantByPos(
-                            variant.getSequenceName(),
-                            variant.getStartPos());
-
-                    if (snpVariantByPos == null ||
-                            !snpVariantByPos.getPrimaryVariantId().equals(variant.getPrimaryVariantId())) {
+                    if (!complement.sameAlleles(variant.getVariantAlleles())) {
+                        numberOfVariantsWithoutSameAllelesComplement++;
                         continue;
                     }
-
-                    if (!snpVariantByPos.getVariantAlleles().sameAlleles(variant.getVariantAlleles())) {
-                        numberOfVariantsWithoutSameAlleles++;
-                        Alleles complement = snpVariantByPos.getVariantAlleles().getComplement();
-
-                        if (!complement.sameAlleles(variant.getVariantAlleles())) {
-                            numberOfVariantsWithoutSameAllelesComplement++;
-                            continue;
-                        }
-                    }
+                }
 
 //                    System.out.println(s);
 //                        System.out.print(snpObject.getSequenceName() + "\t" + snpObject.getStartPos() + "\n");
-                    double currentP = summaryStatistics.getTransformedPValues(variant)[0][0];
-                    boolean addEntry = true;
-                    float partsTwo = summaryStatistics.getEffectSizeEstimates(variant)[0][0];
+                double currentP = Math.pow(10, -summaryStatistics.getTransformedPValues(variant)[0][0]);
+                boolean addEntry = true;
+                float partsTwo = summaryStatistics.getEffectSizeEstimates(variant)[0][0];
 
-                    if (unweighted) {
-                        if (partsTwo < 0) {
-                            partsTwo = -1;
-                        } else {
-                            partsTwo = 1;
+                if (unweighted) {
+                    if (partsTwo < 0) {
+                        partsTwo = -1;
+                    } else {
+                        partsTwo = 1;
+                    }
+                }
+
+                if (exclussionRanges.contains(variant.getSequenceName())) {
+                    chromosomesExcluded.add(variant.getSequenceName());
+                    for (Pair<Integer, Integer> p : exclussionRanges.get(variant.getSequenceName())) {
+                        if (p.getLeft() <= variant.getStartPos() && p.getRight() >= variant.getStartPos()) {
+                            addEntry = false;
+                            snpsExcluded++;
                         }
                     }
+                }
 
-                    if (exclussionRanges.contains(variant.getSequenceName())) {
-                        chromosomesExcluded.add(variant.getSequenceName());
-                        for (Pair<Integer, Integer> p : exclussionRanges.get(variant.getSequenceName())) {
-                            if (p.getLeft() <= variant.getStartPos() && p.getRight() >= variant.getStartPos()) {
-                                addEntry = false;
-                                snpsExcluded++;
+                if (addEntry) {
+                    for (double p : pValueThreshold) {
+                        if (currentP < p) {
+                            String name2 = "_P" + p;
+
+                            if (!filehash.get(name2).containsKey(variant.getSequenceName())) {
+                                filehash.get(name2).put(variant.getSequenceName(), new ArrayList<>());
                             }
-                        }
-                    }
-
-                    if (addEntry) {
-                        for (double p : pValueThreshold) {
-                            if (currentP > p) {
-                                String name2 = "_P" + p;
-
-                                if (!filehash.get(name2).containsKey(variant.getSequenceName())) {
-                                    filehash.get(name2).put(variant.getSequenceName(), new ArrayList<>());
-                                }
-                                filehash.get(name2).get(variant.getSequenceName()).add(new RiskEntry(variant.getPrimaryVariantId(),
-                                        variant.getSequenceName(), variant.getStartPos(),
-                                        variant.getAlternativeAlleles().getAllelesAsChars()[0], partsTwo, currentP));
-                            }
+                            filehash.get(name2).get(variant.getSequenceName()).add(new RiskEntry(variant.getPrimaryVariantId(),
+                                    variant.getSequenceName(), variant.getStartPos(),
+                                    variant.getAlternativeAlleles().getAllelesAsChars()[0], partsTwo, currentP));
                         }
                     }
                 }
-                synchronized (risks) {
-                    risks.put(name, filehash);
-                }
-
-                if (numberOfVariantsWithoutSameAlleles > 0) {
-                    String message = String.format(
-                            "%d variants have different alleles than the alleles of " +
-                                    "the matched variant from the input genotype data.%n" +
-                                    "The complement of these alleles is also different for %d variants, " +
-                                    "which will be removed.",
-                            numberOfVariantsWithoutSameAlleles, numberOfVariantsWithoutSameAllelesComplement);
-                    System.out.println(message);
-                    LOGGER.warn(message);
-                }
-
-                if (debugMode) {
-                    System.out.println("Chromosomes where regions are excluded: " + chromosomesExcluded);
-                    System.out.println("Number of SNPs excluded: " + snpsExcluded);
-                }
-            } catch (VcfGwasSummaryStatisticsException ex) {
-                LOGGER.error(ex);
+            }
+            synchronized (risks) {
+                risks.put(name, filehash);
             }
 
-        });
+            if (numberOfVariantsWithoutSameAlleles > 0) {
+                String message = String.format(
+                        "%d variants have different alleles than the alleles of " +
+                                "the matched variant from the input genotype data.%n" +
+                                "The complement of these alleles is also different for %d variants, " +
+                                "which will be removed.",
+                        numberOfVariantsWithoutSameAlleles, numberOfVariantsWithoutSameAllelesComplement);
+                System.out.println(message);
+                LOGGER.warn(message);
+            }
+
+            if (debugMode) {
+                System.out.println("Chromosomes where regions are excluded: " + chromosomesExcluded);
+                System.out.println("Number of SNPs excluded: " + snpsExcluded);
+            }
+        } catch (VcfGwasSummaryStatisticsException ex) {
+            LOGGER.error(ex);
+        }
 
         for (Entry<String, THashMap<String, THashMap<String, ArrayList<RiskEntry>>>> e : risks.entrySet()) {
 

@@ -22,8 +22,8 @@ public class VariantFilterableGwasSummaryStatisticsDecorator extends VariantFilt
     }
 
     @Override
-    public Iterator<EffectAllele> effectAlleles(ReadOnlyGwasSummaryStatistics studyIndex) {
-        return ((MultiStudyGwasSummaryStatistics) originalGenotypeData).effectAlleles(studyIndex);
+    public Iterator<EffectAllele> effectAlleles(GwasSummaryStatistics summaryStatistics) {
+        return ((MultiStudyGwasSummaryStatistics) originalGenotypeData).effectAlleles(summaryStatistics);
     }
 
     @Override

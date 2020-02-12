@@ -1,11 +1,9 @@
 package nl.systemsgenetics.gwassummarystatistics;
 
-import org.molgenis.genotype.RandomAccessGenotypeData;
 import org.molgenis.genotype.variant.GeneticVariant;
 import org.molgenis.genotype.variantFilter.VariantFilter;
 import org.molgenis.genotype.variantFilter.VariantFilterableGenotypeDataDecorator;
 
-import java.util.Arrays;
 import java.util.Iterator;
 
 public class VariantFilterableGwasSummaryStatisticsDecorator extends VariantFilterableGenotypeDataDecorator implements MultiStudyGwasSummaryStatistics {
@@ -24,8 +22,8 @@ public class VariantFilterableGwasSummaryStatisticsDecorator extends VariantFilt
     }
 
     @Override
-    public Iterator<EffectAllele> effectAlleles(String studyName) {
-        return EffectAllele.effectAlleles(this.iterator(), this, Arrays.asList(getSampleNames()).indexOf(studyName));
+    public Iterator<EffectAllele> effectAlleles(ReadOnlyGwasSummaryStatistics studyIndex) {
+        return ((MultiStudyGwasSummaryStatistics) originalGenotypeData).effectAlleles(studyIndex);
     }
 
     @Override

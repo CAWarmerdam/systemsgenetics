@@ -16,7 +16,7 @@ import org.molgenis.genotype.variant.sampleProvider.SampleVariantsProvider;
  */
 public class RiskEntry implements Comparable<RiskEntry>  {
     private final String rsName;
-    private final double or;
+    private double or;
     private final int pos;
     private final int chr;
     private final char allele;
@@ -100,5 +100,9 @@ public class RiskEntry implements Comparable<RiskEntry>  {
         s.append(this.or).append("\t");
         s.append(this.pValue);
         return(s.toString());
+    }
+
+    public void setOr(int i) {
+        or = i;
     }
 }

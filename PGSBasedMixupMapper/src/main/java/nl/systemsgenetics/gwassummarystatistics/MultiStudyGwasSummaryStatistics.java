@@ -10,7 +10,7 @@ public interface MultiStudyGwasSummaryStatistics extends RandomAccessGenotypeDat
 
     float[][] getTransformedPValues(GeneticVariant variant);
 
-    Iterator<EffectAllele> effectAlleles(String studyName);
+    Iterator<EffectAllele> effectAlleles(GwasSummaryStatistics summaryStatistics);
 
     float[][] getStandardErrorOfES(GeneticVariant variant);
 }

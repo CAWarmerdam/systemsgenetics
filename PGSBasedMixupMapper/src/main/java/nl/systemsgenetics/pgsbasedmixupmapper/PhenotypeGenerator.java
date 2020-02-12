@@ -3,6 +3,7 @@ package nl.systemsgenetics.pgsbasedmixupmapper;
 import cern.colt.matrix.tdouble.DoubleMatrix1D;
 import cern.jet.math.tdouble.DoubleFunctions;
 import gnu.trove.map.hash.THashMap;
+import nl.systemsgenetics.gwassummarystatistics.GwasSummaryStatistics;
 import nl.systemsgenetics.gwassummarystatistics.MultiStudyGwasSummaryStatistics;
 import nl.systemsgenetics.polygenicscorecalculator.*;
 import org.apache.log4j.Logger;
@@ -73,7 +74,7 @@ public class PhenotypeGenerator {
         // Load GWAS summary statistics
         Map<String, String> gwasPhenotypeCoupling = loadGwasSummaryStatisticsPhenotypeCouplings(
                 options.getGwasSummaryStatisticsPhenotypeCouplingFile(), CSV_DELIMITER);
-        Map<String, List<MultiStudyGwasSummaryStatistics>> gwasSummaryStatisticsMap = loadGwasSummaryStatisticsMap(
+        Map<String, GwasSummaryStatistics> gwasSummaryStatisticsMap = loadGwasSummaryStatisticsMap(
                 options.getGwasSummaryStatisticsPath(), gwasPhenotypeCoupling, variantFilter);
 //        System.out.println("Height");
 //        DoubleMatrix1D height = generatePhenotype(genotypeData, gwasSummaryStatisticsMap.get("Height"));
@@ -95,7 +96,7 @@ public class PhenotypeGenerator {
     }
 
     private static DoubleMatrix1D generatePhenotype(RandomAccessGenotypeData genotypeData,
-                                                    List<MultiStudyGwasSummaryStatistics> vcfGwasSummaryStatistics,
+                                                    GwasSummaryStatistics vcfGwasSummaryStatistics,
                                                     PGSBasedMixupMapperOptions options) {
         DoubleMatrixDataset<String, String> scores = calculatePolyGenicScores(
                 vcfGwasSummaryStatistics, genotypeData, options);
@@ -117,7 +118,7 @@ public class PhenotypeGenerator {
     }
 
     private static DoubleMatrixDataset<String, String> calculatePolyGenicScores(
-            List<MultiStudyGwasSummaryStatistics> summaryStatistics,
+            GwasSummaryStatistics summaryStatistics,
             RandomAccessGenotypeData genotypeData, PGSBasedMixupMapperOptions options) {
 
         int[] windowSize = new int[]{options.getWindowSize().get(0)};
@@ -135,10 +136,9 @@ public class PhenotypeGenerator {
 
         System.out.println(genotypeData.hashCode());
 
-        THashMap<String, THashMap<String, THashMap<String, ArrayList<RiskEntry>>>> risks = SimplePolyGenicScoreCalculator
-                .summStatsToConvolutedDataStructure(genotypeData,
-                        summaryStatistics, pValThres, options.getGenomicRangesToExclude(),
-                        unweighted, LOGGER.isDebugEnabled());
+        THashMap<String, THashMap<String, THashMap<String, ArrayList<RiskEntry>>>> risks = summaryStatistics.riskEntries(genotypeData,
+                        pValThres, options.getGenomicRangesToExclude(),
+                        unweighted);
 
         System.out.println(risks.hashCode());
 

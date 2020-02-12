@@ -1,5 +1,6 @@
 package nl.systemsgenetics.gwassummarystatistics;
 
+import org.molgenis.genotype.Allele;
 import org.molgenis.genotype.variant.GeneticVariant;
 
 import java.util.*;
@@ -8,57 +9,21 @@ import java.util.stream.Collectors;
 public class EffectAllele implements Comparable<EffectAllele> {
     private final int alleleIndex;
     private final GeneticVariant variant;
-    private final MultiStudyGwasSummaryStatistics summaryStatistics;
-    private final int studyIndex;
+    private final GwasSummaryStatistics summaryStatistics;
 
-    private EffectAllele(GeneticVariant variant, MultiStudyGwasSummaryStatistics summaryStatistics,
-                         int alleleIndex, int studyIndex) {
+    public EffectAllele(GeneticVariant variant, GwasSummaryStatistics summaryStatistics,
+                        int alleleIndex) {
         this.variant = variant;
         this.alleleIndex = alleleIndex;
-        this.studyIndex = studyIndex;
         this.summaryStatistics = summaryStatistics;
     }
 
-    private static EffectAllele fromVariant(GeneticVariant variant, MultiStudyGwasSummaryStatistics summaryStatistics,
-                                            int alleleIndex, int studyIndex) {
+    public static EffectAllele fromVariant(GeneticVariant variant, GwasSummaryStatistics summaryStatistics,
+                                            int alleleIndex) {
         return new EffectAllele(
                 variant,
                 summaryStatistics,
-                alleleIndex,
-                studyIndex);
-    }
-
-    public static Iterator<EffectAllele> effectAlleles(Iterator<GeneticVariant> variantIterator, MultiStudyGwasSummaryStatistics summaryStatistics, int studyIndex) {
-        return new Iterator<EffectAllele>() {
-            GeneticVariant variant = variantIterator.hasNext() ? variantIterator.next() : null;
-            int currentAlleleIndex = 0;
-
-            @Override
-            public boolean hasNext() {
-                if (variant == null) return false;
-                while (currentAlleleIndex == variant.getAlternativeAlleles().getAlleleCount()) {
-                    if (!variantIterator.hasNext()) {
-                        return false;
-                    }
-                    variant = variantIterator.next();
-                    currentAlleleIndex = 0;
-                }
-                return true;
-            }
-
-            @Override
-            public EffectAllele next() {
-                while (currentAlleleIndex == variant.getAlternativeAlleles().getAlleleCount()) {
-                    if (!variantIterator.hasNext()) {
-                        throw new NoSuchElementException();
-                    }
-                    variant = variantIterator.next();
-                    currentAlleleIndex = 0;
-                }
-                return EffectAllele.fromVariant(
-                        variant, summaryStatistics, currentAlleleIndex++, studyIndex);
-            }
-        };
+                alleleIndex);
     }
 
     public static Iterator<EffectAllele> sortEffectAllelesPerSequence(Iterator<EffectAllele> unorderedIterator) {
@@ -144,15 +109,11 @@ public class EffectAllele implements Comparable<EffectAllele> {
     }
 
     public double getEffectSize() {
-        return summaryStatistics.getEffectSizeEstimates(variant)[studyIndex][alleleIndex];
-    }
-
-    public double getStandardErrorOfES() {
-        return summaryStatistics.getStandardErrorOfES(variant)[studyIndex][alleleIndex];
+        return summaryStatistics.getEffectSizeEstimates(variant)[alleleIndex];
     }
 
     public double getLogTransformedPValue() {
-        return summaryStatistics.getTransformedPValues(variant)[studyIndex][alleleIndex];
+        return summaryStatistics.getTransformedPValues(variant)[alleleIndex];
     }
 
     @Override
@@ -164,5 +125,21 @@ public class EffectAllele implements Comparable<EffectAllele> {
         } else {
             return 1;
         }
+    }
+
+    public Allele getAllele() {
+        return variant.getAlternativeAlleles().get(alleleIndex);
+    }
+
+    @Override
+    public String toString() {
+        return String.join("\t",
+                variant.getPrimaryVariantId(),
+                variant.getSequenceName(),
+                String.valueOf(variant.getStartPos()),
+                String.valueOf(variant.getAlternativeAlleles().get(alleleIndex)),
+                String.valueOf(getEffectSize()),
+                String.valueOf(Math.pow(10, -getLogTransformedPValue())));
+
     }
 }

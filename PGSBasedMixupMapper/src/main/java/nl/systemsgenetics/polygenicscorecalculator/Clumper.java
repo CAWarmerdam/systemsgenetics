@@ -6,6 +6,7 @@ import org.molgenis.genotype.util.LdCalculator;
 import org.molgenis.genotype.util.LdCalculatorException;
 import org.molgenis.genotype.variant.GeneticVariant;
 
+import javax.management.RuntimeErrorException;
 import java.util.*;
 
 public class Clumper implements LDHandler {
@@ -17,12 +18,19 @@ public class Clumper implements LDHandler {
     private List<ComparableGeneticVariant> indexVariants;
 
     public Clumper(RandomAccessGenotypeData genotypeData,
-                   List<Integer> windowSize, double rSquared, double indexVariantPValueThreshold) throws LdCalculatorException, LDHandlerException {
-
-        this(calculateLDMatrix(genotypeData, windowSize, rSquared), windowSize, rSquared, indexVariantPValueThreshold);
+                   List<Integer> windowSize,
+                   double rSquared,
+                   double indexVariantPValueThreshold) throws LdCalculatorException, LDHandlerException {
+        this.ldMatrix = calculateLDMatrix(genotypeData, windowSize, rSquaredThreshold);
+        this.windowSize = windowSize;
+        this.rSquaredThreshold = rSquared;
+        this.indexVariantPValueThreshold = indexVariantPValueThreshold;
     }
 
-    public Clumper(Map<Set<ComparableGeneticVariant>, Double> ldMatrix, List<Integer> windowSize, double rSquared, double indexVariantPValueThreshold) {
+    public Clumper(Map<Set<ComparableGeneticVariant>, Double> ldMatrix,
+                   List<Integer> windowSize,
+                   double rSquared,
+                   double indexVariantPValueThreshold) {
         this.ldMatrix = ldMatrix;
         this.windowSize = windowSize;
         this.rSquaredThreshold = rSquared;
@@ -95,13 +103,44 @@ public class Clumper implements LDHandler {
             // If the LD should be calculated on the spot, to this.
             Set<ComparableGeneticVariant> geneticVariantPair = Collections.unmodifiableSet(
                     new HashSet<>(Arrays.asList(indexVariant, newVariant)));
-            if (ldMatrix.containsKey(geneticVariantPair) && ldMatrix.get(geneticVariantPair) >= rSquaredThreshold &&
+            if (doesPairExceedRSquaredThreshold(geneticVariantPair) &&
                     areLocatedWithinOrEqualToWindowSize(newVariant, indexVariant)) {
                 return false;
             }
         }
         return true;
     }
+
+    private boolean doesPairExceedRSquaredThreshold(Set<ComparableGeneticVariant> geneticVariantPair) {
+        return ldMatrix.containsKey(geneticVariantPair) && ldMatrix.get(geneticVariantPair) >= rSquaredThreshold;
+//        } else {
+//            ArrayList<ComparableGeneticVariant> comparableGeneticVariants = new ArrayList<>(geneticVariantPair);
+//            GeneticVariant firstMatchingVariant = getMatchingVariant(comparableGeneticVariants.get(0));
+//            GeneticVariant otherMatchingVariant = getMatchingVariant(comparableGeneticVariants.get(1));
+//
+//            try {
+//                return firstMatchingVariant != null && otherMatchingVariant != null
+//                        && LdCalculator.calculateRsquare(firstMatchingVariant, otherMatchingVariant) >= rSquaredThreshold;
+//            } catch (LdCalculatorException e) {
+//                throw new RuntimeException("Encountered unexpected exception when calculating R-squared", e);
+//            }
+//        }
+    }
+
+//    private GeneticVariant getMatchingVariant(ComparableGeneticVariant comparableGeneticVariant) {
+//        GeneticVariant firstVariant = comparableGeneticVariant.originalVariant;
+//        Iterable<GeneticVariant> candidateVariants = genotypeData.getVariantsByPos(
+//                firstVariant.getSequenceName(), firstVariant.getStartPos());
+//
+//        GeneticVariant firstMatchingVariant = null;
+//        for (GeneticVariant candidateVariant : candidateVariants) {
+//            if (new ComparableGeneticVariant(candidateVariant).equals(comparableGeneticVariant)) {
+//                firstMatchingVariant = candidateVariant;
+//                break;
+//            }
+//        }
+//        return firstMatchingVariant;
+//    }
 
     private boolean areLocatedWithinOrEqualToWindowSize(ComparableGeneticVariant firstVariant,
                                                         ComparableGeneticVariant secondVariant) {
@@ -115,40 +154,41 @@ public class Clumper implements LDHandler {
         HashMap<Set<ComparableGeneticVariant>, Double> ldMatrix = new HashMap<>();
 
         // Get the chromosomes / sequences in the genotype data
-//        for (String sequence : genotypeData.getSeqNames()) {
-//            System.out.println("sequence = " + sequence);
-//            int lastStartPos = 0;
-//
-//            // Loop through the variants in this sequence in order (low bp to high bp)
-//            Iterable<GeneticVariant> sequenceVariants = genotypeData.getSequenceGeneticVariants(sequence);
-//            // TODO: Make sure that these iterables go through the variants ordered by bp position
-//
-//            for (GeneticVariant variant : sequenceVariants) {
-//                int startPos = variant.getStartPos();
-//                if (lastStartPos > startPos) {
-//                    throw new LDHandlerException(
-//                            "Genetic variants in the genotype data should be ordered by position");
-//                }
-//                lastStartPos = startPos;
-//                // Now loop through the variants starting from the current variant stopping at the variant
-//                // for which the starting position difference with the current startpos does not exceed the window size.
-//                for (GeneticVariant otherVariant : genotypeData.getVariantsByRange(
-//                        sequence, startPos + 1, startPos + windowSize.get(0) + 1)) {
-//                    if (!variant.equals(otherVariant)) {
-//                        // Calculate the R2
-//                        double rSquared = LdCalculator.calculateRsquare(variant, otherVariant);
-//                        // If the R2 is above the required threshold, put this pair in the map / matrix
-//                        if (rSquared >= rSquaredThreshold) {
-//                            ldMatrix.put( // Create a set as a key because order is not important this way
-//                                    Collections.unmodifiableSet(new HashSet<>(Arrays.asList(
-//                                            new ComparableGeneticVariant(variant),
-//                                            new ComparableGeneticVariant(otherVariant)))),
-//                                    rSquared);
-//                        }
-//                    }
-//                }
-//            }
-//        }
+        for (String sequence : genotypeData.getSeqNames()) {
+            System.out.println("sequence = " + sequence);
+            int lastStartPos = 0;
+
+            // Loop through the variants in this sequence in order (low bp to high bp)
+            Iterable<GeneticVariant> sequenceVariants = genotypeData.getSequenceGeneticVariants(sequence);
+
+            // Outer loop through variants: loops from first to last variant
+            for (GeneticVariant variant : sequenceVariants) {
+                // First check if the variants indeed are processed in order
+                int startPos = variant.getStartPos();
+                if (lastStartPos > startPos) {
+                    throw new LDHandlerException(
+                            "Genetic variants in the genotype data should be ordered by position");
+                }
+                lastStartPos = startPos;
+                // Now loop through the variants starting from the current variant stopping at the variant
+                // for which the starting position difference with the current startpos does not exceed the window size.
+                for (GeneticVariant otherVariant : genotypeData.getVariantsByRange(
+                        sequence, startPos + 1, startPos + windowSize.get(0) + 1)) {
+                    if (!variant.equals(otherVariant)) {
+                        // Calculate the R2
+                        double rSquared = LdCalculator.calculateRsquare(variant, otherVariant);
+                        // If the R2 is above the required threshold, put this pair in the map / matrix
+                        if (rSquared >= rSquaredThreshold) {
+                            ldMatrix.put( // Create a set as a key because order is not important this way
+                                    Collections.unmodifiableSet(new HashSet<>(Arrays.asList(
+                                            new ComparableGeneticVariant(variant),
+                                            new ComparableGeneticVariant(otherVariant)))),
+                                    rSquared);
+                        }
+                    }
+                }
+            }
+        }
         return ldMatrix;
     }
 

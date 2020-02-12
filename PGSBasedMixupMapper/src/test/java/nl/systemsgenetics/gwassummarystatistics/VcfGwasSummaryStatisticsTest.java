@@ -22,7 +22,7 @@ public class VcfGwasSummaryStatisticsTest {
 
 
     @org.testng.annotations.Test
-    public void testGetSummaryStatistics() throws IOException, VcfGwasSummaryStatisticsException {
+    public void testGetSummaryStatistics() throws IOException, GwasSummaryStatisticsException {
         List<String> expectedVariantIds = new ArrayList<>(Arrays.asList(
                 "rs10399793", "rs2462492", "rs114608975", "rs6702460", "rs8179466",
                 "rs6680723", "rs12025928", "rs12238997", "rs72631875", "rs12029736", "rs9442385"));
@@ -89,7 +89,7 @@ public class VcfGwasSummaryStatisticsTest {
             fail("getEffectSizeEstimates() did not raise an " +
                     "exception while the alternative allele count " +
                     "does not correspond to the number of summary statistic values");
-        } catch (VcfGwasSummaryStatisticsException e) {
+        } catch (GwasSummaryStatisticsException e) {
             assertEquals(e.getMessage(),
                     "Error in 'ES' value for study [IEU-b-1], " +
                             "found 1 value(s) (-0.0042266), while 2 were " +

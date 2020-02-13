@@ -647,25 +647,10 @@ public class PGSBasedMixupMapper {
         // Get the P-value thresholds to use in PGS calculation
         List<Double> pValueThresholds = options.getpValueThresholds();
 
-        Map<String, GwasSummaryStatistics> gwasSummaryStatisticsMap = null;
-
-        if (options.isCalculateNewGenomeWideAssociationsEnabled()) {
-
-            DoubleMatrixDataset<String, String> filteredPhenotypes = phenotypeData
-                    .viewColSelection(phenotypeToGwasFolderCoupling.keySet()).duplicate();
-
-            LOGGER.info("Calculating new genome wide associations");
-            // Perform GWAS
-            gwasSummaryStatisticsMap = calculateGenomeWideAssociations(
-                    genotypeData, filteredPhenotypes, genotypeToPhenotypeSampleCoupling, Collections.max(pValueThresholds));
-        } else {
-            // Get a variant filter that includes only variants als present in the given genotype data.
-            VariantFilter variantFilter = getVariantFilter(genotypeData);
-
-            // Load GWAS summary statistics applying the variant filter.
-            gwasSummaryStatisticsMap = loadGwasSummaryStatisticsMap(
-                    options.getGwasSummaryStatisticsPath(), gwasPhenotypeCoupling, variantFilter);
-        }
+        // Get the gwas summary statistics map
+        Map<String, GwasSummaryStatistics> gwasSummaryStatisticsMap = getGwasSummaryStatisticsMap(options,
+                genotypeToPhenotypeSampleCoupling, gwasPhenotypeCoupling, phenotypeData, genotypeData,
+                phenotypeToGwasFolderCoupling, pValueThresholds);
 
         try {
             // Initialize an LD handler for clumping the effect entries into the top, unlinked, clumps
@@ -715,7 +700,48 @@ public class PGSBasedMixupMapper {
         }
     }
 
-    private static Map<String, GwasSummaryStatistics> calculateGenomeWideAssociations(
+    private static Map<String, GwasSummaryStatistics> getGwasSummaryStatisticsMap(PGSBasedMixupMapperOptions options, Map<String, String> genotypeToPhenotypeSampleCoupling, Map<String, String> gwasPhenotypeCoupling, DoubleMatrixDataset<String, String> phenotypeData, RandomAccessGenotypeData genotypeData, Map<String, String> phenotypeToGwasFolderCoupling, List<Double> pValueThresholds) {
+        Map<String, GwasSummaryStatistics> gwasSummaryStatisticsMap = null;
+
+        if (options.isCalculateNewGenomeWideAssociationsEnabled()) {
+
+            DoubleMatrixDataset<String, String> filteredPhenotypes = phenotypeData
+                    .viewColSelection(phenotypeToGwasFolderCoupling.keySet()).duplicate();
+
+            LOGGER.info("Calculating new genome wide associations");
+            // Perform GWAS
+            Map<String, WritableGwasSummaryStatistics> writableGwasSummaryStatisticsMap = calculateGenomeWideAssociations(
+                    genotypeData, filteredPhenotypes,
+                    genotypeToPhenotypeSampleCoupling, Collections.max(pValueThresholds));
+
+            gwasSummaryStatisticsMap = new HashMap<>();
+
+            for (String phenotypeIdentifier : writableGwasSummaryStatisticsMap.keySet()) {
+                if (options.isWriteNewGenomeWideAssociationsEnabled()) {
+                    try {
+                        writableGwasSummaryStatisticsMap.get(phenotypeIdentifier).save(options.getOutputBasePath().toString());
+                    } catch (IOException e) {
+                        System.err.println("Could not save writableGwasSummaryStatistics." + e.getMessage());
+                        System.err.println("See log file for stack trace");
+                        LOGGER.warn("Could not save writableGwasSummaryStatistics.", e);
+                    }
+                }
+                gwasSummaryStatisticsMap.put(
+                        phenotypeIdentifier,
+                        writableGwasSummaryStatisticsMap.get(phenotypeIdentifier));
+            }
+        } else {
+            // Get a variant filter that includes only variants als present in the given genotype data.
+            VariantFilter variantFilter = getVariantFilter(genotypeData);
+
+            // Load GWAS summary statistics applying the variant filter.
+            gwasSummaryStatisticsMap = loadGwasSummaryStatisticsMap(
+                    options.getGwasSummaryStatisticsPath(), gwasPhenotypeCoupling, variantFilter);
+        }
+        return gwasSummaryStatisticsMap;
+    }
+
+    private static Map<String, WritableGwasSummaryStatistics> calculateGenomeWideAssociations(
             RandomAccessGenotypeData genotypeData,
             DoubleMatrixDataset<String, String> phenotypeData,
             Map<String, String> genotypeToPhenotypeCoupling,
@@ -726,7 +752,8 @@ public class PGSBasedMixupMapper {
                 .map(genotypeToPhenotypeCoupling::get).collect(Collectors.toList());
         phenotypeData = phenotypeData.viewRowSelection(orderedPhenotypeIdentifiers);
 
-        HashMap<String, GwasSummaryStatistics> summaryStatisticsMap = new HashMap<>();
+        HashMap<String, WritableGwasSummaryStatistics> summaryStatisticsMap = new HashMap<>();
+
 //        DoubleMatrixDataset<String, String> normalizedPhenotypes = filteredPhenotypes.duplicate();
 //        normalizedPhenotypes.normalizeColumns(); // Normalizes so that the mean of columns is 0 and SD is 1
 
@@ -815,7 +842,8 @@ public class PGSBasedMixupMapper {
                     continue;
                 }
 
-                //
+                // Get the tested allele, this should correspond to the last allele of the alternative alleles if
+                // there was filtered on biallelic variants
                 Allele testedAllele = geneticVariant.getAlternativeAlleles().get(
                         geneticVariant.getAlternativeAlleles().getAlleleCount() - 1);
 
@@ -831,6 +859,8 @@ public class PGSBasedMixupMapper {
                             pValue));
                 }
             }
+            LOGGER.info(String.format("Found %d variants associated to '%s' with a p-value <= %.1e",
+                    writableGwasSummaryStatistics.size(), phenotype, pValueThreshold));
             summaryStatisticsMap.put(phenotype, writableGwasSummaryStatistics);
         }
         return summaryStatisticsMap;

@@ -52,12 +52,20 @@ public class WritableGwasSummaryStatistics implements GwasSummaryStatistics {
     }
 
     public void save(String pathPrefix) throws IOException {
-        CSVWriter writer = new CSVWriter(new FileWriter(String.format("%s.tsv", pathPrefix)),
+        // Format the output path.
+        String outputPath = String.format("%s_%s.tsv",
+                pathPrefix, gwasId.replace(" ", "_"));
+
+        // Create a CSV writer without quotation characters and with tabs as separators to mimic
+        // the legacy gwas summary statistics files.
+        CSVWriter writer = new CSVWriter(new FileWriter(outputPath),
                 '\t', CSVWriter.NO_QUOTE_CHARACTER,
                 CSVWriter.DEFAULT_ESCAPE_CHARACTER, CSVWriter.DEFAULT_LINE_END);
 
+        // Write a header (is skipped when reading again)
         writer.writeNext(new String[]{"variant", "AssessedAllele", "ES", "pvalue"});
 
+        // Write risk entries
         for (RiskEntry riskEntry : riskEntryList) {
             writer.writeNext(new String[]{
                     riskEntry.getRsName(),
@@ -177,5 +185,9 @@ public class WritableGwasSummaryStatistics implements GwasSummaryStatistics {
         }
 
         return risks;
+    }
+
+    public int size() {
+        return riskEntryList.size();
     }
 }

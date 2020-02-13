@@ -6,7 +6,6 @@
 package nl.systemsgenetics.pgsbasedmixupmapper;
 
 import edu.emory.mathcs.utils.ConcurrencyUtils;
-import nl.systemsgenetics.polygenicscorecalculator.PolyGenicScoreCalculatorMode;
 import org.apache.commons.cli.*;
 import org.apache.log4j.Logger;
 import org.molgenis.genotype.GenotypeDataException;
@@ -20,27 +19,27 @@ import java.util.*;
  */
 public class PGSBasedMixupMapperOptions {
 
-	private static final String[] HSA_DEFAULT_SEQUENCES =
+    private static final double DEFAULT_CLUMPING_R_SQUARED = 0.2;
+    private static final String[] HSA_DEFAULT_SEQUENCES =
             {"1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11",
                     "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "22"};
 
     private static final Options OPTIONS;
-	public static final double DEFAULT_CLUMPING_R_SQUARED = 0.2;
-	private static int numberOfThreadsToUse = Runtime.getRuntime().availableProcessors();//Might be changed
+    private static int numberOfThreadsToUse = Runtime.getRuntime().availableProcessors();//Might be changed
     private static final Logger LOGGER = Logger.getLogger(PGSBasedMixupMapperOptions.class);
 
-    private final PolyGenicScoreCalculatorMode pgsMode;
     private final String[] inputGenotypePath;
     private final RandomAccessGenotypeDataReaderFormats inputGenotypeType;
     private final File outputBasePath;
     private final String gwasSummaryStatisticsPath;
     private final boolean debugMode;
     private final boolean calculateNewGenomeWideAssociationsEnabled;
+    private final boolean writeNewGenomeWideAssociationsEnabled;
     private final double mafFilter;
     private final double rSquared;
     private final String forceSeqName;
     private final String gwasSummaryStatisticsPhenotypeCouplingFile;
-    private final List<Integer> windowSize = new ArrayList<>();
+    private final List<Integer> windowSize;
     private final List<Double> pValueThresholds;
     private final String[] genomicRangesToExclude;
 
@@ -50,6 +49,7 @@ public class PGSBasedMixupMapperOptions {
     private final File logFile;
     private final File debugFolder;
     private final String genotypeToPhenotypeSampleCouplingFile;
+
 
     static {
 
@@ -187,23 +187,30 @@ public class PGSBasedMixupMapperOptions {
                 "Files will be overwritten!");
         OptionBuilder.withLongOpt("calculateNewAssociations");
         OPTIONS.addOption(OptionBuilder.create("n"));
+
+        OptionBuilder.withArgName("boolean");
+        OptionBuilder.withDescription("Write summary statistics of newly calculated genome wide associations. " +
+                "Option is ignored without -n / --calculateNewAssociations");
+        OptionBuilder.withLongOpt("writeSummaryStatistics");
+        OPTIONS.addOption(OptionBuilder.create("w"));
     }
 
     PGSBasedMixupMapperOptions(String... args) throws ParseException {
 
+        // Parse the raw command line input
         final CommandLineParser parser = new PosixParser();
         CommandLine commandLine = parser.parse(OPTIONS, args, false);
         setNumberOfThreadsToUse(commandLine);
 
-        pgsMode = getPolyGenicScoreCalculatorMode(commandLine);
         outputBasePath = getOutputBasePath(commandLine);
         logFile = new File(outputBasePath + ".log");
         debugMode = commandLine.hasOption('d');
+        debugFolder = new File(outputBasePath + "_debugFiles");
         gwasSummaryStatisticsPath = commandLine.getOptionValue('s');
         gwasSummaryStatisticsPhenotypeCouplingFile = commandLine.getOptionValue("wpc");
         genotypeToPhenotypeSampleCouplingFile = commandLine.getOptionValue("gpc");
-        debugFolder = new File(outputBasePath + "_debugFiles");
 
+        // Get the path and type for the genotype data
         inputGenotypePath = getInputGenotypePath(commandLine);
         inputGenotypeType = getInputGenotypeType(commandLine);
 
@@ -211,7 +218,8 @@ public class PGSBasedMixupMapperOptions {
         forceSeqName = getForceSeqName(commandLine);
 
         // Is the custom GWA enabled?
-        calculateNewGenomeWideAssociationsEnabled = commandLine.hasOption('n');
+        calculateNewGenomeWideAssociationsEnabled = commandLine.hasOption("n");
+        writeNewGenomeWideAssociationsEnabled = commandLine.hasOption("w");
 
         // Parse the command line option representing sequence identifiers to expand the genotype input with.
         sequences = getSequences(commandLine);
@@ -219,17 +227,8 @@ public class PGSBasedMixupMapperOptions {
         // Get the R squared from the command line arguments.
         rSquared = getRSquared(commandLine);
 
-        String windowSizeArgument = commandLine.getOptionValue("bp", String.valueOf(500000));
-        String[] split = windowSizeArgument.split(":");
-        for (String splitWindowSize :
-                split) {
-            try {
-                windowSize.add(Integer.parseInt(splitWindowSize));
-            } catch (NumberFormatException e) {
-                throw new ParseException(String.format("Error parsing --bp \"%s\" is not a valid integer",
-                        splitWindowSize));
-            }
-        }
+        // Get the window sizes from the command line arguments
+        windowSize = getWindowSizes(commandLine);
 
         try {
             pValueThresholds = new ArrayList<>();
@@ -262,7 +261,37 @@ public class PGSBasedMixupMapperOptions {
         }
     }
 
-	private double getRSquared(CommandLine commandLine) throws ParseException {
+    /**
+     * Gets the window sizes from the provided command line arguments.
+     *
+     * @param commandLine the command line that could contain the window sizes in option 'bp'.
+     * @return a list with every window size provided or the default value of 50000.
+     * @throws ParseException If any of the window size values were not able to be parsed to an integer.
+     */
+    private List<Integer> getWindowSizes(CommandLine commandLine) throws ParseException {
+        String windowSizeArgument = commandLine.getOptionValue("bp", String.valueOf(500000));
+        String[] split = windowSizeArgument.split(":");
+        List<Integer> windowSizes = new ArrayList<>();
+        for (String splitWindowSize :
+                split) {
+            try {
+                windowSizes.add(Integer.parseInt(splitWindowSize));
+            } catch (NumberFormatException e) {
+                throw new ParseException(String.format("Error parsing --bp \"%s\" is not a valid integer",
+                        splitWindowSize));
+            }
+        }
+        return windowSizes;
+    }
+
+    /**
+     * Gets the R-squared threshold for clumping from the provided command line arguments.
+     *
+     * @param commandLine the command line that could contain the R-squared option 'r2'.
+     * @return the provided R-squared value or the default.
+     * @throws ParseException If the value was not able to be parsed to a double.
+     */
+    private double getRSquared(CommandLine commandLine) throws ParseException {
     	if (commandLine.hasOption("r2")) {
 			try {
 				return Double.parseDouble(commandLine.getOptionValue("r2"));
@@ -314,15 +343,6 @@ public class PGSBasedMixupMapperOptions {
             throw new ParseException("Error cannot force sequence name of: " + inputGenotypeType.getName());
         }
         return isForceSeqPresent ? commandLine.getOptionValue('f') : null;
-    }
-
-    private PolyGenicScoreCalculatorMode getPolyGenicScoreCalculatorMode(CommandLine commandLine) throws ParseException {
-        try {
-            return PolyGenicScoreCalculatorMode.valueOf(commandLine.getOptionValue("pgs").toUpperCase());
-        } catch (IllegalArgumentException e) {
-            throw new ParseException(String.format("Error parsing --PGSmode \"%s\" is not a valid mode",
-                    commandLine.getOptionValue("pgs")));
-        }
     }
 
     private void setNumberOfThreadsToUse(CommandLine commandLine) throws ParseException {
@@ -423,10 +443,6 @@ public class PGSBasedMixupMapperOptions {
         return genotypeToPhenotypeSampleCouplingFile;
     }
 
-    public PolyGenicScoreCalculatorMode getPgsMode() {
-        return pgsMode;
-    }
-
     public double getrSquared() {
         return rSquared;
     }
@@ -478,5 +494,9 @@ public class PGSBasedMixupMapperOptions {
 
     public boolean shouldForceSeqName() {
         return forceSeqName != null;
+    }
+
+    public boolean isWriteNewGenomeWideAssociationsEnabled() {
+        return writeNewGenomeWideAssociationsEnabled;
     }
 }

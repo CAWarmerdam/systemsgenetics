@@ -1,11 +1,12 @@
 package nl.systemsgenetics.gwassummarystatistics;
 
-import com.google.common.primitives.Floats;
+import cern.colt.matrix.tdouble.DoubleMatrix1D;
 import com.opencsv.CSVWriter;
 import gnu.trove.map.hash.THashMap;
 import gnu.trove.set.hash.THashSet;
 import nl.systemsgenetics.polygenicscorecalculator.RiskEntry;
 import org.apache.log4j.Logger;
+import org.molgenis.genotype.Allele;
 import org.molgenis.genotype.RandomAccessGenotypeData;
 import org.molgenis.genotype.variant.GeneticVariant;
 import umcg.genetica.containers.Pair;
@@ -13,26 +14,21 @@ import umcg.genetica.containers.Pair;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.*;
-import java.util.stream.Collector;
-import java.util.stream.Collectors;
 
-public class WritableGwasSummaryStatistics implements GwasSummaryStatistics {
+public class MatrixBasedGwasSummaryStatistics implements GwasSummaryStatistics{
 
     private static final Logger LOGGER = Logger.getLogger(WritableGwasSummaryStatistics.class);
-    private final List<RiskEntry> riskEntryList;
     private String gwasId;
+    private final LinkedHashMap<String, Integer> variantIds;
+    private final DoubleMatrix1D betaCoefficients;
+    private final DoubleMatrix1D pValues;
 
-    public WritableGwasSummaryStatistics(String gwasId) {
-        this(gwasId, new LinkedList<>());
-    }
-
-    public WritableGwasSummaryStatistics(String gwasId, List<RiskEntry> riskEntryList) {
+    public MatrixBasedGwasSummaryStatistics(String gwasId, LinkedHashMap<String, Integer> variantIds,
+                                            DoubleMatrix1D betaCoefficients, DoubleMatrix1D pValues) {
         this.gwasId = gwasId;
-        this.riskEntryList = riskEntryList;
-    }
-
-    public void write(RiskEntry riskEntry) {
-        this.riskEntryList.add(riskEntry);
+        this.variantIds = variantIds;
+        this.betaCoefficients = betaCoefficients;
+        this.pValues = pValues;
     }
 
     @Override
@@ -40,60 +36,25 @@ public class WritableGwasSummaryStatistics implements GwasSummaryStatistics {
         return gwasId;
     }
 
+    @Override
     public float[] getEffectSizeEstimates(GeneticVariant variant) {
-        float[] effectSizesPerAllele = Floats.toArray(riskEntryList.stream()
-                .filter(riskEntry -> riskEntry.getRsName().equals(variant.getPrimaryVariantId()))
-                .map(RiskEntry::getOr)
-                .collect(Collectors.toList()));
-        assert effectSizesPerAllele.length == 1;
-        return effectSizesPerAllele;
+        return new float[]{(float) betaCoefficients.getQuick(variantIds.get(variant.getPrimaryVariantId()))};
     }
 
+    @Override
     public float[] getTransformedPValues(GeneticVariant variant) {
-        float[] pValuesPerAllele = Floats.toArray(riskEntryList.stream()
-                .filter(riskEntry -> riskEntry.getRsName().equals(variant.getPrimaryVariantId()))
-                .map(riskEntry1 -> -Math.log10(riskEntry1.getpValue()))
-                .collect(Collectors.toList()));
-        assert pValuesPerAllele.length == 1;
-        return pValuesPerAllele;
+        return new float[]{(float) -Math.log10(pValues.getQuick(variantIds.get(variant.getPrimaryVariantId())))};
     }
 
+    @Override
     public Iterator<EffectAllele> effectAlleles() {
         throw new UnsupportedOperationException("Not currently supported");
     }
 
-    public void save(String pathPrefix) throws IOException {
-        // Format the output path.
-        String outputPath = String.format("%s_%s.tsv",
-                pathPrefix, gwasId.replace(" ", "_"));
-
-        // Create a CSV writer without quotation characters and with tabs as separators to mimic
-        // the legacy gwas summary statistics files.
-        CSVWriter writer = new CSVWriter(new FileWriter(outputPath),
-                '\t', CSVWriter.NO_QUOTE_CHARACTER,
-                CSVWriter.DEFAULT_ESCAPE_CHARACTER, CSVWriter.DEFAULT_LINE_END);
-
-        // Write a header (is skipped when reading again)
-        writer.writeNext(new String[]{"variant", "AssessedAllele", "ES", "pvalue"});
-
-        // Write risk entries
-        for (RiskEntry riskEntry : riskEntryList) {
-            writer.writeNext(new String[]{
-                    riskEntry.getRsName(),
-                    String.valueOf(riskEntry.getAllele()),
-                    String.valueOf(riskEntry.getOr()),
-                    String.valueOf(riskEntry.getpValue())});
-        }
-
-        writer.close();
-    }
-
     @Override
     public THashMap<String, THashMap<String, THashMap<String, ArrayList<RiskEntry>>>> riskEntries(
-            RandomAccessGenotypeData genotypeData,
-            double[] pValThres,
-            String[] genomicRangesToExclude,
-            boolean unweighted) {
+            RandomAccessGenotypeData genotypeData, double[] pValThres,
+            String[] genomicRangesToExclude, boolean unweighted) {
         THashMap<String, ArrayList<Pair<Integer, Integer>>> exclussionRanges = new THashMap<>();
 
         if (genomicRangesToExclude != null) {
@@ -130,22 +91,22 @@ public class WritableGwasSummaryStatistics implements GwasSummaryStatistics {
             }
         }
 
-        for (RiskEntry riskEntry : riskEntryList) {
+        for (Map.Entry<String, Integer> variantAssociation : variantIds.entrySet()) {
 
 //                    System.out.println(s);
-            if (genotypeData.getVariantIdMap().containsKey(riskEntry.getRsName())) {
-                GeneticVariant snpObject = genotypeData.getVariantIdMap().get(riskEntry.getRsName());
+            if (genotypeData.getVariantIdMap().containsKey(variantAssociation.getKey())) {
+                GeneticVariant snpObject = genotypeData.getVariantIdMap().get(variantAssociation.getKey());
 //                        System.out.print(snpObject.getSequenceName() + "\t" + snpObject.getStartPos() + "\n");
-                double currentP = riskEntry.getpValue();
+                double currentP = pValues.getQuick(variantAssociation.getValue());
                 boolean addEntry = true;
 
-                double or = riskEntry.getOr();
+                double or = betaCoefficients.getQuick(variantAssociation.getValue());
 
                 if (unweighted) {
                     if (or < 0) {
-                        riskEntry.setOr(-1);
+                        or = -1;
                     } else {
-                        riskEntry.setOr(1);
+                        or = 1;
                     }
                 }
 
@@ -167,7 +128,11 @@ public class WritableGwasSummaryStatistics implements GwasSummaryStatistics {
                             if (!filehash.get(name2).containsKey(snpObject.getSequenceName())) {
                                 filehash.get(name2).put(snpObject.getSequenceName(), new ArrayList<>());
                             }
-                            filehash.get(name2).get(snpObject.getSequenceName()).add(riskEntry);
+                            filehash.get(name2).get(snpObject.getSequenceName()).add(new RiskEntry(
+                                    variantAssociation.getKey(), snpObject.getSequenceName(), snpObject.getStartPos(),
+                                    snpObject.getAlternativeAlleles()
+                                            .get(snpObject.getAlternativeAlleles().getAlleleCount() - 1).getAlleleAsSnp(),
+                                    or, currentP));
                         }
                     }
                 }
@@ -198,7 +163,33 @@ public class WritableGwasSummaryStatistics implements GwasSummaryStatistics {
         return risks;
     }
 
+    public void save(String pathPrefix) throws IOException {
+        // Format the output path.
+        String outputPath = String.format("%s_%s.tsv",
+                pathPrefix, gwasId.replace(" ", "_"));
+
+        // Create a CSV writer without quotation characters and with tabs as separators to mimic
+        // the legacy gwas summary statistics files.
+        CSVWriter writer = new CSVWriter(new FileWriter(outputPath),
+                '\t', CSVWriter.NO_QUOTE_CHARACTER,
+                CSVWriter.DEFAULT_ESCAPE_CHARACTER, CSVWriter.DEFAULT_LINE_END);
+
+        // Write a header (is skipped when reading again)
+        writer.writeNext(new String[]{"variant", "AssessedAllele", "ES", "pvalue"});
+
+        // Write risk entries
+        for (Map.Entry<String, Integer> variantAssociation : variantIds.entrySet()) {
+            writer.writeNext(new String[]{
+                    variantAssociation.getKey(),
+                    "LastAlternativeAllele",
+                    String.valueOf(betaCoefficients.getQuick(variantAssociation.getValue())),
+                    String.valueOf(pValues.getQuick(variantAssociation.getValue()))});
+        }
+
+        writer.close();
+    }
+
     public int size() {
-        return riskEntryList.size();
+        return variantIds.size();
     }
 }

@@ -33,6 +33,7 @@ import org.molgenis.genotype.util.LdCalculatorException;
 import org.molgenis.genotype.variant.GeneticVariant;
 import org.molgenis.genotype.variantFilter.*;
 import umcg.genetica.math.matrix2.DoubleMatrixDataset;
+import umcg.genetica.math.stats.PearsonRToPValueBinned;
 
 import java.io.*;
 import java.nio.file.Path;
@@ -41,6 +42,7 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 /**
  * @author Robert Warmerdam
@@ -638,19 +640,12 @@ public class PGSBasedMixupMapper {
         RandomAccessGenotypeData genotypeData = loadGenotypeData(options,
                 genotypeToPhenotypeSampleCoupling.keySet());
 
-        // Get the flipped map.
-        Map<String, String> phenotypeToGwasFolderCoupling =
-                gwasPhenotypeCoupling.entrySet()
-                        .stream()
-                        .collect(Collectors.toMap(Map.Entry::getValue, Map.Entry::getKey));
-
         // Get the P-value thresholds to use in PGS calculation
         List<Double> pValueThresholds = options.getpValueThresholds();
 
         // Get the gwas summary statistics map
         Map<String, GwasSummaryStatistics> gwasSummaryStatisticsMap = getGwasSummaryStatisticsMap(options,
-                genotypeToPhenotypeSampleCoupling, gwasPhenotypeCoupling, phenotypeData, genotypeData,
-                phenotypeToGwasFolderCoupling, pValueThresholds);
+                genotypeToPhenotypeSampleCoupling, gwasPhenotypeCoupling, phenotypeData, genotypeData);
 
         try {
             // Initialize an LD handler for clumping the effect entries into the top, unlinked, clumps
@@ -700,26 +695,49 @@ public class PGSBasedMixupMapper {
         }
     }
 
-    private static Map<String, GwasSummaryStatistics> getGwasSummaryStatisticsMap(PGSBasedMixupMapperOptions options, Map<String, String> genotypeToPhenotypeSampleCoupling, Map<String, String> gwasPhenotypeCoupling, DoubleMatrixDataset<String, String> phenotypeData, RandomAccessGenotypeData genotypeData, Map<String, String> phenotypeToGwasFolderCoupling, List<Double> pValueThresholds) {
-        Map<String, GwasSummaryStatistics> gwasSummaryStatisticsMap = null;
+    private static Map<String, GwasSummaryStatistics> getGwasSummaryStatisticsMap(
+            PGSBasedMixupMapperOptions options, Map<String, String> genotypeToPhenotypeSampleCoupling,
+            Map<String, String> gwasPhenotypeCoupling, DoubleMatrixDataset<String, String> phenotypeData,
+            RandomAccessGenotypeData genotypeData) {
 
+        // Initialize a map
+        Map<String, GwasSummaryStatistics> gwasSummaryStatisticsMap;
+
+        // Check the option is given to calculate new genome wide associations
         if (options.isCalculateNewGenomeWideAssociationsEnabled()) {
 
+            // Get the flipped map.
+            Map<String, String> phenotypeToGwasFolderCoupling =
+                    gwasPhenotypeCoupling.entrySet()
+                            .stream()
+                            .collect(Collectors.toMap(Map.Entry::getValue, Map.Entry::getKey));
+
+            // Filter the phenotype data on the phenotypes that where requested.
             DoubleMatrixDataset<String, String> filteredPhenotypes = phenotypeData
                     .viewColSelection(phenotypeToGwasFolderCoupling.keySet()).duplicate();
 
             LOGGER.info("Calculating new genome wide associations");
             // Perform GWAS
-            Map<String, WritableGwasSummaryStatistics> writableGwasSummaryStatisticsMap = calculateGenomeWideAssociations(
-                    genotypeData, filteredPhenotypes,
-                    genotypeToPhenotypeSampleCoupling, Collections.max(pValueThresholds));
+            Map<String, MatrixBasedGwasSummaryStatistics> MatrixBasedGwasSummaryStatisticsMap = null;
+
+            // Try to calculate new genome wide associations.
+            try {
+                MatrixBasedGwasSummaryStatisticsMap = calculateGenomeWideAssociations(
+                        genotypeData, filteredPhenotypes,
+                        genotypeToPhenotypeSampleCoupling);
+            } catch (Exception e) {
+                System.err.println("Number of samples between phenotypes and genotypes were not equal." + e.getMessage());
+                System.err.println("See log file for stack trace");
+                LOGGER.warn("Number of samples between phenotypes and genotypes were not equal.", e);
+                System.exit(1);
+            }
 
             gwasSummaryStatisticsMap = new HashMap<>();
 
-            for (String phenotypeIdentifier : writableGwasSummaryStatisticsMap.keySet()) {
+            for (String phenotypeIdentifier : MatrixBasedGwasSummaryStatisticsMap.keySet()) {
                 if (options.isWriteNewGenomeWideAssociationsEnabled()) {
                     try {
-                        writableGwasSummaryStatisticsMap.get(phenotypeIdentifier).save(options.getOutputBasePath().toString());
+                        MatrixBasedGwasSummaryStatisticsMap.get(phenotypeIdentifier).save(options.getOutputBasePath().toString());
                     } catch (IOException e) {
                         System.err.println("Could not save writableGwasSummaryStatistics." + e.getMessage());
                         System.err.println("See log file for stack trace");
@@ -728,7 +746,7 @@ public class PGSBasedMixupMapper {
                 }
                 gwasSummaryStatisticsMap.put(
                         phenotypeIdentifier,
-                        writableGwasSummaryStatisticsMap.get(phenotypeIdentifier));
+                        MatrixBasedGwasSummaryStatisticsMap.get(phenotypeIdentifier));
             }
         } else {
             // Get a variant filter that includes only variants als present in the given genotype data.
@@ -741,128 +759,150 @@ public class PGSBasedMixupMapper {
         return gwasSummaryStatisticsMap;
     }
 
-    private static Map<String, WritableGwasSummaryStatistics> calculateGenomeWideAssociations(
+    /**
+     * Method calculating genome wide associations
+     *
+     * @param genotypeData
+     * @param phenotypeData
+     * @param genotypeToPhenotypeCoupling
+     * @return
+     * @throws Exception
+     */
+    private static Map<String, MatrixBasedGwasSummaryStatistics> calculateGenomeWideAssociations(
             RandomAccessGenotypeData genotypeData,
             DoubleMatrixDataset<String, String> phenotypeData,
-            Map<String, String> genotypeToPhenotypeCoupling,
-            double pValueThreshold) {
+            Map<String, String> genotypeToPhenotypeCoupling) throws Exception {
 
         // Order phenotype data according to the genotype data.
         List<String> orderedPhenotypeIdentifiers = Arrays.stream(genotypeData.getSampleNames())
                 .map(genotypeToPhenotypeCoupling::get).collect(Collectors.toList());
         phenotypeData = phenotypeData.viewRowSelection(orderedPhenotypeIdentifiers);
 
-        HashMap<String, WritableGwasSummaryStatistics> summaryStatisticsMap = new HashMap<>();
+        // ---------------------------------------------
+        // Fast option
+        // ---------------------------------------------
 
-//        DoubleMatrixDataset<String, String> normalizedPhenotypes = filteredPhenotypes.duplicate();
-//        normalizedPhenotypes.normalizeColumns(); // Normalizes so that the mean of columns is 0 and SD is 1
+        HashMap<String, MatrixBasedGwasSummaryStatistics> summaryStatisticsMap = new HashMap<>();
 
-//        String[] samples = genotypeData.getSampleNames();
+        // Phenotypes have to be normalized. This can be done here, but also in an earlier stage
+
+        DoubleMatrixDataset<String, String> normalizedPhenotypes = phenotypeData.duplicate();
+        normalizedPhenotypes.normalizeColumns(); // Normalizes so that the mean of columns is 0 and SD is 1
+
+        String[] samples = genotypeData.getSampleNames();
 
         // Get a linked hash map of the samples in the genotype data
-//        LinkedHashMap<String, Integer> sampleHash = new LinkedHashMap<>(samples.length);
-//
-//        int s = 0;
-//        for (String sample : samples) {
-//            sampleHash.put(sample, s++);
-//        }
+        LinkedHashMap<String, Integer> sampleHash = new LinkedHashMap<>(samples.length);
 
-//        PearsonRToZscoreBinned r2zScore = new PearsonRToZscoreBinned(10000000, sampleHash.size());
+        // Fill the hash map with sample names
+        int s = 0;
+        for (String sample : samples) {
+            sampleHash.put(sample, s++);
+        }
 
-        // Order the rows in the phenotype samples
-//        List<String> phenotypeSamples = sampleHash.keySet().stream()
-//                .map(genotypeToPhenotypeCoupling::get).collect(Collectors.toList());
-//        normalizedPhenotypes = normalizedPhenotypes.viewRowSelection(phenotypeSamples);
+        // Use a binned approach for determining p values per correlation
+        PearsonRToPValueBinned rToPValue = new PearsonRToPValueBinned(10000000, sampleHash.size());
 
         // Get normalized genotypes
-//        DoubleMatrixDataset<String, String> variantScaledDosages = loadVariantScaledDosageMatrix(genotypeData, sampleHash);
+        DoubleMatrixDataset<String, String> variantScaledDosages = loadVariantScaledDosageMatrix(genotypeData, sampleHash);
 
-        // Get the z scores of correlations
-//        DoubleMatrixDataset<String, String> zScoresOfCorrelation =
-//                DoubleMatrixDataset.correlateColumnsOf2ColumnNormalizedDatasets(
-//                        normalizedPhenotypes, variantScaledDosages);
-//        r2zScore.inplaceRToZ(zScoresOfCorrelation);
+        // We want to test the alternative allele, so we reverse this.
+        variantScaledDosages.getMatrix().assign(DoubleFunctions.neg);
+
+        // Get the correlations
+        DoubleMatrixDataset<String, String> pearsonRValues =
+                DoubleMatrixDataset.correlateColumnsOf2ColumnNormalizedDatasets(
+                        normalizedPhenotypes, variantScaledDosages);
+
         // Columns are columns of normalized phenotypes (phenotypes)
         // Rows are the variants (columns of normalized dosages)
 
-        // Calculate the beta coefficient from the z scores
+        // Remove rows with NaN values (dosages did not show variance in that case)
+        DoubleMatrixDataset<String, String> finalPearsonRValues = pearsonRValues;
+        List<String> variantsWherePearsonRIsNaN = IntStream.range(0, pearsonRValues.rows())
+                .filter(i -> !Double.isNaN(finalPearsonRValues.getElementQuick(i, 0)))
+                .mapToObj(i -> finalPearsonRValues.getRowObjects().get(i))
+                .collect(Collectors.toList());
 
-        // According to: https://images.nature.com/full/nature-assets/ng/journal/v48/n5/extref/ng.3538-S1.pdf
-        // we can do that with the following formula
-        // beta-hat = z / sqrt(2p(1−p)(n+z^2))
-        // where z is the z score
-        // p is is the minor allele frequency (MAF) of the SNP and n is the sample size
-//
-//        DoubleMatrixDataset<String, String> coefficients = zScoresOfCorrelation.duplicate();
-//
-//        for (GeneticVariant variant : genotypeData) {
-//
-//            // Get the minor allele frequency
-//            double minorAlleleFrequency = variant.getMinorAlleleFrequency();
-//
-//            // Get the sample size
-//            int sampleSize = variantScaledDosages.rows();
-//
-//            double mafPart = 2 * minorAlleleFrequency * (1 - minorAlleleFrequency);
-//
-//            DoubleFunction betaHatFunction = v -> v / Math.sqrt(mafPart * (sampleSize + Math.pow(v, 2)));
-//
-//            coefficients.viewRow(variant.getPrimaryVariantId())
-//                    .assign(betaHatFunction);
-//        }
+        pearsonRValues = pearsonRValues.viewRowSelection(variantsWherePearsonRIsNaN);
 
-        // Get a t distribution for calculating p-values
-        final TDistribution tdistribution = new TDistribution(phenotypeData.rows() - 1);
+        // Duplicate the pearson R values to calculate p values
+        DoubleMatrixDataset<String, String> pValues = pearsonRValues.duplicate();
 
-        // Loop through the phenotypes to calculate genome wide association for every one of them
+        // Get actual pValues
+        rToPValue.inplaceRToPValue(pValues);
+
+        // Wrap the pearson values and p values inside a summary statistics object
         for (int i = 0; i < phenotypeData.columns(); i++) {
-
             // Get the phenotype identifier
             String phenotype = phenotypeData.getColObjects().get(i);
 
-            // Initialize a writable gwas summary statistic
-            WritableGwasSummaryStatistics writableGwasSummaryStatistics = new WritableGwasSummaryStatistics(phenotype);
+            MatrixBasedGwasSummaryStatistics summaryStatistics = new MatrixBasedGwasSummaryStatistics(
+                    phenotype, pearsonRValues.getHashRows(), pearsonRValues.viewCol(i), pValues.viewCol(i));
 
-            // Get all phenotype values for this specific trait i.
-            double[] phenotypeArray = phenotypeData.getCol(i).toArray();
-
-            // Loop through the genotype data
-            for (GeneticVariant geneticVariant : genotypeData) {
-                byte[] sampleDosages = geneticVariant.getSampleCalledDosages();
-
-                SimpleRegression simpleRegression = new SimpleRegression(true);
-
-                double[][] regressionArray = new double[phenotypeData.rows()][];
-                for (int j = 0; j < phenotypeData.rows(); j++) {
-                    regressionArray[j] = new double[]{Math.abs(sampleDosages[j] - 2), phenotypeArray[j]};
-                }
-                simpleRegression.addData(regressionArray);
-
-                if (Double.isNaN(simpleRegression.getSlope())) {
-                    continue;
-                }
-
-                // Get the tested allele, this should correspond to the last allele of the alternative alleles if
-                // there was filtered on biallelic variants
-                Allele testedAllele = geneticVariant.getAlternativeAlleles().get(
-                        geneticVariant.getAlternativeAlleles().getAlleleCount() - 1);
-
-                // Calculate t statistic and the p-value
-                double tStat = simpleRegression.getSlope() / simpleRegression.getSlopeStdErr();
-                double pValue = tdistribution.cumulativeProbability(-FastMath.abs(tStat)) * 2;
-
-                if (pValue <= pValueThreshold) {
-                    // Add a new risk entry with the association details
-                    writableGwasSummaryStatistics.write(new RiskEntry(geneticVariant.getPrimaryVariantId(),
-                            geneticVariant.getSequenceName(), geneticVariant.getStartPos(),
-                            testedAllele.getAlleleAsSnp(), simpleRegression.getSlope(),
-                            pValue));
-                }
-            }
-            LOGGER.info(String.format("Found %d variants associated to '%s' with a p-value <= %.1e",
-                    writableGwasSummaryStatistics.size(), phenotype, pValueThreshold));
-            summaryStatisticsMap.put(phenotype, writableGwasSummaryStatistics);
+            LOGGER.info(String.format("Calculated correlation between %d variants and '%s'",
+                    summaryStatistics.size(), phenotype));
+            summaryStatisticsMap.put(phenotype, summaryStatistics);
         }
+
+        // ---------------------------------------------
+        // Slow option
+        // ---------------------------------------------
+
+//        HashMap<String, WritableGwasSummaryStatistics> summaryStatisticsMap = new HashMap<>();
+
+//        // Get a t distribution for calculating p-values
+//        final TDistribution tdistribution = new TDistribution(phenotypeData.rows() - 1);
+//
+//        // Loop through the phenotypes to calculate genome wide association for every one of them
+//        for (int i = 0; i < phenotypeData.columns(); i++) {
+//
+//            // Get the phenotype identifier
+//            String phenotype = phenotypeData.getColObjects().get(i);
+//
+//            // Initialize a writable gwas summary statistic
+//            WritableGwasSummaryStatistics writableGwasSummaryStatistics = new WritableGwasSummaryStatistics(phenotype);
+//
+//            // Get all phenotype values for this specific trait i.
+//            double[] phenotypeArray = phenotypeData.getCol(i).toArray();
+//
+//            // Loop through the genotype data
+//            for (GeneticVariant geneticVariant : genotypeData) {
+//                byte[] sampleDosages = geneticVariant.getSampleCalledDosages();
+//
+//                SimpleRegression simpleRegression = new SimpleRegression(true);
+//
+//                double[][] regressionArray = new double[phenotypeData.rows()][];
+//                for (int j = 0; j < phenotypeData.rows(); j++) {
+//                    regressionArray[j] = new double[]{Math.abs(sampleDosages[j] - 2), phenotypeArray[j]};
+//                }
+//                simpleRegression.addData(regressionArray);
+//
+//                if (Double.isNaN(simpleRegression.getSlope())) {
+//                    continue;
+//                }
+//
+//                // Get the tested allele, this should correspond to the last allele of the alternative alleles if
+//                // there was filtered on biallelic variants
+//                Allele testedAllele = geneticVariant.getAlternativeAlleles().get(
+//                        geneticVariant.getAlternativeAlleles().getAlleleCount() - 1);
+//
+//                // Calculate t statistic and the p-value
+//                double tStat = simpleRegression.getSlope() / simpleRegression.getSlopeStdErr();
+//                double pValue = tdistribution.cumulativeProbability(-FastMath.abs(tStat)) * 2;
+//
+//                if (pValue <= pValueThreshold) {
+//                    // Add a new risk entry with the association details
+//                    writableGwasSummaryStatistics.write(new RiskEntry(geneticVariant.getPrimaryVariantId(),
+//                            geneticVariant.getSequenceName(), geneticVariant.getStartPos(),
+//                            testedAllele.getAlleleAsSnp(), simpleRegression.getSlope(),
+//                            pValue));
+//                }
+//            }
+//            LOGGER.info(String.format("Found %d variants associated to '%s' with a p-value <= %.1e",
+//                    writableGwasSummaryStatistics.size(), phenotype, pValueThreshold));
+//            summaryStatisticsMap.put(phenotype, writableGwasSummaryStatistics);
+//        }
         return summaryStatisticsMap;
     }
 

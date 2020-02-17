@@ -872,64 +872,6 @@ public class PGSBasedMixupMapper {
             summaryStatisticsMap.put(phenotype, summaryStatistics);
         }
 
-        // ---------------------------------------------
-        // Slow option
-        // ---------------------------------------------
-
-//        HashMap<String, WritableGwasSummaryStatistics> summaryStatisticsMap = new HashMap<>();
-
-//        // Get a t distribution for calculating p-values
-//        final TDistribution tdistribution = new TDistribution(phenotypeData.rows() - 1);
-//
-//        // Loop through the phenotypes to calculate genome wide association for every one of them
-//        for (int i = 0; i < phenotypeData.columns(); i++) {
-//
-//            // Get the phenotype identifier
-//            String phenotype = phenotypeData.getColObjects().get(i);
-//
-//            // Initialize a writable gwas summary statistic
-//            WritableGwasSummaryStatistics writableGwasSummaryStatistics = new WritableGwasSummaryStatistics(phenotype);
-//
-//            // Get all phenotype values for this specific trait i.
-//            double[] phenotypeArray = phenotypeData.getCol(i).toArray();
-//
-//            // Loop through the genotype data
-//            for (GeneticVariant geneticVariant : genotypeData) {
-//                byte[] sampleDosages = geneticVariant.getSampleCalledDosages();
-//
-//                SimpleRegression simpleRegression = new SimpleRegression(true);
-//
-//                double[][] regressionArray = new double[phenotypeData.rows()][];
-//                for (int j = 0; j < phenotypeData.rows(); j++) {
-//                    regressionArray[j] = new double[]{Math.abs(sampleDosages[j] - 2), phenotypeArray[j]};
-//                }
-//                simpleRegression.addData(regressionArray);
-//
-//                if (Double.isNaN(simpleRegression.getSlope())) {
-//                    continue;
-//                }
-//
-//                // Get the tested allele, this should correspond to the last allele of the alternative alleles if
-//                // there was filtered on biallelic variants
-//                Allele testedAllele = geneticVariant.getAlternativeAlleles().get(
-//                        geneticVariant.getAlternativeAlleles().getAlleleCount() - 1);
-//
-//                // Calculate t statistic and the p-value
-//                double tStat = simpleRegression.getSlope() / simpleRegression.getSlopeStdErr();
-//                double pValue = tdistribution.cumulativeProbability(-FastMath.abs(tStat)) * 2;
-//
-//                if (pValue <= pValueThreshold) {
-//                    // Add a new risk entry with the association details
-//                    writableGwasSummaryStatistics.write(new RiskEntry(geneticVariant.getPrimaryVariantId(),
-//                            geneticVariant.getSequenceName(), geneticVariant.getStartPos(),
-//                            testedAllele.getAlleleAsSnp(), simpleRegression.getSlope(),
-//                            pValue));
-//                }
-//            }
-//            LOGGER.info(String.format("Found %d variants associated to '%s' with a p-value <= %.1e",
-//                    writableGwasSummaryStatistics.size(), phenotype, pValueThreshold));
-//            summaryStatisticsMap.put(phenotype, writableGwasSummaryStatistics);
-//        }
         return summaryStatisticsMap;
     }
 
@@ -943,7 +885,7 @@ public class PGSBasedMixupMapper {
         LOGGER.debug("Querying genotype data");
 
         //ArrayList<GeneticVariant> variants = new ArrayList<>(64);
-        ArrayList<float[]> variantsDosages = new ArrayList<>(64);
+        LinkedList<float[]> variantsDosages = new LinkedList<>();
         LinkedHashMap<String, Integer> variantHash = new LinkedHashMap<>(64);
 
         long timeStart = System.currentTimeMillis();

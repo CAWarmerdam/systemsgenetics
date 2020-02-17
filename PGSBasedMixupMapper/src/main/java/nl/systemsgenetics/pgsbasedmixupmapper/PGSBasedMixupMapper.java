@@ -725,10 +725,10 @@ public class PGSBasedMixupMapper {
                 MatrixBasedGwasSummaryStatisticsMap = calculateGenomeWideAssociations(
                         genotypeData, filteredPhenotypes,
                         genotypeToPhenotypeSampleCoupling);
-            } catch (Exception e) {
-                System.err.println("Number of samples between phenotypes and genotypes were not equal." + e.getMessage());
+            } catch (PGSBasedMixupMapperException e) {
+                System.err.println("Could not calculate genome wide associations." + e.getMessage());
                 System.err.println("See log file for stack trace");
-                LOGGER.warn("Number of samples between phenotypes and genotypes were not equal.", e);
+                LOGGER.warn("Could not calculate genome wide associations.", e);
                 System.exit(1);
             }
 
@@ -771,7 +771,7 @@ public class PGSBasedMixupMapper {
     private static Map<String, MatrixBasedGwasSummaryStatistics> calculateGenomeWideAssociations(
             RandomAccessGenotypeData genotypeData,
             DoubleMatrixDataset<String, String> phenotypeData,
-            Map<String, String> genotypeToPhenotypeCoupling) throws Exception {
+            Map<String, String> genotypeToPhenotypeCoupling) throws PGSBasedMixupMapperException {
 
         // Order phenotype data according to the genotype data.
         List<String> orderedPhenotypeIdentifiers = Arrays.stream(genotypeData.getSampleNames())
@@ -809,22 +809,36 @@ public class PGSBasedMixupMapper {
         // We want to test the alternative allele, so we reverse this.
         variantScaledDosages.getMatrix().assign(DoubleFunctions.neg);
 
-        // Get the correlations
-        DoubleMatrixDataset<String, String> pearsonRValues =
-                DoubleMatrixDataset.correlateColumnsOf2ColumnNormalizedDatasets(
-                        normalizedPhenotypes, variantScaledDosages);
+        DoubleMatrixDataset<String, String> pearsonRValues = null;
+
+        try {
+            // Get the correlations
+            pearsonRValues = DoubleMatrixDataset.correlateColumnsOf2ColumnNormalizedDatasets(
+                    normalizedPhenotypes, variantScaledDosages);
+        } catch (Exception e) {
+            throw new PGSBasedMixupMapperException("Number of samples between phenotypes and genotypes were not equal.", e);
+        }
 
         // Columns are columns of normalized phenotypes (phenotypes)
         // Rows are the variants (columns of normalized dosages)
 
-        // Remove rows with NaN values (dosages did not show variance in that case)
-        DoubleMatrixDataset<String, String> finalPearsonRValues = pearsonRValues;
-        List<String> variantsWherePearsonRIsNaN = IntStream.range(0, pearsonRValues.rows())
-                .filter(i -> !Double.isNaN(finalPearsonRValues.getElementQuick(i, 0)))
-                .mapToObj(i -> finalPearsonRValues.getRowObjects().get(i))
-                .collect(Collectors.toList());
+        // Remove rows with NaN values
 
-        pearsonRValues = pearsonRValues.viewRowSelection(variantsWherePearsonRIsNaN);
+        // Initialize a linked list to which variant ids should be appended that do not show NaN values.
+        List<String> variantsWherePearsonRIsNotNaN = new LinkedList<>();
+        // Loop through the variants, checking if the pearson R is not NaN for the first phenotype.
+        for (int variantIndex = 0; variantIndex < pearsonRValues.rows(); variantIndex++) {
+            // Only check the first phenotype since a lack of variance for a particular variant probably
+            // also results in a NaN for other phenotypes and vice versa.
+            if (!Double.isNaN(pearsonRValues.getElementQuick(variantIndex, 0))) {
+                // Add the variant identifier to the list.
+                String variantIdentifier = pearsonRValues.getRowObjects().get(variantIndex);
+                variantsWherePearsonRIsNotNaN.add(variantIdentifier);
+            }
+        }
+
+        // Perform the row selection, removing the rows where pearson R is NaN.
+        pearsonRValues = pearsonRValues.viewRowSelection(variantsWherePearsonRIsNotNaN);
 
         // Duplicate the pearson R values to calculate p values
         DoubleMatrixDataset<String, String> pValues = pearsonRValues.duplicate();
@@ -924,8 +938,11 @@ public class PGSBasedMixupMapper {
         int v = 0;
         for (GeneticVariant variant : genotypeData) {
             //variants.add(variant);
-            variantsDosages.add(variant.getSampleDosages());
-            variantHash.put(variant.getPrimaryVariantId(), v++);
+            String primaryVariantId = variant.getPrimaryVariantId();
+            if (!variantHash.containsKey(primaryVariantId)) {
+                variantHash.put(primaryVariantId, v++);
+                variantsDosages.add(variant.getSampleDosages());
+            }
         }
 
         DoubleMatrixDataset<String, String> dosageDataset = new DoubleMatrixDataset<>(sampleHash, variantHash);

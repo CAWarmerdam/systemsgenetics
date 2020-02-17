@@ -2,9 +2,7 @@ package nl.systemsgenetics.pgsbasedmixupmapper;
 
 import cern.colt.matrix.tdouble.DoubleMatrix1D;
 import cern.jet.math.tdouble.DoubleFunctions;
-import gnu.trove.map.hash.THashMap;
 import nl.systemsgenetics.gwassummarystatistics.GwasSummaryStatistics;
-import nl.systemsgenetics.gwassummarystatistics.MultiStudyGwasSummaryStatistics;
 import nl.systemsgenetics.polygenicscorecalculator.*;
 import org.apache.log4j.Logger;
 import org.molgenis.genotype.RandomAccessGenotypeData;
@@ -127,7 +125,7 @@ public class PhenotypeGenerator {
         boolean sumRisks = false;
         double v = options.getpValueThresholds().get(options.getpValueThresholds().size() - 1);
         LOGGER.info(String.format("Using a pvalue threshold of %f for phenotype generation", v));
-        double[] pValThres = new double[]{v};
+        List<Double> pValThres = Collections.singletonList(v);
         double rSquare = options.getrSquared();
         LOGGER.info(String.format("Using r2 size of %f for phenotype generation", rSquare));
         boolean unweighted = false;
@@ -136,22 +134,26 @@ public class PhenotypeGenerator {
 
         System.out.println(genotypeData.hashCode());
 
-        THashMap<String, THashMap<String, THashMap<String, ArrayList<RiskEntry>>>> risks = summaryStatistics.riskEntries(genotypeData,
-                        pValThres, options.getGenomicRangesToExclude(),
-                        unweighted);
-
-        System.out.println(risks.hashCode());
-
         DoubleMatrixDataset<String, String> geneticRiskScoreMatrix = null;
 
-        if (windowSize.length == 1) {
-            geneticRiskScoreMatrix = SimplePolyGenicScoreCalculator.calculate(genotypeData, risks, rSquare, windowSize[0], pValThres, sumRisks);
-//			} else if (windowSize.length == 2) {
-//				DoubleMatrixDataset<String, String> geneticRiskScoreMatrix = SimplePolyGenicScoreCalculator.calculateTwoStages(genotypeData, risks, outputFolder, rSquare, windowSize, debugMode, pValThres, sumRisks);
-        } else {
-            System.out.println("More than two window-sizes is not supported.");
-            System.exit(0);
-        }
+        // Initialize an Simple polygenic score calculator
+        SimplePolyGenicScoreCalculator polyGenicScoreCalculator = new SimplePolyGenicScoreCalculator(
+                genotypeData, // The genotype data to calculate an LD matrix in.
+                options.getWindowSize(), // Get the window size in number of base pairs,
+                pValThres,
+                options.getrSquared(),
+                false,
+                options.getGenomicRangesToExclude());
+
+        geneticRiskScoreMatrix = polyGenicScoreCalculator.calculate(summaryStatistics);
+//        if (windowSize.length == 1) {
+//            geneticRiskScoreMatrix = SimplePolyGenicScoreCalculator.calculate(genotypeData, rSquare, windowSize[0], pValThres, sumRisks);
+////			} else if (windowSize.length == 2) {
+////				DoubleMatrixDataset<String, String> geneticRiskScoreMatrix = SimplePolyGenicScoreCalculator.calculateTwoStages(genotypeData, risks, outputFolder, rSquare, windowSize, debugMode, pValThres, sumRisks);
+//        } else {
+//            System.out.println("More than two window-sizes is not supported.");
+//            System.exit(0);
+//        }
 
         return geneticRiskScoreMatrix;
     }

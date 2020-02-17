@@ -6,17 +6,12 @@
 package nl.systemsgenetics.polygenicscorecalculator;
 
 import gnu.trove.map.hash.THashMap;
-import gnu.trove.set.hash.THashSet;
 import nl.systemsgenetics.gwassummarystatistics.GwasSummaryStatistics;
-import nl.systemsgenetics.gwassummarystatistics.GwasSummaryStatisticsException;
 import org.molgenis.genotype.Allele;
-import org.molgenis.genotype.Alleles;
 import org.molgenis.genotype.RandomAccessGenotypeData;
-import org.molgenis.genotype.Sample;
 import org.molgenis.genotype.util.LdCalculatorException;
 import org.molgenis.genotype.variant.GeneticVariant;
 import umcg.genetica.console.ProgressBar;
-import umcg.genetica.containers.Pair;
 import umcg.genetica.math.matrix2.DoubleMatrixDataset;
 import org.apache.log4j.Logger;
 
@@ -32,11 +27,50 @@ public class SimplePolyGenicScoreCalculator {
 
     private static final Logger LOGGER = Logger.getLogger(SimplePolyGenicScoreCalculator.class);
     private static final String[] chrOrder = {"1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "22"};
+    private final RandomAccessGenotypeData genotypeData;
+    private final List<Integer> windowSizeList;
+    private final List<Double> pValueThresholds;
+    private final double rSquared;
+    private final boolean sumRisk;
+    private final String[] genomicRangesToExclude;
 
-    public static DoubleMatrixDataset<String, String> calculate(
-            RandomAccessGenotypeData genotypeData,
+    public SimplePolyGenicScoreCalculator (RandomAccessGenotypeData genotypeData,
+                                           List<Integer> windowSizeList,
+                                           List<Double> pValueThresholds,
+                                           double rSquared, boolean sumRisk,
+                                           String[] genomicRangesToExclude) {
+
+        this.genotypeData = genotypeData;
+        this.windowSizeList = windowSizeList;
+        this.pValueThresholds = pValueThresholds;
+        this.rSquared = rSquared;
+        this.sumRisk = sumRisk;
+        this.genomicRangesToExclude = genomicRangesToExclude;
+    }
+
+    public DoubleMatrixDataset<String, String> calculate(
+            GwasSummaryStatistics summaryStatistics) {
+
+        double[] pValThres = this.getpValueThresholds()
+                .stream().mapToDouble(Double::doubleValue).toArray();
+        boolean unweighted = false;
+        String[] genomicRangesToExclude = this.getGenomicRangesToExclude();
+        THashMap<String, THashMap<String, THashMap<String, ArrayList<RiskEntry>>>> risks =
+                summaryStatistics.riskEntries(genotypeData,
+                pValThres, genomicRangesToExclude,
+                unweighted);
+
+        if (windowSizeList.size() == 1) {
+            return calculate(risks, windowSizeList.get(0));
+        } else if (windowSizeList.size() == 2) {
+            return calculateTwoStages(risks, windowSizeList.stream().mapToInt(i->i).toArray());
+        }
+        throw new UnsupportedOperationException("More than two window sizes not supported");
+    }
+
+    public DoubleMatrixDataset<String, String> calculate(
             THashMap<String, THashMap<String, THashMap<String, ArrayList<RiskEntry>>>> risks,
-            double rSquare, double windowSize, double[] pValueThreshold, boolean sumRisk) {
+            double windowSize) {
 
         // Select the keys that correspond to the different combinations to test for
         ArrayList<String> keys = new ArrayList<>();
@@ -57,7 +91,7 @@ public class SimplePolyGenicScoreCalculator {
             for (Entry<String, THashMap<String, THashMap<String, ArrayList<RiskEntry>>>> riskScorePheno : risks.entrySet()) {
                 // Loop through the p-values
                 HashSet<String> excludeList = new HashSet<String>();
-                for (double pVal : pValueThreshold) {
+                for (double pVal : pValueThresholds) {
                     // Generate a _P<pvalue> key
                     String key = "_P" + pVal;
                     THashMap<String, ArrayList<RiskEntry>> riskScorePheno2 = riskScorePheno.getValue().get(key);
@@ -185,7 +219,7 @@ public class SimplePolyGenicScoreCalculator {
                                                 continue;
                                             }
                                             try {
-                                                if (calculateRsquare(var1, var2) >= rSquare) {
+                                                if (calculateRsquare(var1, var2) >= rSquared) {
                                                     excludeSNPs[t] = true;
                                                     excludeList.add(riskE2.getRsName());
                                                 }
@@ -211,7 +245,9 @@ public class SimplePolyGenicScoreCalculator {
         return scores;
     }
 
-    public static DoubleMatrixDataset<String, String> calculateTwoStages(RandomAccessGenotypeData genotypeData, THashMap<String, THashMap<String, THashMap<String, ArrayList<RiskEntry>>>> risks, double rSquare, int[] windowSize, double[] pValueThreshold, boolean sumRisk) {
+    public DoubleMatrixDataset<String, String> calculateTwoStages(
+            THashMap<String, THashMap<String, THashMap<String, ArrayList<RiskEntry>>>> risks,
+            int[] windowSize) {
         ArrayList<String> keys = new ArrayList<String>();
         for (Entry<String, THashMap<String, THashMap<String, ArrayList<RiskEntry>>>> riskScorePheno : risks.entrySet()) {
             for (Entry<String, THashMap<String, ArrayList<RiskEntry>>> riskScorePheno2 : riskScorePheno.getValue().entrySet()) {
@@ -226,7 +262,7 @@ public class SimplePolyGenicScoreCalculator {
             for (Entry<String, THashMap<String, THashMap<String, ArrayList<RiskEntry>>>> riskScorePheno : risks.entrySet()) {
                 HashSet<String> excludeList = new HashSet<String>();
 
-                for (double pVal : pValueThreshold) {
+                for (double pVal : pValueThresholds) {
                     String key = "_P" + pVal;
                     THashMap<String, ArrayList<RiskEntry>> riskScorePheno2 = riskScorePheno.getValue().get(key);
                     String NameOfEntry = riskScorePheno.getKey() + key;
@@ -279,7 +315,7 @@ public class SimplePolyGenicScoreCalculator {
                                                 continue;
                                             }
                                             try {
-                                                if (calculateRsquare(var1, var2) >= rSquare) {
+                                                if (calculateRsquare(var1, var2) >= rSquared) {
                                                     excludeSNPs[t] = true;
                                                     excludeList.add(riskE2.getRsName());
                                                 }
@@ -403,7 +439,7 @@ public class SimplePolyGenicScoreCalculator {
                                         if (Math.abs(riskE2.getPos() - riskE.getPos()) <= windowSize[1]) {
                                             GeneticVariant var2 = genotypeData.getSnpVariantByPos(riskE2.getChr(), riskE2.getPos());
                                             try {
-                                                if (calculateRsquare(var1, var2) >= rSquare) {
+                                                if (calculateRsquare(var1, var2) >= rSquared) {
                                                     excludeSNPs[t] = true;
                                                     excludeList.add(riskE2.getRsName());
                                                 }
@@ -425,5 +461,13 @@ public class SimplePolyGenicScoreCalculator {
         }
         p.close();
         return scores;
+    }
+
+    public String[] getGenomicRangesToExclude() {
+        return genomicRangesToExclude;
+    }
+
+    public List<Double> getpValueThresholds() {
+        return pValueThresholds;
     }
 }

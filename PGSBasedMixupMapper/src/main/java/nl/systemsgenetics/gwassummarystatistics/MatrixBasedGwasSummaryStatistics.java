@@ -17,7 +17,7 @@ import java.util.*;
 
 public class MatrixBasedGwasSummaryStatistics implements GwasSummaryStatistics{
 
-    private static final Logger LOGGER = Logger.getLogger(WritableGwasSummaryStatistics.class);
+    private static final Logger LOGGER = Logger.getLogger(MatrixBasedGwasSummaryStatistics.class);
     private String gwasId;
     private final LinkedHashMap<String, Integer> variantIds;
     private final DoubleMatrix1D betaCoefficients;

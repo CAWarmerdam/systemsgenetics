@@ -12,18 +12,14 @@ import nl.systemsgenetics.polygenicscorecalculator.*;
 import org.apache.commons.cli.ParseException;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
-import org.apache.commons.math3.distribution.TDistribution;
 import org.apache.commons.math3.stat.StatUtils;
 import org.apache.commons.math3.stat.ranking.NaNStrategy;
 import org.apache.commons.math3.stat.ranking.NaturalRanking;
 import org.apache.commons.math3.stat.ranking.TiesStrategy;
-import org.apache.commons.math3.stat.regression.SimpleRegression;
-import org.apache.commons.math3.util.FastMath;
 import org.apache.log4j.FileAppender;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.apache.log4j.SimpleLayout;
-import org.molgenis.genotype.Allele;
 import org.molgenis.genotype.RandomAccessGenotypeData;
 import org.molgenis.genotype.Sample;
 import org.molgenis.genotype.multipart.MultiPartGenotypeData;
@@ -42,7 +38,6 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 /**
  * @author Robert Warmerdam
@@ -62,7 +57,7 @@ public class PGSBasedMixupMapper {
     private final RandomAccessGenotypeData genotypeData;
     private Map<String, GwasSummaryStatistics> gwasSummaryStatisticsMap;
     private final Map<String, String> genotypeSampleToPhenotypeSampleCoupling;
-    private PolyGenicScoreCalculator polyGenicScoreCalculator;
+    private SimplePolyGenicScoreCalculator polyGenicScoreCalculator;
     private final DoubleMatrixDataset<String, String> phenotypeMatrix;
     private final DoubleMatrixDataset<String, String> zScoreMatrix;
     private final Map<String, DoubleMatrixDataset<String, String>> zScoresMap = new HashMap<>();
@@ -88,7 +83,7 @@ public class PGSBasedMixupMapper {
                                DoubleMatrixDataset<String, String> phenotypeMatrix,
                                Map<String, String> genotypeSampleToPhenotypeSampleCoupling,
                                Map<String, GwasSummaryStatistics> gwasSummaryStatisticsMap,
-                               PolyGenicScoreCalculator polyGenicScoreCalculator)
+                               SimplePolyGenicScoreCalculator polyGenicScoreCalculator)
             throws PGSBasedMixupMapperException, PolyGenicScoreCalculatorException {
         this.genotypeData = genotypeData;
         this.gwasSummaryStatisticsMap = gwasSummaryStatisticsMap;
@@ -449,31 +444,7 @@ public class PGSBasedMixupMapper {
     private DoubleMatrixDataset<String, String> calculatePolyGenicScores(String phenotype) {
         GwasSummaryStatistics summaryStatistics = gwasSummaryStatisticsMap.get(phenotype);
 
-        List<Integer> windowSizeList = polyGenicScoreCalculator.getLdHandler().getWindowSize();
-        int[] windowSize = windowSizeList.stream().mapToInt(i->i).toArray();
-        boolean sumRisks = false;
-        double[] pValThres = polyGenicScoreCalculator.getpValueThresholds()
-                .stream().mapToDouble(Double::doubleValue).toArray();
-        double rSquare = polyGenicScoreCalculator.getLdHandler().getRSquaredThreshold();
-        boolean unweighted = false;
-        String[] genomicRangesToExclude = polyGenicScoreCalculator.getGenomicRangesToExclude();
-        THashMap<String, THashMap<String, THashMap<String, ArrayList<RiskEntry>>>> risks = summaryStatistics.riskEntries(genotypeData,
-                        pValThres, genomicRangesToExclude,
-                        unweighted);
-
-        DoubleMatrixDataset<String, String> geneticRiskScoreMatrix = null;
-
-        if (windowSize.length == 1) {
-            geneticRiskScoreMatrix = SimplePolyGenicScoreCalculator.calculate(
-                    genotypeData, risks, rSquare, windowSize[0], pValThres, sumRisks);
-        } else if (windowSize.length == 2) {
-            geneticRiskScoreMatrix = SimplePolyGenicScoreCalculator.calculateTwoStages(
-                    genotypeData, risks, rSquare, windowSize, pValThres, sumRisks);
-        } else {
-            System.out.println("More than two window-sizes is not supported.");
-            System.exit(0);
-        }
-        return geneticRiskScoreMatrix;
+        return polyGenicScoreCalculator.calculate(summaryStatistics);
     }
 
     private Map<String, String> resolveMixUps(Map<String, String> bestMatchingPhenotypeSamplePerGenotypeSample) {
@@ -648,19 +619,14 @@ public class PGSBasedMixupMapper {
                 genotypeToPhenotypeSampleCoupling, gwasPhenotypeCoupling, phenotypeData, genotypeData);
 
         try {
-            // Initialize an LD handler for clumping the effect entries into the top, unlinked, clumps
-            LDHandler ldHandler = new Clumper(
+            // Initialize an Simple polygenic score calculator
+            SimplePolyGenicScoreCalculator polyGenicScoreCalculator = new SimplePolyGenicScoreCalculator(
                     genotypeData, // The genotype data to calculate an LD matrix in.
-                    options.getWindowSize(), // Get the window size in number of base pairs
-                    options.getrSquared(),  // Use R2 as a threshold
-                    pValueThresholds.get(pValueThresholds.size() - 1)); // Use the last (least stringiest) p-value,
-                    // effect entries with even higher p-values (lower log(p))should not for clumps
-
-            // Initialize a PGS calculator.
-            PolyGenicScoreCalculator pgsCalculator = new PolyGenicScoreCalculator(
-                    ldHandler,
+                    options.getWindowSize(), // Get the window size in number of base pairs,
+                    pValueThresholds,
+                    options.getrSquared(),
+                    false,
                     options.getGenomicRangesToExclude());
-            pgsCalculator.setPValueThresholds(pValueThresholds);
 
 //            DoubleMatrixDataset<String, Double> hdl_cholesterol = pgsCalculator.calculate(genotypeData,
 //                    gwasSummaryStatisticsMap.get("HDL cholesterol"));
@@ -671,7 +637,7 @@ public class PGSBasedMixupMapper {
             // Initialize the Mix-up mapper
             PGSBasedMixupMapper pgsBasedMixupMapper = new PGSBasedMixupMapper(
                     genotypeData, phenotypeData.duplicate(), genotypeToPhenotypeSampleCoupling,
-                    gwasSummaryStatisticsMap, pgsCalculator);
+                    gwasSummaryStatisticsMap, polyGenicScoreCalculator);
             // Report results
             reportResults(options, pgsBasedMixupMapper, phenotypeData);
 
@@ -686,11 +652,6 @@ public class PGSBasedMixupMapper {
             System.err.println("Error saving output from PGS Based Mixup Mapper: " + e.getMessage());
             System.err.println("See log file for stack trace");
             LOGGER.fatal("Error saving output from PGS Based Mixup Mapper: " + e.getMessage(), e);
-            System.exit(1);
-        } catch (LDHandlerException | LdCalculatorException e) {
-            System.err.println("Error calculating LD matrix: " + e.getMessage());
-            System.err.println("See log file for stack trace");
-            LOGGER.fatal("Error calculating LD matrix: " + e.getMessage(), e);
             System.exit(1);
         }
     }
@@ -930,7 +891,7 @@ public class PGSBasedMixupMapper {
         LOGGER.debug("Querying genotype data");
 
         //ArrayList<GeneticVariant> variants = new ArrayList<>(64);
-        ArrayList<float[]> variantsDosages = new ArrayList<>(64);
+        LinkedList<float[]> variantsDosages = new LinkedList<>();
         LinkedHashMap<String, Integer> variantHash = new LinkedHashMap<>(64);
 
         long timeStart = System.currentTimeMillis();

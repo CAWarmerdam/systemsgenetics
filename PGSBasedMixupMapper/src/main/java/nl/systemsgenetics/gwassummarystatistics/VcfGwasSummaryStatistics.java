@@ -82,11 +82,11 @@ public class VcfGwasSummaryStatistics extends VcfGenotypeData implements MultiSt
     }
 
     private void assertVcfMetaValidity(String formatFieldKey) throws GwasSummaryStatisticsException {
-        if (this.vcfMeta.getFormatMeta(formatFieldKey) == null) {
+        if (this.getFormatMeta(formatFieldKey) == null) {
             throw new GwasSummaryStatisticsException(String.format(
                     "Reserved format field '%s' not in format declerations", formatFieldKey));
         }
-        if (!this.vcfMeta.getFormatMeta(formatFieldKey).equals(RESERVED_KEYS.get(formatFieldKey))) {
+        if (!this.getFormatMeta(formatFieldKey).equals(RESERVED_KEYS.get(formatFieldKey))) {
             throw new GwasSummaryStatisticsException(String.format(
                     "Reserved format field '%s' not according to specifications", formatFieldKey));
         }
@@ -150,7 +150,7 @@ public class VcfGwasSummaryStatistics extends VcfGenotypeData implements MultiSt
                         throw new GwasSummaryStatisticsException(String.format(
                                 "Error in '%s' value for study [%s], found %d value(s) (%s), " +
                                         "while %d were expected based on the alternative allele count",
-                                fieldFormat.getId(), vcfMeta.getSampleName(i), splitValuesString.length,
+                                fieldFormat.getId(), this.getSampleNames()[i], splitValuesString.length,
                                 valueString, alternativeAlleleCount));
                     }
 
@@ -166,7 +166,7 @@ public class VcfGwasSummaryStatistics extends VcfGenotypeData implements MultiSt
                         } catch (NumberFormatException e) {
                             throw new GwasSummaryStatisticsException(String.format(
                                     "Error in '%s' value for study [%s], found value: %s",
-                                    fieldFormat.getId(), vcfMeta.getSampleName(i), valueString));
+                                    fieldFormat.getId(), this.getSampleNames()[i], valueString));
                         }
                     }
                 }

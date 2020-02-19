@@ -12,6 +12,8 @@ import org.molgenis.genotype.GenotypeDataException;
 import org.molgenis.genotype.RandomAccessGenotypeDataReaderFormats;
 
 import java.io.File;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.*;
 
 /**
@@ -20,6 +22,7 @@ import java.util.*;
 public class PGSBasedMixupMapperOptions {
 
     private static final double DEFAULT_CLUMPING_R_SQUARED = 0.2;
+    private static final List<Double> DEFAULT_P_VALUE_THRESHOLDS = new ArrayList<>(Collections.singletonList(1e-5));
     private static final String[] HSA_DEFAULT_SEQUENCES =
             {"1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11",
                     "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "22"};
@@ -31,7 +34,7 @@ public class PGSBasedMixupMapperOptions {
     private final String[] inputGenotypePath;
     private final RandomAccessGenotypeDataReaderFormats inputGenotypeType;
     private final File outputBasePath;
-    private final String gwasSummaryStatisticsPath;
+    private final Path gwasSummaryStatisticsPath;
     private final boolean debugMode;
     private final boolean calculateNewGenomeWideAssociationsEnabled;
     private final boolean writeNewGenomeWideAssociationsEnabled;
@@ -41,7 +44,7 @@ public class PGSBasedMixupMapperOptions {
     private final String gwasSummaryStatisticsPhenotypeCouplingFile;
     private final List<Integer> windowSize;
     private final List<Double> pValueThresholds;
-    private final String[] genomicRangesToExclude;
+    private final List<String> genomicRangesToExclude;
 
     private final String[] sequences;
 
@@ -49,6 +52,7 @@ public class PGSBasedMixupMapperOptions {
     private final File logFile;
     private final File debugFolder;
     private final String genotypeToPhenotypeSampleCouplingFile;
+
 
 
     static {
@@ -134,7 +138,7 @@ public class PGSBasedMixupMapperOptions {
         OptionBuilder.withArgName("String");
         OptionBuilder.hasArg();
         OptionBuilder.withDescription("Exclude genomic range(s) from the risk score calculation. " +
-                "Range needs to be specified as: \"6:101-110;6:250000-350000. Warning: " +
+                "Range needs to be specified as: \"6:101-110 6:250000-350000. Warning: " +
                 "Chr name must be specified as expected in the genotype dataset.");
         OptionBuilder.withLongOpt("excludeRange");
         OPTIONS.addOption(OptionBuilder.create("er"));
@@ -164,9 +168,9 @@ public class PGSBasedMixupMapperOptions {
 
         OptionBuilder.withArgName("integer[:integer]");
         OptionBuilder.hasArg();
-        OptionBuilder.withDescription("Window size for clumping, if given two window-sizes (colon separated), " +
+        OptionBuilder.withDescription("Window sizes for clumping, if given two window-sizes (colon separated), " +
                 "a two step window approach is used.");
-        OptionBuilder.withLongOpt("windowSize");
+        OptionBuilder.withLongOpt("windowSizes");
         OPTIONS.addOption(OptionBuilder.create("bp"));
 
         OptionBuilder.withArgName("double");
@@ -206,7 +210,7 @@ public class PGSBasedMixupMapperOptions {
         logFile = new File(outputBasePath + ".log");
         debugMode = commandLine.hasOption('d');
         debugFolder = new File(outputBasePath + "_debugFiles");
-        gwasSummaryStatisticsPath = commandLine.getOptionValue('s');
+        gwasSummaryStatisticsPath = Paths.get(commandLine.getOptionValue('s'));
         gwasSummaryStatisticsPhenotypeCouplingFile = commandLine.getOptionValue("wpc");
         genotypeToPhenotypeSampleCouplingFile = commandLine.getOptionValue("gpc");
 
@@ -222,33 +226,22 @@ public class PGSBasedMixupMapperOptions {
         writeNewGenomeWideAssociationsEnabled = commandLine.hasOption("w");
 
         // Parse the command line option representing sequence identifiers to expand the genotype input with.
-        sequences = getSequences(commandLine);
+        sequences = parseSequences(commandLine);
 
         // Get the R squared from the command line arguments.
         rSquared = getRSquared(commandLine);
 
-        // Get the window sizes from the command line arguments
-        windowSize = getWindowSizes(commandLine);
+        // Get the window sizes from the command line arguments.
+        windowSize = parseWindowSizes(commandLine);
 
-        try {
-            pValueThresholds = new ArrayList<>();
-            for (String pvalue : commandLine.getOptionValue("pv", String.valueOf(1e-5)).split(":")) {
-                double e = Double.parseDouble(pvalue);
-                pValueThresholds.add(e);
-            }
-        } catch (NumberFormatException e) {
-            throw new ParseException(String.format("Error parsing --pv \"%s\" could not be parsed to valid doubles",
-                    commandLine.getOptionValue("pv")));
-        }
+        // Get the P-value thresholds from the command line arguments.
+        pValueThresholds = parsePValueThresholds(commandLine);
 
-        if (commandLine.hasOption("excludeRange") || commandLine.hasOption("er")) {
-            // initialise the member variable
-            genomicRangesToExclude = commandLine.getOptionValue("excludeRange").split(";");
-        } else {
-            genomicRangesToExclude = new String[]{};
-        }
+        // Get the input phenotype path.
+        inputPhenotypePath = parseInputPhenotypePath(commandLine);
 
-        this.inputPhenotypePath = getInputPhenotypePath(commandLine);
+        genomicRangesToExclude = parseRangesToExclude(commandLine);
+
 
         if (commandLine.hasOption("maf")) {
             try {
@@ -261,6 +254,49 @@ public class PGSBasedMixupMapperOptions {
         }
     }
 
+    private List<String> parseRangesToExclude(CommandLine commandLine) {
+        List<String> ranges = new ArrayList<>();
+
+        if (commandLine.hasOption("er")) {
+            // initialise the member variable
+            Collections.addAll(ranges, commandLine.getOptionValues("excludeRange"));
+        }
+        return ranges;
+    }
+
+    /**
+     * Gets the P-values thresholds from the provided command line arguments.
+     *
+     * @param commandLine the command line that could contain the P-value thresholds in option 'pv'.
+     * @return a list with every P-value threshold provided or the default value of 1e-5.
+     * @throws ParseException If any of the window size values were not able to be parsed to a double.
+     */
+    private List<Double> parsePValueThresholds(CommandLine commandLine) throws ParseException {
+
+        // Initialize an array list with
+        List<Double> pValueThresholds = new ArrayList<>();
+
+        if (!commandLine.hasOption("pv")) {
+            return DEFAULT_P_VALUE_THRESHOLDS;
+        }
+
+        // Loop through the P-value thresholds
+        for (String pValue : commandLine.getOptionValue("pv").split(":")) {
+            // Parse the P-value to a double
+            try {
+                double e = Double.parseDouble(pValue);
+                pValueThresholds.add(e);
+            // If the supposed P-value cannot be parsed to a double, a NumberFormatException is thrown,
+            // catch this and throw a parse exception.
+            } catch (NumberFormatException e) {
+                throw new ParseException(String.format(
+                        "Error parsing -pv / --pValueThresholds: \"%s\" could not be parsed to a double",
+                        pValue));
+            }
+        }
+        return pValueThresholds;
+    }
+
     /**
      * Gets the window sizes from the provided command line arguments.
      *
@@ -268,16 +304,24 @@ public class PGSBasedMixupMapperOptions {
      * @return a list with every window size provided or the default value of 50000.
      * @throws ParseException If any of the window size values were not able to be parsed to an integer.
      */
-    private List<Integer> getWindowSizes(CommandLine commandLine) throws ParseException {
+    private List<Integer> parseWindowSizes(CommandLine commandLine) throws ParseException {
+
+        // Get the window size parameter or the default value of 500.000
         String windowSizeArgument = commandLine.getOptionValue("bp", String.valueOf(500000));
+        // Split the given option
         String[] split = windowSizeArgument.split(":");
+        // Initialize the window sizes list
         List<Integer> windowSizes = new ArrayList<>();
-        for (String splitWindowSize :
-                split) {
+
+        // Loop through the window sizes
+        for (String splitWindowSize : split) {
+            // Try to parse the window size to a integer
             try {
                 windowSizes.add(Integer.parseInt(splitWindowSize));
+            // If the supposed window size cannot be parsed to an integer, a NumberFormatException is thrown,
+            // catch this and throw a parse exception.
             } catch (NumberFormatException e) {
-                throw new ParseException(String.format("Error parsing --bp \"%s\" is not a valid integer",
+                throw new ParseException(String.format("Error parsing -bp / --windowSizes: \"%s\" is not a valid integer",
                         splitWindowSize));
             }
         }
@@ -294,23 +338,33 @@ public class PGSBasedMixupMapperOptions {
     private double getRSquared(CommandLine commandLine) throws ParseException {
     	if (commandLine.hasOption("r2")) {
 			try {
+			    // Try to parse the r2
 				return Double.parseDouble(commandLine.getOptionValue("r2"));
+            // Throw a parse exception if the r2 cannot be parsed to a double
 			} catch (NumberFormatException e) {
-				throw new ParseException(String.format("Error parsing --r2 \"%s\" is not a valid double",
+				throw new ParseException(String.format("Error parsing -r2 / --rSquared \"%s\" is not a valid double",
 						commandLine.getOptionValue("r2")));
 			}
 		}
     	return DEFAULT_CLUMPING_R_SQUARED;
 	}
 
-	private String[] getSequences(CommandLine commandLine) {
+    /**
+     * Method parsing a the chromosomes option from the given options.
+     *
+     * @param commandLine the command line that could contain the chromosomes option.
+     * @return the provided chromosomes or the default human sequences.
+     */
+	private String[] parseSequences(CommandLine commandLine) {
+        // If the command line has a chromosomes option, return this.
         if (commandLine.hasOption("chromosomes")) {
             return commandLine.getOptionValues("chromosomes");
         }
+        // If the command line does not have a chromosomes option return the default sequences
         return HSA_DEFAULT_SEQUENCES;
     }
 
-    private File getInputPhenotypePath(CommandLine commandLine) throws ParseException {
+    private File parseInputPhenotypePath(CommandLine commandLine) throws ParseException {
         if (!commandLine.hasOption("inputPhenotype")) {
             throw new ParseException("--inputPhenotype not specified");
         } else {
@@ -403,6 +457,43 @@ public class PGSBasedMixupMapperOptions {
 
     }
 
+    /**
+     * Method that returns the input genotype paths expanded for every sequence
+     * if one of these paths contain a '#'. The input genotype paths are copied
+     * for every sequence with which the '#' is subsequently replaced by the
+     * sequence name.
+     *
+     * @return a map with sequence names as the keys and a corresponding array
+     * of input paths as values. the sequence name is null if a '#' is not present
+     * and force seq name was not set.
+     */
+    public Map<String, String[]> getInputGenotypePaths() {
+
+        // Initialize the output 2d array
+        Map<String, String[]> expandedInputGenotypePaths = new LinkedHashMap<>();
+
+        // Check if one of the input paths for the genotype data contains a '#',
+        // If this is the case expand the input genotype paths.
+        if (Arrays.stream(inputGenotypePath).anyMatch(path -> path.contains("#"))) {
+
+            // Loop through the sequences and the genotype paths, replacing every
+            // '#' with the sequence name.
+            for (String sequence : sequences) {
+                String[] strings = new String[inputGenotypePath.length];
+                for (int i = 0; i < inputGenotypePath.length; i++) {
+                    String filePath = inputGenotypePath[i];
+                    strings[i] = filePath.replace("#", sequence);
+                }
+                expandedInputGenotypePaths.put(sequence, strings);
+            }
+        } else {
+            // If the paths do not contain a '#', return the map with size 1.
+            expandedInputGenotypePaths.put(forceSeqName, inputGenotypePath);
+        }
+
+        return expandedInputGenotypePaths;
+    }
+
     public RandomAccessGenotypeDataReaderFormats getInputGenotypeType() {
         return inputGenotypeType;
     }
@@ -431,7 +522,7 @@ public class PGSBasedMixupMapperOptions {
         return forceSeqName;
     }
 
-    public String getGwasSummaryStatisticsPath() {
+    public Path getGwasSummaryStatisticsPath() {
         return gwasSummaryStatisticsPath;
     }
 
@@ -456,7 +547,7 @@ public class PGSBasedMixupMapperOptions {
     }
 
     public String[] getGenomicRangesToExclude() {
-        return genomicRangesToExclude;
+        return genomicRangesToExclude.stream().toArray(String[] ::new);
     }
 
     public boolean isDebugMode() {
@@ -465,27 +556,6 @@ public class PGSBasedMixupMapperOptions {
 
     public String[] getInputGenotypePath() {
         return inputGenotypePath;
-    }
-
-    public Map<String, String[]> getInputGenotypePaths() {
-
-        // Initialize the output 2d array
-        Map<String, String[]> expandedInputGenotypePaths = new LinkedHashMap<>();
-
-        if (Arrays.stream(inputGenotypePath).anyMatch(path -> path.contains("#"))) {
-            for (String sequence : sequences) {
-                String[] strings = new String[inputGenotypePath.length];
-                for (int i = 0; i < inputGenotypePath.length; i++) {
-                    String filePath = inputGenotypePath[i];
-                    strings[i] = filePath.replace("#", sequence);
-                }
-                expandedInputGenotypePaths.put(sequence, strings);
-            }
-        } else {
-            expandedInputGenotypePaths.put(forceSeqName, inputGenotypePath);
-        }
-
-        return expandedInputGenotypePaths;
     }
 
     public boolean isCalculateNewGenomeWideAssociationsEnabled() {

@@ -41,6 +41,7 @@ import org.molgenis.vcf.VcfRecord;
 import org.molgenis.vcf.VcfSample;
 import org.molgenis.vcf.meta.VcfMeta;
 import org.molgenis.vcf.meta.VcfMetaContig;
+import org.molgenis.vcf.meta.VcfMetaFormat;
 import org.molgenis.vcf.meta.VcfMetaInfo;
 
 import com.google.common.base.Function;
@@ -57,7 +58,7 @@ public class VcfGenotypeData extends AbstractRandomAccessGenotypeData implements
     private final TabixIndex tabixIndex;
     private final int sampleVariantProviderUniqueId;
     private final SampleVariantsProvider variantProvider;
-    protected final VcfMeta vcfMeta;
+    private final VcfMeta vcfMeta;
     private transient Map<String, Annotation> cachedSampleAnnotationsMap;
     private transient GeneticVariant cachedGeneticVariant;
     private transient VcfRecord cachedVcfRecord;
@@ -654,5 +655,9 @@ public class VcfGenotypeData extends AbstractRandomAccessGenotypeData implements
      */
     private GenotypeRecord toGenotypeRecord(VcfRecord vcfRecord, VcfSample vcfSample) {
         return new VcfGenotypeRecord(vcfMeta, vcfRecord, vcfSample);
+    }
+
+    public VcfMetaFormat getFormatMeta(String id) {
+        return vcfMeta.getFormatMeta(id);
     }
 }

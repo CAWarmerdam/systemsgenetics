@@ -6,7 +6,6 @@ import cern.colt.matrix.tdouble.DoubleMatrix2D;
 import cern.colt.matrix.tdouble.impl.DenseDoubleMatrix1D;
 import cern.jet.math.tdouble.DoubleFunctions;
 import com.opencsv.*;
-import gnu.trove.map.hash.THashMap;
 import nl.systemsgenetics.gwassummarystatistics.*;
 import nl.systemsgenetics.polygenicscorecalculator.*;
 import org.apache.commons.cli.ParseException;
@@ -22,13 +21,14 @@ import org.apache.log4j.Logger;
 import org.apache.log4j.SimpleLayout;
 import org.molgenis.genotype.RandomAccessGenotypeData;
 import org.molgenis.genotype.Sample;
+import org.molgenis.genotype.Sequence;
 import org.molgenis.genotype.multipart.MultiPartGenotypeData;
 import org.molgenis.genotype.sampleFilter.SampleFilter;
 import org.molgenis.genotype.sampleFilter.SampleIdIncludeFilter;
-import org.molgenis.genotype.util.LdCalculatorException;
 import org.molgenis.genotype.variant.GeneticVariant;
 import org.molgenis.genotype.variantFilter.*;
-import umcg.genetica.graphics.panels.HistogramPanel;
+import umcg.genetica.genomicboundaries.GenomicBoundaries;
+import umcg.genetica.genomicboundaries.GenomicBoundary;
 import umcg.genetica.math.matrix2.DoubleMatrixDataset;
 import umcg.genetica.math.stats.PearsonRToPValueBinned;
 
@@ -695,7 +695,12 @@ public class PGSBasedMixupMapper {
             for (String phenotypeIdentifier : MatrixBasedGwasSummaryStatisticsMap.keySet()) {
                 if (options.isWriteNewGenomeWideAssociationsEnabled()) {
                     try {
-                        MatrixBasedGwasSummaryStatisticsMap.get(phenotypeIdentifier).save(options.getOutputBasePath().toString());
+                        MatrixBasedGwasSummaryStatisticsMap.get(phenotypeIdentifier).save(
+                                // Save the summary statistics with the base output path as a prefix
+                                options.getGwasSummaryStatisticsPath()
+                                        .resolve(phenotypeToGwasFolderCoupling.get(phenotypeIdentifier)),
+                                // Save only those risk entries that are not above the lowest pValue threshold
+                                Collections.min(options.getpValueThresholds()));
                     } catch (IOException e) {
                         System.err.println("Could not save writableGwasSummaryStatistics." + e.getMessage());
                         System.err.println("See log file for stack trace");
@@ -740,8 +745,6 @@ public class PGSBasedMixupMapper {
         phenotypeData = phenotypeData.viewRowSelection(orderedPhenotypeIdentifiers);
         LOGGER.debug("Ordering phenotype identifiers done!");
 
-        HashMap<String, MatrixBasedGwasSummaryStatistics> summaryStatisticsMap = new HashMap<>();
-
         // Phenotypes have to be normalized. This can be done here, but also in an earlier stage
 
         LOGGER.debug(String.format("Normalizing %d phenotypes...", phenotypeData.columns()));
@@ -749,6 +752,20 @@ public class PGSBasedMixupMapper {
         normalizedPhenotypes.normalizeColumns(); // Normalizes so that the mean of columns is 0 and SD is 1
 
         LOGGER.debug(String.format("Normalizing %d phenotypes done!", phenotypeData.columns()));
+
+        // Initialize map of summary statistics
+        LOGGER.info("Initializig summary statistics");
+        HashMap<String, MatrixBasedGwasSummaryStatistics> summaryStatisticsMap = new HashMap<>();
+
+        // Wrap the pearson values and p values inside a summary statistics object
+        for (int i = 0; i < phenotypeData.columns(); i++) {
+            // Get the phenotype identifier
+            String phenotype = phenotypeData.getColObjects().get(i);
+
+            MatrixBasedGwasSummaryStatistics summaryStatistics = new MatrixBasedGwasSummaryStatistics(
+                    phenotype);
+            summaryStatisticsMap.put(phenotype, summaryStatistics);
+        }
 
         String[] samples = genotypeData.getSampleNames();
 
@@ -765,78 +782,108 @@ public class PGSBasedMixupMapper {
         // Use a binned approach for determining p values per correlation
         PearsonRToPValueBinned rToPValue = new PearsonRToPValueBinned(10000000, sampleHash.size());
 
-        LOGGER.debug("Loading variant scaled dosage matrix");
+        GenomicBoundaries<String> boundaries = getGenomicBoundaries(genotypeData, -1);
 
-        // Get normalized genotypes
-        DoubleMatrixDataset<String, String> variantScaledDosages = loadVariantScaledDosageMatrix(genotypeData, sampleHash);
+        for (GenomicBoundary<String> boundary : boundaries) {
+            LOGGER.debug(String.format("Loading variant scaled dosage matrix for range %s", boundary.getAnnotation()));
+            // Get normalized genotypes
+            DoubleMatrixDataset<String, String> variantScaledDosages = loadVariantScaledDosageMatrix(genotypeData, boundary, sampleHash);
 
-        LOGGER.debug("Negating variant scaled dosages...");
-        // We want to test the alternative allele, so we reverse this.
-        variantScaledDosages.getMatrix().assign(DoubleFunctions.neg);
+            LOGGER.debug("Negating variant scaled dosages...");
+            // We want to test the alternative allele, so we reverse this.
+            variantScaledDosages.getMatrix().assign(DoubleFunctions.neg);
 
-        DoubleMatrixDataset<String, String> pearsonRValues = null;
+            DoubleMatrixDataset<String, String> pearsonRValues = null;
 
-        LOGGER.debug("Starting correlating variants and phenotypes...");
-        try {
-            // Get the correlations
-            pearsonRValues = DoubleMatrixDataset.correlateColumnsOf2ColumnNormalizedDatasets(
-                    normalizedPhenotypes, variantScaledDosages);
-        } catch (Exception e) {
-            throw new PGSBasedMixupMapperException("Number of samples between phenotypes and genotypes were not equal.", e);
-        }
-        LOGGER.debug(String.format("Finished correlating columns of 2 column normalized datasets.%n shape is %d x %d",
-                pearsonRValues.rows(), pearsonRValues.columns()));
-
-        // Columns are columns of normalized phenotypes (phenotypes)
-        // Rows are the variants (columns of normalized dosages)
-
-        // Remove rows with NaN values
-
-        LOGGER.debug("Checking for NaN values...");
-        // Initialize a linked list to which variant ids should be appended that do not show NaN values.
-        List<String> variantsWherePearsonRIsNotNaN = new LinkedList<>();
-        // Loop through the variants, checking if the pearson R is not NaN for the first phenotype.
-        for (int variantIndex = 0; variantIndex < pearsonRValues.rows(); variantIndex++) {
-            // Only check the first phenotype since a lack of variance for a particular variant probably
-            // also results in a NaN for other phenotypes and vice versa.
-            if (!Double.isNaN(pearsonRValues.getElementQuick(variantIndex, 0))) {
-                // Add the variant identifier to the list.
-                String variantIdentifier = pearsonRValues.getRowObjects().get(variantIndex);
-                variantsWherePearsonRIsNotNaN.add(variantIdentifier);
+            LOGGER.debug("Starting correlating variants and phenotypes...");
+            try {
+                // Get the correlations
+                pearsonRValues = DoubleMatrixDataset.correlateColumnsOf2ColumnNormalizedDatasets(
+                        normalizedPhenotypes, variantScaledDosages);
+            } catch (Exception e) {
+                throw new PGSBasedMixupMapperException("Number of samples between phenotypes and genotypes were not equal.", e);
             }
-        }
+            LOGGER.debug(String.format("Finished correlating columns of 2 column normalized datasets.%n shape is %d x %d",
+                    pearsonRValues.rows(), pearsonRValues.columns()));
 
-        LOGGER.debug(String.format("Found %d / %d variants that do not have a NaN value in the first phenotype",
-                variantsWherePearsonRIsNotNaN.size(), pearsonRValues.rows()));
+            // Columns are columns of normalized phenotypes (phenotypes)
+            // Rows are the variants (columns of normalized dosages)
 
-        // Perform the row selection, removing the rows where pearson R is NaN.
-        pearsonRValues = pearsonRValues.viewRowSelection(variantsWherePearsonRIsNotNaN);
+            // Remove rows with NaN values
 
-        // Duplicate the pearson R values to calculate p values
-        DoubleMatrixDataset<String, String> pValues = pearsonRValues.duplicate();
+            LOGGER.debug("Checking for NaN values...");
+            // Initialize a linked list to which variant ids should be appended that do not show NaN values.
+            List<String> variantsWherePearsonRIsNotNaN = new LinkedList<>();
+            ArrayList<String> variants = pearsonRValues.getRowObjects();
+            // Loop through the variants, checking if the pearson R is not NaN for the first phenotype.
+            for (int variantIndex = 0; variantIndex < pearsonRValues.rows(); variantIndex++) {
+                // Only check the first phenotype since a lack of variance for a particular variant probably
+                // also results in a NaN for other phenotypes and vice versa.
+                if (!Double.isNaN(pearsonRValues.getElementQuick(variantIndex, 0))) {
+                    // Add the variant identifier to the list.
+                    String variantIdentifier = variants.get(variantIndex);
+                    variantsWherePearsonRIsNotNaN.add(variantIdentifier);
+                }
+            }
 
-        LOGGER.debug("Getting P-values...");
+            LOGGER.debug(String.format("Found %d / %d variants that do not have a NaN value in the first phenotype",
+                    variantsWherePearsonRIsNotNaN.size(), pearsonRValues.rows()));
 
-        // Get actual pValues
-        rToPValue.inplaceRToPValue(pValues);
+            // Perform the row selection, removing the rows where pearson R is NaN.
+            pearsonRValues = pearsonRValues.viewRowSelection(variantsWherePearsonRIsNotNaN);
 
-        LOGGER.debug("Getting P-values done!");
+            // Duplicate the pearson R values to calculate p values
+            DoubleMatrixDataset<String, String> pValues = pearsonRValues.duplicate();
 
-        // Wrap the pearson values and p values inside a summary statistics object
-        for (int i = 0; i < phenotypeData.columns(); i++) {
-            // Get the phenotype identifier
-            String phenotype = phenotypeData.getColObjects().get(i);
+            LOGGER.debug("Getting P-values...");
 
-            MatrixBasedGwasSummaryStatistics summaryStatistics = new MatrixBasedGwasSummaryStatistics(
-                    phenotype, pearsonRValues.getHashRows(), pearsonRValues.viewCol(i), pValues.viewCol(i));
+            // Get actual pValues
+            rToPValue.inplaceRToPValue(pValues);
 
-            LOGGER.info(String.format("Calculated correlation between %d variants and '%s'",
-                    summaryStatistics.size(), phenotype));
-            summaryStatisticsMap.put(phenotype, summaryStatistics);
+            LOGGER.debug("Getting P-values done!");
+
+            // Wrap the pearson values and p values inside a summary statistics object
+            for (int i = 0; i < phenotypeData.columns(); i++) {
+                // Get the phenotype identifier
+                String phenotype = phenotypeData.getColObjects().get(i);
+
+                MatrixBasedGwasSummaryStatistics summaryStatistics = summaryStatisticsMap.get(phenotype);
+                summaryStatistics.add(
+                        pearsonRValues.getHashRows(), pearsonRValues.viewCol(i), pValues.viewCol(i));
+
+                LOGGER.info(String.format("Calculated correlation between %d variants and '%s'",
+                        summaryStatistics.size(), phenotype));
+            }
         }
 
         LOGGER.debug(String.format("Returning summary statistics map of size %d", summaryStatisticsMap.size()));
         return summaryStatisticsMap;
+    }
+
+    private static GenomicBoundaries<String> getGenomicBoundaries(
+            RandomAccessGenotypeData genotypeData, int windowSize) {
+        GenomicBoundaries<String> genomicBoundaries = new GenomicBoundaries<>();
+
+        for (Sequence sequence : genotypeData.getSequences()) {
+//            int currentPosition = 0;
+//            while (currentPosition < sequence.getLength()) {
+//                System.out.println("currentPosition = " + currentPosition);
+//                int nextPosition = currentPosition + windowSize;
+//                System.out.println("nextPosition = " + nextPosition);
+//                genomicBoundaries.addBoundary(
+//                        sequence.getName(), currentPosition, nextPosition,
+//                        String.format("%s:%d-%d", sequence.getName(), currentPosition, nextPosition));
+//                currentPosition = nextPosition;
+//            }
+            if (windowSize < 0) {
+                genomicBoundaries.addBoundary(
+                        sequence.getName(), 0, Integer.MAX_VALUE,
+                        String.format("%s", sequence.getName()));
+            } else {
+                throw new UnsupportedOperationException("Not yet supported");
+            }
+        }
+        return genomicBoundaries;
     }
 
     /**
@@ -844,7 +891,9 @@ public class PGSBasedMixupMapper {
      * 1. This will allow fast correlation calculations
      *
      */
-    private static DoubleMatrixDataset<String, String> loadVariantScaledDosageMatrix(RandomAccessGenotypeData genotypeData, LinkedHashMap<String, Integer> sampleHash) {
+    private static DoubleMatrixDataset<String, String> loadVariantScaledDosageMatrix(
+            RandomAccessGenotypeData genotypeData,
+            GenomicBoundary<String> boundary, LinkedHashMap<String, Integer> sampleHash) {
 
         LOGGER.debug("Querying genotype data");
 
@@ -855,7 +904,8 @@ public class PGSBasedMixupMapper {
         long timeStart = System.currentTimeMillis();
 
         int v = 0;
-        for (GeneticVariant variant : genotypeData) {
+        for (GeneticVariant variant : genotypeData.getVariantsByRange(
+                boundary.getChromosome(), boundary.getStart(), boundary.getStop())) {
             //variants.add(variant);
             String primaryVariantId = variant.getPrimaryVariantId();
             if (!variantHash.containsKey(primaryVariantId)) {
@@ -1084,61 +1134,100 @@ public class PGSBasedMixupMapper {
      * @return A map with for every phenotype (key), a list of gwas summary statistics.
      */
     static Map<String, GwasSummaryStatistics> loadGwasSummaryStatisticsMap(
-            String gwasSummaryStatisticsPath, Map<String, String> gwasPhenotypeCoupling, VariantFilter variantFilter) {
+            Path gwasSummaryStatisticsPath, Map<String, String> gwasPhenotypeCoupling, VariantFilter variantFilter) {
 
         // Initialize map with, for every phenotype, a lists of vcf summary statistics as the value.
         Map<String, GwasSummaryStatistics> summaryStatisticsMap = new LinkedHashMap<>();
 
         // Create the path for the directory where the gwas summary statistic files are stored.
-        Path traitSpecificGwasSummaryStatisticsVcfPath =
-                Paths.get(gwasSummaryStatisticsPath);
         try {
             // Try to fill the summary statistics map.
             for (String gwasSummaryStatisticsFilePrefix : gwasPhenotypeCoupling.keySet()) {
 
                 // Get the phenotype identifier corresponding to the prefix.
                 String phenotype = gwasPhenotypeCoupling.get(gwasSummaryStatisticsFilePrefix);
+
                 // Load the vcf gwas summary statistics data with.
-                File bzipVcfFile = traitSpecificGwasSummaryStatisticsVcfPath
+                File bzipVcfFile = gwasSummaryStatisticsPath
                         .resolve(gwasSummaryStatisticsFilePrefix + ".vcf.gz").toFile();
 
-                MultiStudyGwasSummaryStatistics vcfGwasSummaryStatistics = new VcfGwasSummaryStatistics(
-                        bzipVcfFile,
-                        50000, // Represents the cache size in number of variants,
-                        // value copied from the GeneticRiskScoreCalculator module
-                        1); // Represents the minimum posterior probability to call,
-                        // 0.4 is generally the default value
+                File gZippedLegacyGwasSummaryStatisticsPath = gwasSummaryStatisticsPath
+                        .resolve(gwasSummaryStatisticsFilePrefix + ".txt.gz").toFile();
 
-                // Report loaded status and the variant count
-                int variantCount = vcfGwasSummaryStatistics.getVariantIdMap().size();
-                LOGGER.info(String.format("Loaded GWAS summary statistics from '%s'",
-                        bzipVcfFile.toString()));
-                LOGGER.info(String.format("%d variants present prior to filtering",
-                        variantCount));
+                File textLegacyGwasSummaryStatisticsPath = gwasSummaryStatisticsPath
+                        .resolve(gwasSummaryStatisticsFilePrefix + ".txt").toFile();
 
-                // A VCF gwas file can contain more than one study.
-                // We currently do not know how to deal with this, so only the first study is used
-                if (vcfGwasSummaryStatistics.getSamples().size() > 1) {
-                    LOGGER.warn(String.format("Encountered %d studies (VCF samples) while only 1 is expected",
-                            vcfGwasSummaryStatistics.getSamples().size()));
-                    LOGGER.warn("Only the first study will be used.");
+                // Check if the binary Vcf file exists
+                if (bzipVcfFile.exists()) {
+                    // Load the Vcf file
+                    MultiStudyGwasSummaryStatistics vcfGwasSummaryStatistics = new VcfGwasSummaryStatistics(
+                            bzipVcfFile,
+                            50000, // Represents the cache size in number of variants,
+                            // value copied from the GeneticRiskScoreCalculator module
+                            1); // Represents the minimum posterior probability to call,
+                    // 0.4 is generally the default value
+
+                    // Report loaded status and the variant count
+                    int variantCount = vcfGwasSummaryStatistics.getVariantIdMap().size();
+                    LOGGER.info(String.format("Loaded GWAS summary statistics from '%s'",
+                            bzipVcfFile.toString()));
+                    LOGGER.info(String.format("%d variants present prior to filtering",
+                            variantCount));
+
+                    // A VCF gwas file can contain more than one study.
+                    // We currently do not know how to deal with this, so only the first study is used
+                    if (vcfGwasSummaryStatistics.getSamples().size() > 1) {
+                        LOGGER.warn(String.format("Encountered %d studies (VCF samples) while only 1 is expected",
+                                vcfGwasSummaryStatistics.getSamples().size()));
+                        LOGGER.warn("Only the first study will be used.");
+                    }
+
+                    // Remove the variants that are not according to the variant filter.
+                    // This should correspond to including only the variants that are in the genotype data as well.
+                    MultiStudyGwasSummaryStatistics filteredSummaryStatistics =
+                            new VariantFilterableGwasSummaryStatisticsDecorator(vcfGwasSummaryStatistics, variantFilter);
+                    int filteredVariantCount = filteredSummaryStatistics.getVariantIdMap().size();
+                    LOGGER.info(String.format("Removing %d variants not present in the genotype data, keeping %d",
+                            variantCount - filteredVariantCount,
+                            filteredVariantCount));
+
+                    // Check if the map already contains the key,
+                    assert !summaryStatisticsMap.containsKey(phenotype);
+
+                    // If the key-value pair does not exist yet, initialize this.
+                    summaryStatisticsMap.put(phenotype, new ReadOnlyGwasSummaryStatistics(
+                            vcfGwasSummaryStatistics, vcfGwasSummaryStatistics.getSampleNames()[0]));
+                } else if (textLegacyGwasSummaryStatisticsPath.exists()) {
+
+                    // Load the summary statistics from a legacy file
+                    GwasSummaryStatistics legacyGwasSummaryStatistics = new ReadOnlyLegacyGwasSummaryStatistics(
+                            phenotype, textLegacyGwasSummaryStatisticsPath);
+                    LOGGER.info(String.format("Loaded GWAS summary statistics from '%s'",
+                            textLegacyGwasSummaryStatisticsPath.toString()));
+
+                    // Check if the map already contains the key,
+                    assert !summaryStatisticsMap.containsKey(phenotype);
+
+                    // If the key-value pair does not exist yet, initialize this.
+                    summaryStatisticsMap.put(phenotype, legacyGwasSummaryStatistics);
+                }  else if (gZippedLegacyGwasSummaryStatisticsPath.exists()) {
+
+                    // Load the summary statistics from a legacy file
+                    GwasSummaryStatistics legacyGwasSummaryStatistics = new ReadOnlyLegacyGwasSummaryStatistics(
+                            phenotype, gZippedLegacyGwasSummaryStatisticsPath);
+                    LOGGER.info(String.format("Loaded GWAS summary statistics from '%s'",
+                            gZippedLegacyGwasSummaryStatisticsPath.toString()));
+
+                    // Check if the map already contains the key,
+                    assert !summaryStatisticsMap.containsKey(phenotype);
+
+                    // If the key-value pair does not exist yet, initialize this.
+                    summaryStatisticsMap.put(phenotype, legacyGwasSummaryStatistics);
+                } else {
+                    throw new GwasSummaryStatisticsException(String.format(
+                            "No file found matching:%n  '%s.<vcf.gz|txt.gz|txt>'",
+                            gwasSummaryStatisticsFilePrefix));
                 }
-
-                // Remove the variants that are not according to the variant filter.
-                // This should correspond to including only the variants that are in the genotype data as well.
-                MultiStudyGwasSummaryStatistics filteredSummaryStatistics =
-                        new VariantFilterableGwasSummaryStatisticsDecorator(vcfGwasSummaryStatistics, variantFilter);
-                int filteredVariantCount = filteredSummaryStatistics.getVariantIdMap().size();
-                LOGGER.info(String.format("Removing %d variants not present in the genotype data, keeping %d",
-                        variantCount - filteredVariantCount,
-                        filteredVariantCount));
-
-                // Check if the map already contains the key,
-                assert !summaryStatisticsMap.containsKey(phenotype);
-
-                // If the map does not exist yet, initialize this.
-                summaryStatisticsMap.put(phenotype, new ReadOnlyGwasSummaryStatistics(
-                        vcfGwasSummaryStatistics, vcfGwasSummaryStatistics.getSampleNames()[0]));
             }
 
         } catch (IOException | GwasSummaryStatisticsException e) {
@@ -1167,7 +1256,7 @@ public class PGSBasedMixupMapper {
                     phenotypeSampleIdentifiersToInclude, traitsToInclude,'\t');
             LOGGER.info(String.format("Loaded phenotype data for %d samples",
                     phenotypeMatrix.getRowObjects().size()));
-        } catch (IOException e) {
+        } catch (IOException | PhenotypeDataException e) {
             System.err.println("Error accessing input phenotype data: " + e.getMessage());
             System.err.println("See log file for stack trace");
             LOGGER.fatal("Error accessing input phenotype data: " + e.getMessage(), e);
@@ -1218,8 +1307,9 @@ public class PGSBasedMixupMapper {
         try {
             Set<RandomAccessGenotypeData> genotypeDataSet = new HashSet<>();
 
-            for (Map.Entry<String, String[]> inputGenotypePathSet : inputGenotypePaths.entrySet()) {
-                RandomAccessGenotypeData genotypeData = options.getInputGenotypeType().createFilteredGenotypeData(
+            if (inputGenotypePaths.size() == 1) {
+                Map.Entry<String, String[]> inputGenotypePathSet = inputGenotypePaths.entrySet().iterator().next();
+                randomAccessGenotypeData = options.getInputGenotypeType().createFilteredGenotypeData(
                         inputGenotypePathSet.getValue(),
                         50000,
                         variantFilter,
@@ -1231,14 +1321,33 @@ public class PGSBasedMixupMapper {
                         options.getInputGenotypeType().getName(),
                         Arrays.toString(inputGenotypePathSet.getValue())));
 
-                int originalVariantCount = genotypeData.getVariantIdMap().size();
+                int originalVariantCount = randomAccessGenotypeData.getVariantIdMap().size();
                 LOGGER.info(String.format("%d samples and %d variants present after filtering",
-                        genotypeData.getSamples().size(),
+                        randomAccessGenotypeData.getSamples().size(),
                         originalVariantCount));
+            } else {
+                for (Map.Entry<String, String[]> inputGenotypePathSet : inputGenotypePaths.entrySet()) {
+                    RandomAccessGenotypeData genotypeData = options.getInputGenotypeType().createFilteredGenotypeData(
+                            inputGenotypePathSet.getValue(),
+                            50000,
+                            variantFilter,
+                            sampleFilter,
+                            options.shouldForceSeqName() ? inputGenotypePathSet.getKey() : null,
+                            0.5f);
 
-                genotypeDataSet.add(genotypeData);
+                    LOGGER.info(String.format("Loaded genotype data (%s) from '%s'.",
+                            options.getInputGenotypeType().getName(),
+                            Arrays.toString(inputGenotypePathSet.getValue())));
+
+                    int originalVariantCount = genotypeData.getVariantIdMap().size();
+                    LOGGER.info(String.format("%d samples and %d variants present after filtering",
+                            genotypeData.getSamples().size(),
+                            originalVariantCount));
+
+                    genotypeDataSet.add(genotypeData);
+                }
+                randomAccessGenotypeData = new MultiPartGenotypeData(genotypeDataSet);
             }
-            randomAccessGenotypeData = new MultiPartGenotypeData(genotypeDataSet);
 
         } catch (IOException e) {
             System.err.println("Error accessing input genotype data: " + e.getMessage());
@@ -1301,7 +1410,7 @@ public class PGSBasedMixupMapper {
     private static DoubleMatrixDataset<String, String> loadPhenotypeMatrix(File inputPhenotypePath,
                                                          Set<String> phenotypeSampleIdentifiersToInclude,
                                                          Set<String> traitsToInclude,
-                                                         char delimiter) throws IOException {
+                                                         char delimiter) throws IOException, PhenotypeDataException {
 
         // Create the CSV reader object with which the phenotypes can be read through
         final CSVParser parser = new CSVParserBuilder()
@@ -1330,8 +1439,13 @@ public class PGSBasedMixupMapper {
         // Get the index for every trait to include
         int[] traitIndices = new int[traitsToInclude.size()];
         for (int i = 0; i < traitsToInclude.size(); i++) {
-            traitIndices[i] = headerAsList
+            int headerIndex = headerAsList
                     .indexOf(traitsToIncludeList.get(i));
+            if (headerIndex < 0) {
+                throw new PhenotypeDataException(String.format(
+                        "Phenotype '%s' could not be found in '%s'", traitsToIncludeList.get(i), inputPhenotypePath));
+            }
+            traitIndices[i] = headerIndex;
         }
 
         // Initialize a linked hash set to store the identifiers in to include in the analysis

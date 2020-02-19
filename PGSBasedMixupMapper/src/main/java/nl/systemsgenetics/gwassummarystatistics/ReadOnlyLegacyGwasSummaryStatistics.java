@@ -25,9 +25,9 @@ public class ReadOnlyLegacyGwasSummaryStatistics implements GwasSummaryStatistic
     private static final Logger LOGGER = Logger.getLogger(ReadOnlyLegacyGwasSummaryStatistics.class);
     private static final Pattern TAB_PATTERN = Pattern.compile("\\t");
     private String gwasId;
-    private String riskFilePath;
+    private File riskFilePath;
 
-    public ReadOnlyLegacyGwasSummaryStatistics(String gwasId, String riskFilePath) {
+    public ReadOnlyLegacyGwasSummaryStatistics(String gwasId, File riskFilePath) {
         this.gwasId = gwasId;
         this.riskFilePath = riskFilePath;
     }
@@ -78,7 +78,7 @@ public class ReadOnlyLegacyGwasSummaryStatistics implements GwasSummaryStatistic
         // A risk entry (value?) per variant? per sequence? per pval threshold? per file?
         THashMap<String, THashMap<String, THashMap<String, ArrayList<RiskEntry>>>> risks = new THashMap<String, THashMap<String, THashMap<String, ArrayList<RiskEntry>>>>();
 
-        File riskFile = new File(this.riskFilePath);
+        File riskFile = this.riskFilePath;
         if (!riskFile.exists()) {
             System.out.println("Warning: input risk folder does not exists:\n");
             System.out.println(riskFile);

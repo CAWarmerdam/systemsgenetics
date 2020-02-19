@@ -1,6 +1,8 @@
 package nl.systemsgenetics.gwassummarystatistics;
 
+import cern.colt.matrix.tdouble.DoubleFactory1D;
 import cern.colt.matrix.tdouble.DoubleMatrix1D;
+import cern.colt.matrix.tdouble.impl.DenseDoubleMatrix1D;
 import com.opencsv.CSVWriter;
 import gnu.trove.map.hash.THashMap;
 import gnu.trove.set.hash.THashSet;
@@ -10,9 +12,12 @@ import org.molgenis.genotype.Allele;
 import org.molgenis.genotype.RandomAccessGenotypeData;
 import org.molgenis.genotype.variant.GeneticVariant;
 import umcg.genetica.containers.Pair;
+import umcg.genetica.math.matrix2.DoubleMatrixDataset;
 
 import java.io.FileWriter;
 import java.io.IOException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.*;
 
 public class MatrixBasedGwasSummaryStatistics implements GwasSummaryStatistics{
@@ -20,8 +25,8 @@ public class MatrixBasedGwasSummaryStatistics implements GwasSummaryStatistics{
     private static final Logger LOGGER = Logger.getLogger(MatrixBasedGwasSummaryStatistics.class);
     private String gwasId;
     private final LinkedHashMap<String, Integer> variantIds;
-    private final DoubleMatrix1D betaCoefficients;
-    private final DoubleMatrix1D pValues;
+    private DoubleMatrix1D betaCoefficients;
+    private DoubleMatrix1D pValues;
 
     public MatrixBasedGwasSummaryStatistics(String gwasId, LinkedHashMap<String, Integer> variantIds,
                                             DoubleMatrix1D betaCoefficients, DoubleMatrix1D pValues) {
@@ -29,6 +34,31 @@ public class MatrixBasedGwasSummaryStatistics implements GwasSummaryStatistics{
         this.variantIds = variantIds;
         this.betaCoefficients = betaCoefficients;
         this.pValues = pValues;
+    }
+
+    public MatrixBasedGwasSummaryStatistics(String gwasId) {
+        this.gwasId = gwasId;
+        this.variantIds = new LinkedHashMap<>();
+        this.betaCoefficients = new DenseDoubleMatrix1D(0);
+        this.pValues = new DenseDoubleMatrix1D(0);
+    }
+
+    public void add(LinkedHashMap<String, Integer> variantIds, DoubleMatrix1D betaCoefficients, DoubleMatrix1D pValues) {
+        if (variantIds.size() != betaCoefficients.size() || variantIds.size() != pValues.size()) {
+            throw new GwasSummaryStatisticsException(
+                    String.format("Trying to add summary statistics with unequal number of variants, " +
+                            "betas or p-values (%d vs %d, %d)",
+                            variantIds.size(), betaCoefficients.size(), pValues.size()));
+        }
+
+        this.betaCoefficients = DoubleFactory1D.dense.append(this.betaCoefficients, betaCoefficients);
+        this.pValues = DoubleFactory1D.dense.append(this.pValues, pValues);
+
+        int originalSize = this.variantIds.size();
+
+        for (String variantId : variantIds.keySet()) {
+            this.variantIds.put(variantId, variantIds.get(variantId) + originalSize);
+        }
     }
 
     @Override
@@ -163,14 +193,20 @@ public class MatrixBasedGwasSummaryStatistics implements GwasSummaryStatistics{
         return risks;
     }
 
-    public void save(String pathPrefix) throws IOException {
+    public void save(Path pathPrefix, Double pValueThreshold) throws IOException {
         // Format the output path.
-        String outputPath = String.format("%s_%s.tsv",
-                pathPrefix, gwasId.replace(" ", "_"));
+        Path outputPath = Paths.get(String.format("%s.txt",
+                pathPrefix));
+
+        LOGGER.info(String.format("Writing summary statistics to '%s'", outputPath));
+
+        if (!outputPath.getParent().toFile().isDirectory() && !outputPath.getParent().toFile().mkdir()) {
+            throw new IOException(String.format("Could not create directory '%s'", outputPath.getParent()));
+        }
 
         // Create a CSV writer without quotation characters and with tabs as separators to mimic
         // the legacy gwas summary statistics files.
-        CSVWriter writer = new CSVWriter(new FileWriter(outputPath),
+        CSVWriter writer = new CSVWriter(new FileWriter(outputPath.toFile()),
                 '\t', CSVWriter.NO_QUOTE_CHARACTER,
                 CSVWriter.DEFAULT_ESCAPE_CHARACTER, CSVWriter.DEFAULT_LINE_END);
 
@@ -179,11 +215,16 @@ public class MatrixBasedGwasSummaryStatistics implements GwasSummaryStatistics{
 
         // Write risk entries
         for (Map.Entry<String, Integer> variantAssociation : variantIds.entrySet()) {
-            writer.writeNext(new String[]{
-                    variantAssociation.getKey(),
-                    "LastAlternativeAllele",
-                    String.valueOf(betaCoefficients.getQuick(variantAssociation.getValue())),
-                    String.valueOf(pValues.getQuick(variantAssociation.getValue()))});
+
+            // Check if the pvalue for this association is below the given threshold.
+            if (pValues.getQuick(variantAssociation.getValue()) < pValueThreshold) {
+                // Only write the association whenever the p-value is below the threshold
+                writer.writeNext(new String[]{
+                        variantAssociation.getKey(),
+                        "LastAlternativeAllele",
+                        String.valueOf(betaCoefficients.getQuick(variantAssociation.getValue())),
+                        String.valueOf(pValues.getQuick(variantAssociation.getValue()))});
+            }
         }
 
         writer.close();

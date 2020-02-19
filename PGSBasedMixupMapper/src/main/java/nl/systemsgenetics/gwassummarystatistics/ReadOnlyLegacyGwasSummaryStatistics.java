@@ -37,15 +37,7 @@ public class ReadOnlyLegacyGwasSummaryStatistics implements GwasSummaryStatistic
         return gwasId;
     }
 
-    public float[] getEffectSizeEstimates(GeneticVariant variant) {
-        throw new UnsupportedOperationException("Not supported");
-    }
-
-    public float[] getTransformedPValues(GeneticVariant variant) {
-        throw new UnsupportedOperationException("Not supported");
-    }
-
-    public Iterator<EffectAllele> effectAlleles() {
+    public Iterator<EffectAllele> iterator() {
         throw new UnsupportedOperationException("Not currently supported");
     }
 

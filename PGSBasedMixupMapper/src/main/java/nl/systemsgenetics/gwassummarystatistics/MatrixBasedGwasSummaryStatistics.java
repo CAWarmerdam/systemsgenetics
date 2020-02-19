@@ -30,7 +30,17 @@ public class MatrixBasedGwasSummaryStatistics implements GwasSummaryStatistics{
 
     public MatrixBasedGwasSummaryStatistics(String gwasId, LinkedHashMap<String, Integer> variantIds,
                                             DoubleMatrix1D betaCoefficients, DoubleMatrix1D pValues) {
+        // Set the gwas identifier
         this.gwasId = gwasId;
+
+        // Make sure that the sizes of the three collections are equal.
+        if (variantIds.size() != betaCoefficients.size() || variantIds.size() != pValues.size()) {
+            throw new GwasSummaryStatisticsException(
+                    String.format("Trying to add summary statistics with unequal number of variants, " +
+                                    "betas or p-values (%d vs %d, %d)",
+                            variantIds.size(), betaCoefficients.size(), pValues.size()));
+        }
+
         this.variantIds = variantIds;
         this.betaCoefficients = betaCoefficients;
         this.pValues = pValues;
@@ -67,17 +77,7 @@ public class MatrixBasedGwasSummaryStatistics implements GwasSummaryStatistics{
     }
 
     @Override
-    public float[] getEffectSizeEstimates(GeneticVariant variant) {
-        return new float[]{(float) betaCoefficients.getQuick(variantIds.get(variant.getPrimaryVariantId()))};
-    }
-
-    @Override
-    public float[] getTransformedPValues(GeneticVariant variant) {
-        return new float[]{(float) -Math.log10(pValues.getQuick(variantIds.get(variant.getPrimaryVariantId())))};
-    }
-
-    @Override
-    public Iterator<EffectAllele> effectAlleles() {
+    public Iterator<EffectAllele> iterator() {
         throw new UnsupportedOperationException("Not currently supported");
     }
 

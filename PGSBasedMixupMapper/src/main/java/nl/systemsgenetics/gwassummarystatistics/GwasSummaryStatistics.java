@@ -8,14 +8,8 @@ import org.molgenis.genotype.variant.GeneticVariant;
 import java.util.ArrayList;
 import java.util.Iterator;
 
-public interface GwasSummaryStatistics {
+public interface GwasSummaryStatistics extends Iterable<EffectAllele> {
     public String getGwasId();
-
-    public float[] getEffectSizeEstimates(GeneticVariant variant);
-
-    public float[] getTransformedPValues(GeneticVariant variant);
-
-    public Iterator<EffectAllele> effectAlleles();
 
     THashMap<String, THashMap<String, THashMap<String, ArrayList<RiskEntry>>>> riskEntries(
             RandomAccessGenotypeData genotypeData,

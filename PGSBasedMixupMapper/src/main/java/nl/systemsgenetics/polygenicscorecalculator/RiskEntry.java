@@ -5,65 +5,60 @@
  */
 package nl.systemsgenetics.polygenicscorecalculator;
 
-import nl.systemsgenetics.gwassummarystatistics.VcfGwasSummaryStatistics;
-import org.molgenis.genotype.Allele;
-import org.molgenis.genotype.variant.GeneticVariant;
-import org.molgenis.genotype.variant.sampleProvider.SampleVariantsProvider;
-
 /**
  *
  * @author MarcJan
  */
 public class RiskEntry implements Comparable<RiskEntry>  {
-    private final String rsName;
-    private double or;
-    private final int pos;
-    private final int chr;
+    private final String variantId;
+    private double effectSize;
+    private final int startPos;
+    private final int sequenceName;
     private final char allele;
     private final double pValue;
 
-    RiskEntry(String rsName, int chr, int pos, char allele, String or, double pValue) {
-        this.rsName = rsName;
-        this.chr = chr;
-        this.pos = pos;
+    RiskEntry(String variantId, int sequenceName, int startPos, char allele, String effectSize, double pValue) {
+        this.variantId = variantId;
+        this.sequenceName = sequenceName;
+        this.startPos = startPos;
         this.allele = allele;
         this.pValue = pValue;
-        this.or = Double.parseDouble(or);
+        this.effectSize = Double.parseDouble(effectSize);
     }
     
-    RiskEntry(String rsName, String chr, int pos, char allele, String or, double pValue) {
-        this(rsName, chr, pos, allele, Double.parseDouble(or), pValue);
+    RiskEntry(String variantId, String sequenceName, int startPos, char allele, String effectSize, double pValue) {
+        this(variantId, sequenceName, startPos, allele, Double.parseDouble(effectSize), pValue);
     }
 
-    public RiskEntry(String rsName, String chr, int pos, char allele, double or, double pValue) {
-        this.rsName = rsName;
-        this.pos = pos;
+    public RiskEntry(String variantId, String sequenceName, int startPos, char allele, double effectSize, double pValue) {
+        this.variantId = variantId;
+        this.startPos = startPos;
         this.allele = allele;
         this.pValue = pValue;
-        this.or = or;
-        if(chr.equals("X")){
-            this.chr = 23;
-        } else if(chr.equals("Y")){
-            this.chr = 24;
+        this.effectSize = effectSize;
+        if(sequenceName.equals("X")){
+            this.sequenceName = 23;
+        } else if(sequenceName.equals("Y")){
+            this.sequenceName = 24;
         } else {
-            this.chr=Integer.parseInt(chr);
+            this.sequenceName =Integer.parseInt(sequenceName);
         }
     }
 
-    public String getRsName() {
-        return rsName;
+    public String getVariantId() {
+        return variantId;
     }
 
-    public double getOr() {
-        return or;
+    public double getEffectSize() {
+        return effectSize;
     }
 
-    public int getPos() {
-        return pos;
+    public int getStartPos() {
+        return startPos;
     }
 
-    public String getChr() {
-        return String.valueOf(chr);
+    public String getSequenceName() {
+        return String.valueOf(sequenceName);
     }
 
     public char getAllele() {
@@ -79,9 +74,9 @@ public class RiskEntry implements Comparable<RiskEntry>  {
         if(this.pValue<o.getpValue()){
             return -1;
         } else if (this.pValue == o.getpValue()) {
-            if(Math.abs(this.or)>Math.abs(o.getOr())){
+            if(Math.abs(this.effectSize)>Math.abs(o.getEffectSize())){
                 return -1;
-            } else if (Math.abs(this.or) == Math.abs(o.getOr())) {
+            } else if (Math.abs(this.effectSize) == Math.abs(o.getEffectSize())) {
                 return 0;
             } else {
                 return 1;
@@ -93,16 +88,16 @@ public class RiskEntry implements Comparable<RiskEntry>  {
 
     String InfoToString() {
         StringBuilder s = new StringBuilder();
-        s.append(this.rsName).append("\t");
-        s.append(this.chr).append("\t");
-        s.append(this.pos).append("\t");
+        s.append(this.variantId).append("\t");
+        s.append(this.sequenceName).append("\t");
+        s.append(this.startPos).append("\t");
         s.append(this.allele).append("\t");
-        s.append(this.or).append("\t");
+        s.append(this.effectSize).append("\t");
         s.append(this.pValue);
         return(s.toString());
     }
 
-    public void setOr(int i) {
-        or = i;
+    public void setEffectSize(int i) {
+        effectSize = i;
     }
 }

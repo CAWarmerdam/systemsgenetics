@@ -1,18 +1,24 @@
 package nl.systemsgenetics.gwassummarystatistics;
 
 import org.apache.commons.lang3.StringUtils;
+import org.molgenis.genotype.RandomAccessGenotypeData;
 import org.molgenis.genotype.variant.GeneticVariant;
+import org.molgenis.genotype.variantFilter.VariantFilter;
+import org.molgenis.genotype.variantFilter.VariantFilterableGenotypeDataDecorator;
 import org.molgenis.genotype.vcf.VcfGenotypeData;
 import org.molgenis.vcf.VcfRecord;
 import org.molgenis.vcf.VcfSample;
 import org.molgenis.vcf.meta.VcfMetaFormat;
 
+import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
 import java.util.*;
 
-public class VcfGwasSummaryStatistics extends VcfGenotypeData implements MultiStudyGwasSummaryStatistics{
+public class VcfGwasSummaryStatistics implements Closeable {
     private static final Map<String, VcfMetaFormat> RESERVED_KEYS = getReservedKeys();
+    private VcfGenotypeData vcfGenotypeData;
+    private RandomAccessGenotypeData genotypeData;
 
     private static Map<String, VcfMetaFormat> getReservedKeys() {
         HashMap<String, VcfMetaFormat> reservedKeys = new HashMap<>();
@@ -46,16 +52,19 @@ public class VcfGwasSummaryStatistics extends VcfGenotypeData implements MultiSt
         return new VcfMetaFormat(properties);
     }
 
-    public VcfGwasSummaryStatistics(File bzipVcfFile, int cacheSize, double minimumPosteriorProbabilityToCall) throws IOException, GwasSummaryStatisticsException {
-        this(bzipVcfFile, new File(bzipVcfFile.getAbsolutePath() + ".tbi"), cacheSize, minimumPosteriorProbabilityToCall);
+    public VcfGwasSummaryStatistics(File bzipVcfFile, int cacheSize) throws IOException, GwasSummaryStatisticsException {
+        this(bzipVcfFile, new File(bzipVcfFile.getAbsolutePath() + ".tbi"), cacheSize);
     }
 
-    public VcfGwasSummaryStatistics(File bzipVcfFile, File tabixIndexFile, double minimumPosteriorProbabilityToCall) throws IOException, GwasSummaryStatisticsException {
-        this(bzipVcfFile, tabixIndexFile, 100, minimumPosteriorProbabilityToCall);
+    public VcfGwasSummaryStatistics(File bzipVcfFile, File tabixIndexFile) throws IOException, GwasSummaryStatisticsException {
+        this(bzipVcfFile, tabixIndexFile, 100);
     }
 
-    public VcfGwasSummaryStatistics(File bzipVcfFile, File tabixIndexFile, int cacheSize, double minimumPosteriorProbabilityToCall) throws IOException, GwasSummaryStatisticsException {
-        super(bzipVcfFile, tabixIndexFile, cacheSize, minimumPosteriorProbabilityToCall);
+    public VcfGwasSummaryStatistics(File bzipVcfFile, File tabixIndexFile, int cacheSize) throws IOException, GwasSummaryStatisticsException {
+        vcfGenotypeData = new VcfGenotypeData(bzipVcfFile, tabixIndexFile, cacheSize,
+                0.4);// Represents the minimum posterior probability to call,
+        // 0.4 is generally the default value);
+        genotypeData = vcfGenotypeData;
 
         // Check the following
         // Variant IDs must be unique!
@@ -75,6 +84,10 @@ public class VcfGwasSummaryStatistics extends VcfGenotypeData implements MultiSt
         assertReservedKeyValidity();
     }
 
+    public void applyVariantFilter(VariantFilter variantFilter) {
+        genotypeData = new VariantFilterableGenotypeDataDecorator(vcfGenotypeData, variantFilter);
+    }
+
     private void assertReservedKeyValidity() throws GwasSummaryStatisticsException {
         for (String reservedKey : RESERVED_KEYS.keySet()) {
             assertVcfMetaValidity(reservedKey);
@@ -82,17 +95,16 @@ public class VcfGwasSummaryStatistics extends VcfGenotypeData implements MultiSt
     }
 
     private void assertVcfMetaValidity(String formatFieldKey) throws GwasSummaryStatisticsException {
-        if (this.getFormatMeta(formatFieldKey) == null) {
+        if (vcfGenotypeData.getFormatMeta(formatFieldKey) == null) {
             throw new GwasSummaryStatisticsException(String.format(
                     "Reserved format field '%s' not in format declerations", formatFieldKey));
         }
-        if (!this.getFormatMeta(formatFieldKey).equals(RESERVED_KEYS.get(formatFieldKey))) {
+        if (!vcfGenotypeData.getFormatMeta(formatFieldKey).equals(RESERVED_KEYS.get(formatFieldKey))) {
             throw new GwasSummaryStatisticsException(String.format(
                     "Reserved format field '%s' not according to specifications", formatFieldKey));
         }
     }
 
-    @Override
     public float[][] getEffectSizeEstimates(GeneticVariant variant) {
         return getSummaryStatisticsPerAlternativeAllele(variant, getReservedKeyFormat("ES"));
     }
@@ -101,9 +113,12 @@ public class VcfGwasSummaryStatistics extends VcfGenotypeData implements MultiSt
         return getSummaryStatisticsPerAlternativeAllele(variant, getReservedKeyFormat("SE"));
     }
 
-    @Override
     public float[][] getTransformedPValues(GeneticVariant variant) {
         return getSummaryStatisticsPerAlternativeAllele(variant, getReservedKeyFormat("LP"));
+    }
+
+    public String[] getStudyNames() {
+        return vcfGenotypeData.getSampleNames();
     }
 
     public float[][] getSummaryStatisticsPerAlternativeAllele(GeneticVariant variant, VcfMetaFormat fieldFormat)
@@ -118,7 +133,7 @@ public class VcfGwasSummaryStatistics extends VcfGenotypeData implements MultiSt
         }
 
         // Get the vcf record
-        VcfRecord vcfRecord = getVcfRecord(variant);
+        VcfRecord vcfRecord = vcfGenotypeData.getVcfRecord(variant);
 
         // Get the number of studies
         final int nrStudies = vcfRecord.getNrSamples();
@@ -150,7 +165,7 @@ public class VcfGwasSummaryStatistics extends VcfGenotypeData implements MultiSt
                         throw new GwasSummaryStatisticsException(String.format(
                                 "Error in '%s' value for study [%s], found %d value(s) (%s), " +
                                         "while %d were expected based on the alternative allele count",
-                                fieldFormat.getId(), this.getSampleNames()[i], splitValuesString.length,
+                                fieldFormat.getId(), vcfGenotypeData.getSampleNames()[i], splitValuesString.length,
                                 valueString, alternativeAlleleCount));
                     }
 
@@ -166,7 +181,7 @@ public class VcfGwasSummaryStatistics extends VcfGenotypeData implements MultiSt
                         } catch (NumberFormatException e) {
                             throw new GwasSummaryStatisticsException(String.format(
                                     "Error in '%s' value for study [%s], found value: %s",
-                                    fieldFormat.getId(), this.getSampleNames()[i], valueString));
+                                    fieldFormat.getId(), vcfGenotypeData.getSampleNames()[i], valueString));
                         }
                     }
                 }
@@ -180,9 +195,8 @@ public class VcfGwasSummaryStatistics extends VcfGenotypeData implements MultiSt
         return RESERVED_KEYS.get(reservedKey);
     }
 
-    @Override
-    public Iterator<EffectAllele> effectAlleles(GwasSummaryStatistics summaryStatistics) {
-        Iterator<GeneticVariant> variantIterator = this.iterator();
+    public Iterator<EffectAllele> effectAlleles(ReadOnlyGwasSummaryStatistics summaryStatistics) {
+        Iterator<GeneticVariant> variantIterator = variantIterator();
 
         return new Iterator<EffectAllele>() {
             GeneticVariant variant = variantIterator.hasNext() ? variantIterator.next() : null;
@@ -210,9 +224,21 @@ public class VcfGwasSummaryStatistics extends VcfGenotypeData implements MultiSt
                     variant = variantIterator.next();
                     currentAlleleIndex = 0;
                 }
-                return EffectAllele.fromVariant(
-                        variant, summaryStatistics, currentAlleleIndex++);
+                return new EffectAllele(variant, summaryStatistics, currentAlleleIndex++);
             }
         };
+    }
+
+    public Map<String, GeneticVariant> getVariantIdMap() {
+        return genotypeData.getVariantIdMap();
+    }
+
+    public Iterator<GeneticVariant> variantIterator() {
+        return genotypeData.iterator();
+    }
+
+    @Override
+    public void close() throws IOException {
+        genotypeData.close();
     }
 }

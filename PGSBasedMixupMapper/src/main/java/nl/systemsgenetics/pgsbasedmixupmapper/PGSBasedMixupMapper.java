@@ -34,7 +34,6 @@ import umcg.genetica.math.stats.PearsonRToPValueBinned;
 
 import java.io.*;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.*;
@@ -629,12 +628,6 @@ public class PGSBasedMixupMapper {
                     false,
                     options.getGenomicRangesToExclude());
 
-//            DoubleMatrixDataset<String, Double> hdl_cholesterol = pgsCalculator.calculate(genotypeData,
-//                    gwasSummaryStatisticsMap.get("HDL cholesterol"));
-//
-//            hdl_cholesterol.save(String.format("%s_PGSs_test_%s.tsv",
-//                    options.getOutputBasePath(), "hdl_cholesterol"));
-
             // Initialize the Mix-up mapper
             PGSBasedMixupMapper pgsBasedMixupMapper = new PGSBasedMixupMapper(
                     genotypeData, phenotypeData.duplicate(), genotypeToPhenotypeSampleCoupling,
@@ -692,7 +685,10 @@ public class PGSBasedMixupMapper {
 
             gwasSummaryStatisticsMap = new HashMap<>();
 
+            // Loop through te summary statistics
             for (String phenotypeIdentifier : MatrixBasedGwasSummaryStatisticsMap.keySet()) {
+
+                // Write the new gwas summary statistics if this option is enabled.
                 if (options.isWriteNewGenomeWideAssociationsEnabled()) {
                     try {
                         MatrixBasedGwasSummaryStatisticsMap.get(phenotypeIdentifier).save(
@@ -1160,12 +1156,10 @@ public class PGSBasedMixupMapper {
                 // Check if the binary Vcf file exists
                 if (bzipVcfFile.exists()) {
                     // Load the Vcf file
-                    MultiStudyGwasSummaryStatistics vcfGwasSummaryStatistics = new VcfGwasSummaryStatistics(
+                    VcfGwasSummaryStatistics vcfGwasSummaryStatistics = new VcfGwasSummaryStatistics(
                             bzipVcfFile,
-                            50000, // Represents the cache size in number of variants,
+                            50000); // Represents the cache size in number of variants,
                             // value copied from the GeneticRiskScoreCalculator module
-                            1); // Represents the minimum posterior probability to call,
-                    // 0.4 is generally the default value
 
                     // Report loaded status and the variant count
                     int variantCount = vcfGwasSummaryStatistics.getVariantIdMap().size();
@@ -1176,17 +1170,16 @@ public class PGSBasedMixupMapper {
 
                     // A VCF gwas file can contain more than one study.
                     // We currently do not know how to deal with this, so only the first study is used
-                    if (vcfGwasSummaryStatistics.getSamples().size() > 1) {
+                    if (vcfGwasSummaryStatistics.getStudyNames().length > 1) {
                         LOGGER.warn(String.format("Encountered %d studies (VCF samples) while only 1 is expected",
-                                vcfGwasSummaryStatistics.getSamples().size()));
+                                vcfGwasSummaryStatistics.getStudyNames().length));
                         LOGGER.warn("Only the first study will be used.");
                     }
 
                     // Remove the variants that are not according to the variant filter.
                     // This should correspond to including only the variants that are in the genotype data as well.
-                    MultiStudyGwasSummaryStatistics filteredSummaryStatistics =
-                            new VariantFilterableGwasSummaryStatisticsDecorator(vcfGwasSummaryStatistics, variantFilter);
-                    int filteredVariantCount = filteredSummaryStatistics.getVariantIdMap().size();
+                    vcfGwasSummaryStatistics.applyVariantFilter(variantFilter);
+                    int filteredVariantCount = vcfGwasSummaryStatistics.getVariantIdMap().size();
                     LOGGER.info(String.format("Removing %d variants not present in the genotype data, keeping %d",
                             variantCount - filteredVariantCount,
                             filteredVariantCount));
@@ -1196,7 +1189,7 @@ public class PGSBasedMixupMapper {
 
                     // If the key-value pair does not exist yet, initialize this.
                     summaryStatisticsMap.put(phenotype, new ReadOnlyGwasSummaryStatistics(
-                            vcfGwasSummaryStatistics, vcfGwasSummaryStatistics.getSampleNames()[0]));
+                            vcfGwasSummaryStatistics, vcfGwasSummaryStatistics.getStudyNames()[0]));
                 } else if (textLegacyGwasSummaryStatisticsPath.exists()) {
 
                     // Load the summary statistics from a legacy file

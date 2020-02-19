@@ -117,7 +117,7 @@ public class SimplePolyGenicScoreCalculator {
                         // Get the original entries back, so we are sure we dont need to do to many look ups.
                         if (excludeList.size() > 0) {
                             for (int snp = 0; snp < nrSNPsThisChr; snp++) {
-                                if (excludeList.contains(valueE2.get(snp).getRsName())) {
+                                if (excludeList.contains(valueE2.get(snp).getVariantId())) {
                                     excludeSNPs[snp] = true;
                                 }
                             }
@@ -130,11 +130,11 @@ public class SimplePolyGenicScoreCalculator {
                             if (!excludeSNPs[snp]) {
                                 RiskEntry riskE = valueE2.get(snp);
                                 //System.out.println(snpID + "\t" + c + "\t" + chrPos + "\t" + object.doubleValue);
-                                GeneticVariant var1 = genotypeData.getSnpVariantByPos(riskE.getChr(), riskE.getPos());
+                                GeneticVariant var1 = genotypeData.getSnpVariantByPos(riskE.getSequenceName(), riskE.getStartPos());
                                 //Check if at least 75% of the sampels have information for the SNP otherwise it is removed by default.
                                 if (var1.getCallRate() < 0.75) {
                                     excludeSNPs[snp] = true;
-                                    excludeList.add(riskE.getRsName());
+                                    excludeList.add(riskE.getVariantId());
                                     continue;
                                 }
 
@@ -157,7 +157,7 @@ public class SimplePolyGenicScoreCalculator {
                                             riskE.getAllele(), alternativeAllele);
                                 }
 
-                                double or = riskE.getOr();
+                                double or = riskE.getEffectSize();
 //                                System.out.println("or = " + or);
                                 boolean riskCodedAsTwo;
                                 if (sumRisk && or < 0) {
@@ -211,17 +211,17 @@ public class SimplePolyGenicScoreCalculator {
                                 for (int t = snp + 1; t < nrSNPsThisChr; t++) {
                                     if (!excludeSNPs[t]) {
                                         RiskEntry riskE2 = valueE2.get(t);
-                                        if (Math.abs(riskE2.getPos() - riskE.getPos()) <= windowSize) {
-                                            GeneticVariant var2 = genotypeData.getSnpVariantByPos(riskE2.getChr(), riskE2.getPos());
+                                        if (Math.abs(riskE2.getStartPos() - riskE.getStartPos()) <= windowSize) {
+                                            GeneticVariant var2 = genotypeData.getSnpVariantByPos(riskE2.getSequenceName(), riskE2.getStartPos());
                                             if (var2.getCallRate() < 0.75) {
                                                 excludeSNPs[t] = true;
-                                                excludeList.add(riskE2.getRsName());
+                                                excludeList.add(riskE2.getVariantId());
                                                 continue;
                                             }
                                             try {
                                                 if (calculateRsquare(var1, var2) >= rSquared) {
                                                     excludeSNPs[t] = true;
-                                                    excludeList.add(riskE2.getRsName());
+                                                    excludeList.add(riskE2.getVariantId());
                                                 }
                                             } catch (LdCalculatorException ex) {
                                                 LOGGER.error(ex);
@@ -286,7 +286,7 @@ public class SimplePolyGenicScoreCalculator {
                         //Get the original entries back, so we are sure we dont need to do to many look ups.
                         if (excludeList.size() > 0) {
                             for (int snp = 0; snp < nrSNPsThisChr; snp++) {
-                                if (excludeList.contains(valueE2.get(snp).getRsName())) {
+                                if (excludeList.contains(valueE2.get(snp).getVariantId())) {
                                     excludeSNPs[snp] = true;
                                 }
                             }
@@ -296,28 +296,28 @@ public class SimplePolyGenicScoreCalculator {
                             if (!excludeSNPs[snp]) {
                                 RiskEntry riskE = valueE2.get(snp);
                                 //System.out.println(snpID + "\t" + c + "\t" + chrPos + "\t" + object.doubleValue);
-                                GeneticVariant var1 = genotypeData.getSnpVariantByPos(riskE.getChr(), riskE.getPos());
+                                GeneticVariant var1 = genotypeData.getSnpVariantByPos(riskE.getSequenceName(), riskE.getStartPos());
                                 //Check if at least 75% of the sampels have information for the SNP otherwise it is removed by default.
                                 if (var1 == null || var1.getCallRate() < 0.75) {
                                     excludeSNPs[snp] = true;
-                                    excludeList.add(riskE.getRsName());
+                                    excludeList.add(riskE.getVariantId());
                                     continue;
                                 }
 
                                 for (int t = snp + 1; t < nrSNPsThisChr; t++) {
                                     if (!excludeSNPs[t]) {
                                         RiskEntry riskE2 = valueE2.get(t);
-                                        if (Math.abs(riskE2.getPos() - riskE.getPos()) <= windowSize[0]) {
-                                            GeneticVariant var2 = genotypeData.getSnpVariantByPos(riskE2.getChr(), riskE2.getPos());
+                                        if (Math.abs(riskE2.getStartPos() - riskE.getStartPos()) <= windowSize[0]) {
+                                            GeneticVariant var2 = genotypeData.getSnpVariantByPos(riskE2.getSequenceName(), riskE2.getStartPos());
                                             if (var2 == null || var2.getCallRate() < 0.75) {
                                                 excludeSNPs[t] = true;
-                                                excludeList.add(riskE2.getRsName());
+                                                excludeList.add(riskE2.getVariantId());
                                                 continue;
                                             }
                                             try {
                                                 if (calculateRsquare(var1, var2) >= rSquared) {
                                                     excludeSNPs[t] = true;
-                                                    excludeList.add(riskE2.getRsName());
+                                                    excludeList.add(riskE2.getVariantId());
                                                 }
                                             } catch (LdCalculatorException ex) {
                                                 LOGGER.error(ex);
@@ -333,7 +333,7 @@ public class SimplePolyGenicScoreCalculator {
                             if (!excludeSNPs[snp]) {
                                 RiskEntry riskE = valueE2.get(snp);
 //                                    System.out.println(snpID + "\t" + c + "\t" + chrPos + "\t" + object.doubleValue);
-                                GeneticVariant var1 = genotypeData.getSnpVariantByPos(riskE.getChr(), riskE.getPos());
+                                GeneticVariant var1 = genotypeData.getSnpVariantByPos(riskE.getSequenceName(), riskE.getStartPos());
                                 if (LOGGER.isDebugEnabled()) {
                                     LOGGER.debug(riskE.InfoToString());
                                 }
@@ -350,7 +350,7 @@ public class SimplePolyGenicScoreCalculator {
 
 //                                System.out.println("p-value = " + riskE.getpValue() + " | beta = " + riskE.getOr());
 
-                                double or = riskE.getOr();
+                                double or = riskE.getEffectSize();
                                 boolean riskCodedAsTwo;
                                 if (sumRisk && or < 0) {
                                     or = or * -1; // NOTE: please make sure we're using betas here, and not ORS
@@ -436,12 +436,12 @@ public class SimplePolyGenicScoreCalculator {
                                 for (int t = snp + 1; t < nrSNPsThisChr; t++) {
                                     if (!excludeSNPs[t]) {
                                         RiskEntry riskE2 = valueE2.get(t);
-                                        if (Math.abs(riskE2.getPos() - riskE.getPos()) <= windowSize[1]) {
-                                            GeneticVariant var2 = genotypeData.getSnpVariantByPos(riskE2.getChr(), riskE2.getPos());
+                                        if (Math.abs(riskE2.getStartPos() - riskE.getStartPos()) <= windowSize[1]) {
+                                            GeneticVariant var2 = genotypeData.getSnpVariantByPos(riskE2.getSequenceName(), riskE2.getStartPos());
                                             try {
                                                 if (calculateRsquare(var1, var2) >= rSquared) {
                                                     excludeSNPs[t] = true;
-                                                    excludeList.add(riskE2.getRsName());
+                                                    excludeList.add(riskE2.getVariantId());
                                                 }
                                             } catch (LdCalculatorException ex) {
                                                 LOGGER.error(ex);

@@ -4,29 +4,29 @@ import gnu.trove.map.hash.THashMap;
 import gnu.trove.set.hash.THashSet;
 import nl.systemsgenetics.polygenicscorecalculator.RiskEntry;
 import org.apache.log4j.Logger;
-import org.molgenis.genotype.Alleles;
 import org.molgenis.genotype.RandomAccessGenotypeData;
 import org.molgenis.genotype.variant.GeneticVariant;
 import umcg.genetica.containers.Pair;
 
+import javax.annotation.Nonnull;
 import java.util.*;
 
 public class ReadOnlyGwasSummaryStatistics implements GwasSummaryStatistics {
 
     private static final Logger LOGGER = Logger.getLogger(ReadOnlyGwasSummaryStatistics.class);
-    private MultiStudyGwasSummaryStatistics originalSummaryStatistics;
+    private VcfGwasSummaryStatistics vcfGwasSummaryStatistics;
     private int studyIndex;
     private String studyName;
 
-    public ReadOnlyGwasSummaryStatistics(MultiStudyGwasSummaryStatistics originalSummaryStatistics, String studyName) {
+    public ReadOnlyGwasSummaryStatistics(VcfGwasSummaryStatistics vcfGwasSummaryStatistics, String studyName) {
 
-        List<String> sampleNames = Arrays.asList(originalSummaryStatistics.getSampleNames());
+        List<String> sampleNames = Arrays.asList(vcfGwasSummaryStatistics.getStudyNames());
         if (!sampleNames.contains(studyName)) {
             throw new GwasSummaryStatisticsException(
                     String.format("Study name %s does not exist in the given summary statistics", studyName));
         }
 
-        this.originalSummaryStatistics = originalSummaryStatistics;
+        this.vcfGwasSummaryStatistics = vcfGwasSummaryStatistics;
         this.studyName = studyName;
         this.studyIndex = sampleNames.indexOf(studyName);
     }
@@ -36,19 +36,18 @@ public class ReadOnlyGwasSummaryStatistics implements GwasSummaryStatistics {
         return studyName;
     }
 
-    @Override
     public float[] getEffectSizeEstimates(GeneticVariant variant) {
-        return originalSummaryStatistics.getEffectSizeEstimates(variant)[studyIndex];
+        return vcfGwasSummaryStatistics.getEffectSizeEstimates(variant)[studyIndex];
     }
 
-    @Override
     public float[] getTransformedPValues(GeneticVariant variant) {
-        return originalSummaryStatistics.getTransformedPValues(variant)[studyIndex];
+        return vcfGwasSummaryStatistics.getTransformedPValues(variant)[studyIndex];
     }
 
     @Override
-    public Iterator<EffectAllele> effectAlleles() {
-        return originalSummaryStatistics.effectAlleles(this);
+    @Nonnull
+    public Iterator<EffectAllele> iterator() {
+        return vcfGwasSummaryStatistics.effectAlleles(this);
     }
 
     @Override
@@ -95,32 +94,27 @@ public class ReadOnlyGwasSummaryStatistics implements GwasSummaryStatistics {
             int numberOfVariantsWithoutSameAlleles = 0;
             int numberOfVariantsWithoutSameAllelesComplement = 0;
 
-            for (GeneticVariant variant : originalSummaryStatistics) {
-                // Check if there is a variant in the genotype data corresponding to this variant
+            for (EffectAllele effectAllele : this) {
+                // Check if there is a effectAllele in the genotype data corresponding to this effectAllele
                 GeneticVariant snpVariantByPos = genotypeData.getSnpVariantByPos(
-                        variant.getSequenceName(),
-                        variant.getStartPos());
+                        effectAllele.getSequenceName(),
+                        effectAllele.getStartPos());
 
                 if (snpVariantByPos == null ||
-                        !snpVariantByPos.getPrimaryVariantId().equals(variant.getPrimaryVariantId())) {
+                        !snpVariantByPos.getPrimaryVariantId().equals(effectAllele.getPrimaryVariantId())) {
                     continue;
                 }
 
-                if (!snpVariantByPos.getVariantAlleles().sameAlleles(variant.getVariantAlleles())) {
+                if (!effectAllele.matchesVariantAllelesOrComplement(snpVariantByPos)) {
                     numberOfVariantsWithoutSameAlleles++;
-                    Alleles complement = snpVariantByPos.getVariantAlleles().getComplement();
-
-                    if (!complement.sameAlleles(variant.getVariantAlleles())) {
-                        numberOfVariantsWithoutSameAllelesComplement++;
-                        continue;
-                    }
+                    continue;
                 }
 
 //                    System.out.println(s);
 //                        System.out.print(snpObject.getSequenceName() + "\t" + snpObject.getStartPos() + "\n");
-                double currentP = Math.pow(10, -this.getTransformedPValues(variant)[0]);
+                double currentP = effectAllele.getPValue();
                 boolean addEntry = true;
-                float partsTwo = this.getEffectSizeEstimates(variant)[0];
+                float partsTwo = (float) effectAllele.getEffectSize();
 
                 if (unweighted) {
                     if (partsTwo < 0) {
@@ -130,10 +124,10 @@ public class ReadOnlyGwasSummaryStatistics implements GwasSummaryStatistics {
                     }
                 }
 
-                if (exclussionRanges.contains(variant.getSequenceName())) {
-                    chromosomesExcluded.add(variant.getSequenceName());
-                    for (Pair<Integer, Integer> p : exclussionRanges.get(variant.getSequenceName())) {
-                        if (p.getLeft() <= variant.getStartPos() && p.getRight() >= variant.getStartPos()) {
+                if (exclussionRanges.contains(effectAllele.getSequenceName())) {
+                    chromosomesExcluded.add(effectAllele.getSequenceName());
+                    for (Pair<Integer, Integer> p : exclussionRanges.get(effectAllele.getSequenceName())) {
+                        if (p.getLeft() <= effectAllele.getStartPos() && p.getRight() >= effectAllele.getStartPos()) {
                             addEntry = false;
                             snpsExcluded++;
                         }
@@ -145,12 +139,12 @@ public class ReadOnlyGwasSummaryStatistics implements GwasSummaryStatistics {
                         if (currentP < p) {
                             String name2 = "_P" + p;
 
-                            if (!filehash.get(name2).containsKey(variant.getSequenceName())) {
-                                filehash.get(name2).put(variant.getSequenceName(), new ArrayList<>());
+                            if (!filehash.get(name2).containsKey(effectAllele.getSequenceName())) {
+                                filehash.get(name2).put(effectAllele.getSequenceName(), new ArrayList<>());
                             }
-                            filehash.get(name2).get(variant.getSequenceName()).add(new RiskEntry(variant.getPrimaryVariantId(),
-                                    variant.getSequenceName(), variant.getStartPos(),
-                                    variant.getAlternativeAlleles().getAllelesAsChars()[0], partsTwo, currentP));
+                            filehash.get(name2).get(effectAllele.getSequenceName()).add(new RiskEntry(effectAllele.getPrimaryVariantId(),
+                                    effectAllele.getSequenceName(), effectAllele.getStartPos(),
+                                    effectAllele.getAllele().getAlleleAsSnp(), partsTwo, currentP));
                         }
                     }
                 }

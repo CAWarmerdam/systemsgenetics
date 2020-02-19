@@ -30,18 +30,17 @@ public class VcfGwasSummaryStatisticsTest {
 
         VcfGwasSummaryStatistics summaryStatistics =
                 new VcfGwasSummaryStatistics(exampleGwasVcfFile,
-                750000, // Represents the cache size in number of variants,
+                750000); // Represents the cache size in number of variants,
                 // value copied from the GeneticRiskScoreCalculator module
-                0.4);// Represents the minimum posterior probability to call,
-                // 0.4 is generally the default value);
 
-        assertEquals(summaryStatistics.getSamples(),
-                Collections.singletonList(new Sample("IEU-b-1", null, null)));
+        assertEquals(summaryStatistics.getStudyNames(),
+                new String[]{"IEU-b-1"});
 
         List<GeneticVariant> variants = new ArrayList<>();
 
         int variantIndex = 0;
-        for (GeneticVariant variant : summaryStatistics) {
+        for (Iterator<GeneticVariant> it = summaryStatistics.variantIterator(); it.hasNext(); ) {
+            GeneticVariant variant = it.next();
             assertEquals(variant.getPrimaryVariantId(), expectedVariantIds.get(variantIndex++));
             variants.add(variant);
         }
@@ -128,20 +127,17 @@ public class VcfGwasSummaryStatisticsTest {
 
         VcfGwasSummaryStatistics summaryStatistics =
                 new VcfGwasSummaryStatistics(exampleGwasVcfFile,
-                        750000, // Represents the cache size in number of variants,
+                        750000); // Represents the cache size in number of variants,
                         // value copied from the GeneticRiskScoreCalculator module
-                        0.4);// Represents the minimum posterior probability to call,
-        // 0.4 is generally the default value);
 
-        MultiStudyGwasSummaryStatistics filteredVariants = new VariantFilterableGwasSummaryStatisticsDecorator(
-                summaryStatistics,
-                new VariantIdIncludeFilter(variantIdsToInclude));
+        summaryStatistics.applyVariantFilter(new VariantIdIncludeFilter(variantIdsToInclude));
 
         int filteredVariantIndex = 0;
-        for (GeneticVariant variant : filteredVariants) {
+        for (Iterator<GeneticVariant> it = summaryStatistics.variantIterator(); it.hasNext(); ) {
+            GeneticVariant variant = it.next();
             assertTrue(variantIdsToInclude.contains(variant.getPrimaryVariantId()));
             float[][] effectSizeEstimates = summaryStatistics.getEffectSizeEstimates(variant);
-            float[][] effectSizeEstimatesfiltered = filteredVariants.getEffectSizeEstimates(variant);
+            float[][] effectSizeEstimatesfiltered = summaryStatistics.getEffectSizeEstimates(variant);
             assertEquals(effectSizeEstimatesfiltered, effectSizeEstimates);
             assertEquals(effectSizeEstimatesfiltered, effectSizes[filteredVariantIndex++]);
         }

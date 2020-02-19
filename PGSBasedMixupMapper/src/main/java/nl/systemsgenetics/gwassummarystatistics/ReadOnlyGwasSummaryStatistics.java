@@ -36,12 +36,16 @@ public class ReadOnlyGwasSummaryStatistics implements GwasSummaryStatistics {
         return studyName;
     }
 
-    public float[] getEffectSizeEstimates(GeneticVariant variant) {
-        return vcfGwasSummaryStatistics.getEffectSizeEstimates(variant)[studyIndex];
+    public double getEffectSizeEstimate(GeneticVariant variant, int alleleIndex) {
+        return vcfGwasSummaryStatistics.getEffectSizeEstimates(variant)[studyIndex][alleleIndex];
     }
 
-    public float[] getTransformedPValues(GeneticVariant variant) {
-        return vcfGwasSummaryStatistics.getTransformedPValues(variant)[studyIndex];
+    public double getLogTransformedPValue(GeneticVariant variant, int alleleIndex) {
+        return vcfGwasSummaryStatistics.getTransformedPValues(variant)[studyIndex][alleleIndex];
+    }
+
+    public double getPValue(GeneticVariant variant, int alleleIndex) {
+        return Math.pow(10, -this.getLogTransformedPValue(variant, alleleIndex));
     }
 
     @Override
@@ -100,12 +104,7 @@ public class ReadOnlyGwasSummaryStatistics implements GwasSummaryStatistics {
                         effectAllele.getSequenceName(),
                         effectAllele.getStartPos());
 
-                if (snpVariantByPos == null ||
-                        !snpVariantByPos.getPrimaryVariantId().equals(effectAllele.getPrimaryVariantId())) {
-                    continue;
-                }
-
-                if (!effectAllele.matchesVariantAllelesOrComplement(snpVariantByPos)) {
+                if (!effectAllele.matchesVariant(snpVariantByPos)) {
                     numberOfVariantsWithoutSameAlleles++;
                     continue;
                 }

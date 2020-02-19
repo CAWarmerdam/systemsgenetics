@@ -1,6 +1,7 @@
 package nl.systemsgenetics.polygenicscorecalculator;
 
 import nl.systemsgenetics.gwassummarystatistics.EffectAllele;
+import nl.systemsgenetics.gwassummarystatistics.GeneticVariantBackedEffectAllele;
 import nl.systemsgenetics.gwassummarystatistics.GwasSummaryStatistics;
 import org.molgenis.genotype.Allele;
 import org.molgenis.genotype.RandomAccessGenotypeData;
@@ -59,7 +60,7 @@ public class PolyGenicScoreCalculator {
 
             // Get the genetic variant corresponding to the genotype data.
             GeneticVariant sampleGeneticVariant = extractSampleGeneticVariant(genotypeData,
-                    effectAllele.getVariant());
+                    effectAllele);
             if (sampleGeneticVariant == null) continue;
 
             // Check if the risk entry / genetic variant is valid for use
@@ -124,10 +125,10 @@ public class PolyGenicScoreCalculator {
     }
 
     private GeneticVariant extractSampleGeneticVariant(RandomAccessGenotypeData genotypeData,
-                                                       GeneticVariant geneticVariant) throws PolyGenicScoreCalculatorException {
+                                                       EffectAllele effectAllele) {
         for (GeneticVariant candidateVariant : genotypeData.getVariantsByPos(
-                geneticVariant.getSequenceName(), geneticVariant.getStartPos())) {
-            if (candidateVariant.getVariantAlleles().sameAlleles(geneticVariant.getVariantAlleles())) {
+                effectAllele.getSequenceName(), effectAllele.getStartPos())) {
+            if (effectAllele.matchesVariant(candidateVariant)) {
                 return candidateVariant;
             }
         }

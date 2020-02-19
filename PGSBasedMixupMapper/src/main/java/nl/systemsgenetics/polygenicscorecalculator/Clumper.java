@@ -1,12 +1,11 @@
 package nl.systemsgenetics.polygenicscorecalculator;
 
 import nl.systemsgenetics.gwassummarystatistics.EffectAllele;
+import nl.systemsgenetics.gwassummarystatistics.GeneticVariantBackedEffectAllele;
 import org.molgenis.genotype.RandomAccessGenotypeData;
-import org.molgenis.genotype.util.LdCalculator;
 import org.molgenis.genotype.util.LdCalculatorException;
 import org.molgenis.genotype.variant.GeneticVariant;
 
-import javax.management.RuntimeErrorException;
 import java.util.*;
 
 public class Clumper implements LDHandler {
@@ -38,78 +37,79 @@ public class Clumper implements LDHandler {
     }
 
     public Iterator<EffectAllele> effectAlleleIterator(Iterator<EffectAllele> riskEntries) {
-        indexVariants = new LinkedList<>();
-        return new Iterator<EffectAllele>() {
-            private EffectAllele nextEffectAllele = null;
-            private EffectAllele lastReturnedEffectAllele = null;
-
-            private boolean setNextRiskEntry() {
-                // While there are more risk entries, loop through them to check if
-                // one could be the next risk entry
-                while (riskEntries.hasNext()) {
-                    nextEffectAllele = riskEntries.next();
-                    if (nextEffectAllele == null) {
-                        return false;
-                    } else if (canFormChunk(nextEffectAllele)) {
-                        // If the a chunk can be formed, return true.
-                        indexVariants.add(new ComparableGeneticVariant(nextEffectAllele.getVariant()));
-                        return true;
-                    }
-                }
-                // Return false and set the next risk entry to null if all risk entries have been checked.
-                nextEffectAllele = null;
-                return false;
-            }
-
-            @Override
-            public boolean hasNext() {
-                // Check if there if the next riskEntry exists and if it can form its own chunk
-                if (nextEffectAllele != null && !lastReturnedEffectAllele.equals(nextEffectAllele)) {
-                    return true;
-                }
-                return setNextRiskEntry();
-            }
-
-            @Override
-            public EffectAllele next() {
-                if (nextEffectAllele == null ||
-                        lastReturnedEffectAllele == null ||
-                        lastReturnedEffectAllele.equals(nextEffectAllele)) {
-                    if (!setNextRiskEntry()) {
-                        throw new NoSuchElementException();
-                    }
-                }
-                lastReturnedEffectAllele = nextEffectAllele;
-                return nextEffectAllele;
-            }
-
-            @Override
-            public void remove() {
-                throw new UnsupportedOperationException();
-            }
-        };
+        throw new UnsupportedOperationException();
+//        indexVariants = new LinkedList<>();
+//        return new Iterator<EffectAllele>() {
+//            private EffectAllele nextEffectAllele = null;
+//            private EffectAllele lastReturnedEffectAllele = null;
+//
+//            private boolean setNextRiskEntry() {
+//                // While there are more risk entries, loop through them to check if
+//                // one could be the next risk entry
+//                while (riskEntries.hasNext()) {
+//                    nextEffectAllele = riskEntries.next();
+//                    if (nextEffectAllele == null) {
+//                        return false;
+//                    } else if (canFormChunk(nextEffectAllele)) {
+//                        // If the a chunk can be formed, return true.
+//                        indexVariants.add(new ComparableGeneticVariant(nextEffectAllele));
+//                        return true;
+//                    }
+//                }
+//                // Return false and set the next risk entry to null if all risk entries have been checked.
+//                nextEffectAllele = null;
+//                return false;
+//            }
+//
+//            @Override
+//            public boolean hasNext() {
+//                // Check if there if the next riskEntry exists and if it can form its own chunk
+//                if (nextEffectAllele != null && !lastReturnedEffectAllele.equals(nextEffectAllele)) {
+//                    return true;
+//                }
+//                return setNextRiskEntry();
+//            }
+//
+//            @Override
+//            public EffectAllele next() {
+//                if (nextEffectAllele == null ||
+//                        lastReturnedEffectAllele == null ||
+//                        lastReturnedEffectAllele.equals(nextEffectAllele)) {
+//                    if (!setNextRiskEntry()) {
+//                        throw new NoSuchElementException();
+//                    }
+//                }
+//                lastReturnedEffectAllele = nextEffectAllele;
+//                return nextEffectAllele;
+//            }
+//
+//            @Override
+//            public void remove() {
+//                throw new UnsupportedOperationException();
+//            }
+//        };
     }
 
-    private boolean canFormChunk(EffectAllele effectAllele) {
-        if (effectAllele.getLogTransformedPValue() < indexVariantPValueThreshold) {
-            return false;
-        }
-
-        ComparableGeneticVariant newVariant = new ComparableGeneticVariant(effectAllele.getVariant());
-
-        for (ComparableGeneticVariant indexVariant :
-                indexVariants) {
-            // Check if the LD should be calculated on the spot
-            // If the LD should be calculated on the spot, to this.
-            Set<ComparableGeneticVariant> geneticVariantPair = Collections.unmodifiableSet(
-                    new HashSet<>(Arrays.asList(indexVariant, newVariant)));
-            if (doesPairExceedRSquaredThreshold(geneticVariantPair) &&
-                    areLocatedWithinOrEqualToWindowSize(newVariant, indexVariant)) {
-                return false;
-            }
-        }
-        return true;
-    }
+//    private boolean canFormChunk(EffectAllele effectAllele) {
+//        if (effectAllele.getLogTransformedPValue() < indexVariantPValueThreshold) {
+//            return false;
+//        }
+//
+//        ComparableGeneticVariant newVariant = new ComparableGeneticVariant(effectAllele);
+//
+//        for (ComparableGeneticVariant indexVariant :
+//                indexVariants) {
+//            // Check if the LD should be calculated on the spot
+//            // If the LD should be calculated on the spot, to this.
+//            Set<ComparableGeneticVariant> geneticVariantPair = Collections.unmodifiableSet(
+//                    new HashSet<>(Arrays.asList(indexVariant, newVariant)));
+//            if (doesPairExceedRSquaredThreshold(geneticVariantPair) &&
+//                    areLocatedWithinOrEqualToWindowSize(newVariant, indexVariant)) {
+//                return false;
+//            }
+//        }
+//        return true;
+//    }
 
     private boolean doesPairExceedRSquaredThreshold(Set<ComparableGeneticVariant> geneticVariantPair) {
         return ldMatrix.containsKey(geneticVariantPair) && ldMatrix.get(geneticVariantPair) >= rSquaredThreshold;

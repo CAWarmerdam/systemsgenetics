@@ -216,7 +216,7 @@ public class VcfGwasSummaryStatistics implements Closeable {
             }
 
             @Override
-            public EffectAllele next() {
+            public GeneticVariantBackedEffectAllele next() {
                 while (currentAlleleIndex == variant.getAlternativeAlleles().getAlleleCount()) {
                     if (!variantIterator.hasNext()) {
                         throw new NoSuchElementException();
@@ -224,7 +224,7 @@ public class VcfGwasSummaryStatistics implements Closeable {
                     variant = variantIterator.next();
                     currentAlleleIndex = 0;
                 }
-                return new EffectAllele(variant, summaryStatistics, currentAlleleIndex++);
+                return new GeneticVariantBackedEffectAllele(variant, summaryStatistics, currentAlleleIndex++);
             }
         };
     }

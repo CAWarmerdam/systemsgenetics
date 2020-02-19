@@ -5,11 +5,14 @@
  */
 package nl.systemsgenetics.polygenicscorecalculator;
 
+import nl.systemsgenetics.gwassummarystatistics.EffectAllele;
+import org.molgenis.genotype.Allele;
+
 /**
  *
  * @author MarcJan
  */
-public class RiskEntry implements Comparable<RiskEntry>  {
+public class RiskEntry extends EffectAllele {
     private final String variantId;
     private double effectSize;
     private final int startPos;
@@ -45,7 +48,8 @@ public class RiskEntry implements Comparable<RiskEntry>  {
         }
     }
 
-    public String getVariantId() {
+    @Override
+    public String getPrimaryVariantId() {
         return variantId;
     }
 
@@ -61,29 +65,22 @@ public class RiskEntry implements Comparable<RiskEntry>  {
         return String.valueOf(sequenceName);
     }
 
-    public char getAllele() {
+    @Override
+    public Allele getAllele() {
+        return Allele.create(allele);
+    }
+
+    public char getAlleleAsSnp() {
         return allele;
     }
 
-    public double getpValue() {
+    public double getPValue() {
         return pValue;
     }
 
     @Override
-    public int compareTo(RiskEntry o) {
-        if(this.pValue<o.getpValue()){
-            return -1;
-        } else if (this.pValue == o.getpValue()) {
-            if(Math.abs(this.effectSize)>Math.abs(o.getEffectSize())){
-                return -1;
-            } else if (Math.abs(this.effectSize) == Math.abs(o.getEffectSize())) {
-                return 0;
-            } else {
-                return 1;
-            }
-        } else {
-            return 1;
-        }
+    public double getLogTransformedPValue() {
+        return -Math.log10(pValue);
     }
 
     String InfoToString() {

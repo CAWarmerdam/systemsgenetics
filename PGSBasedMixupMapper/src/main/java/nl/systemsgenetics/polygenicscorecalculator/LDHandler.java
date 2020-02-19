@@ -1,6 +1,7 @@
 package nl.systemsgenetics.polygenicscorecalculator;
 
 import nl.systemsgenetics.gwassummarystatistics.EffectAllele;
+import nl.systemsgenetics.gwassummarystatistics.GeneticVariantBackedEffectAllele;
 
 import java.util.Iterator;
 import java.util.List;

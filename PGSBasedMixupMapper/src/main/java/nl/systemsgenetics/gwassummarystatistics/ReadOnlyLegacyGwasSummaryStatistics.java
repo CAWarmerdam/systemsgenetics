@@ -1,7 +1,5 @@
 package nl.systemsgenetics.gwassummarystatistics;
 
-import com.google.common.primitives.Floats;
-import com.opencsv.CSVWriter;
 import gnu.trove.map.hash.THashMap;
 import gnu.trove.set.hash.THashSet;
 import nl.systemsgenetics.polygenicscorecalculator.Main;
@@ -13,12 +11,10 @@ import umcg.genetica.containers.Pair;
 import umcg.genetica.io.text.TextFile;
 
 import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 public class ReadOnlyLegacyGwasSummaryStatistics implements GwasSummaryStatistics {
 
@@ -37,6 +33,7 @@ public class ReadOnlyLegacyGwasSummaryStatistics implements GwasSummaryStatistic
         return gwasId;
     }
 
+    @Override
     public Iterator<EffectAllele> iterator() {
         throw new UnsupportedOperationException("Not currently supported");
     }

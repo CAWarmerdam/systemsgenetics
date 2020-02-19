@@ -3,10 +3,8 @@ package nl.systemsgenetics.gwassummarystatistics;
 import gnu.trove.map.hash.THashMap;
 import nl.systemsgenetics.polygenicscorecalculator.RiskEntry;
 import org.molgenis.genotype.RandomAccessGenotypeData;
-import org.molgenis.genotype.variant.GeneticVariant;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 
 public interface GwasSummaryStatistics extends Iterable<EffectAllele> {
     public String getGwasId();

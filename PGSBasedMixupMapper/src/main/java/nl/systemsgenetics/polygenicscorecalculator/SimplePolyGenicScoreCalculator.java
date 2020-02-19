@@ -117,7 +117,7 @@ public class SimplePolyGenicScoreCalculator {
                         // Get the original entries back, so we are sure we dont need to do to many look ups.
                         if (excludeList.size() > 0) {
                             for (int snp = 0; snp < nrSNPsThisChr; snp++) {
-                                if (excludeList.contains(valueE2.get(snp).getVariantId())) {
+                                if (excludeList.contains(valueE2.get(snp).getPrimaryVariantId())) {
                                     excludeSNPs[snp] = true;
                                 }
                             }
@@ -134,7 +134,7 @@ public class SimplePolyGenicScoreCalculator {
                                 //Check if at least 75% of the sampels have information for the SNP otherwise it is removed by default.
                                 if (var1.getCallRate() < 0.75) {
                                     excludeSNPs[snp] = true;
-                                    excludeList.add(riskE.getVariantId());
+                                    excludeList.add(riskE.getPrimaryVariantId());
                                     continue;
                                 }
 
@@ -163,12 +163,14 @@ public class SimplePolyGenicScoreCalculator {
                                 if (sumRisk && or < 0) {
                                     or = or * -1;
                                     riskCodedAsTwo = false;
-                                    if (!(riskE.getAllele() == (var1RefAllele.getAlleleAsSnp()) || riskE.getAllele() == (var1RefAllele.getComplement().getAlleleAsSnp()))) {
+                                    if (!(riskE.getAlleleAsSnp() == (var1RefAllele.getAlleleAsSnp())
+                                            || riskE.getAlleleAsSnp() == (var1RefAllele.getComplement().getAlleleAsSnp()))) {
                                         riskCodedAsTwo = true;
                                     }
                                 } else {
                                     riskCodedAsTwo = true;
-                                    if (!(riskE.getAllele() == (var1RefAllele.getAlleleAsSnp()) || riskE.getAllele() == (var1RefAllele.getComplement().getAlleleAsSnp()))) {
+                                    if (!(riskE.getAlleleAsSnp() == (var1RefAllele.getAlleleAsSnp())
+                                            || riskE.getAlleleAsSnp() == (var1RefAllele.getComplement().getAlleleAsSnp()))) {
                                         riskCodedAsTwo = false;
                                     }
                                 }
@@ -215,13 +217,13 @@ public class SimplePolyGenicScoreCalculator {
                                             GeneticVariant var2 = genotypeData.getSnpVariantByPos(riskE2.getSequenceName(), riskE2.getStartPos());
                                             if (var2.getCallRate() < 0.75) {
                                                 excludeSNPs[t] = true;
-                                                excludeList.add(riskE2.getVariantId());
+                                                excludeList.add(riskE2.getPrimaryVariantId());
                                                 continue;
                                             }
                                             try {
                                                 if (calculateRsquare(var1, var2) >= rSquared) {
                                                     excludeSNPs[t] = true;
-                                                    excludeList.add(riskE2.getVariantId());
+                                                    excludeList.add(riskE2.getPrimaryVariantId());
                                                 }
                                             } catch (LdCalculatorException ex) {
                                                 LOGGER.error(ex);
@@ -286,7 +288,7 @@ public class SimplePolyGenicScoreCalculator {
                         //Get the original entries back, so we are sure we dont need to do to many look ups.
                         if (excludeList.size() > 0) {
                             for (int snp = 0; snp < nrSNPsThisChr; snp++) {
-                                if (excludeList.contains(valueE2.get(snp).getVariantId())) {
+                                if (excludeList.contains(valueE2.get(snp).getPrimaryVariantId())) {
                                     excludeSNPs[snp] = true;
                                 }
                             }
@@ -300,7 +302,7 @@ public class SimplePolyGenicScoreCalculator {
                                 //Check if at least 75% of the sampels have information for the SNP otherwise it is removed by default.
                                 if (var1 == null || var1.getCallRate() < 0.75) {
                                     excludeSNPs[snp] = true;
-                                    excludeList.add(riskE.getVariantId());
+                                    excludeList.add(riskE.getPrimaryVariantId());
                                     continue;
                                 }
 
@@ -311,13 +313,13 @@ public class SimplePolyGenicScoreCalculator {
                                             GeneticVariant var2 = genotypeData.getSnpVariantByPos(riskE2.getSequenceName(), riskE2.getStartPos());
                                             if (var2 == null || var2.getCallRate() < 0.75) {
                                                 excludeSNPs[t] = true;
-                                                excludeList.add(riskE2.getVariantId());
+                                                excludeList.add(riskE2.getPrimaryVariantId());
                                                 continue;
                                             }
                                             try {
                                                 if (calculateRsquare(var1, var2) >= rSquared) {
                                                     excludeSNPs[t] = true;
-                                                    excludeList.add(riskE2.getVariantId());
+                                                    excludeList.add(riskE2.getPrimaryVariantId());
                                                 }
                                             } catch (LdCalculatorException ex) {
                                                 LOGGER.error(ex);
@@ -355,12 +357,14 @@ public class SimplePolyGenicScoreCalculator {
                                 if (sumRisk && or < 0) {
                                     or = or * -1; // NOTE: please make sure we're using betas here, and not ORS
                                     riskCodedAsTwo = false;
-                                    if (!(riskE.getAllele() == (var1RefAllele.getAlleleAsSnp()) || riskE.getAllele() == (var1RefAllele.getComplement().getAlleleAsSnp()))) {
+                                    if (!(riskE.getAlleleAsSnp() == (var1RefAllele.getAlleleAsSnp())
+                                            || riskE.getAlleleAsSnp() == (var1RefAllele.getComplement().getAlleleAsSnp()))) {
                                         riskCodedAsTwo = true;
                                     }
                                 } else {
                                     riskCodedAsTwo = true;
-                                    if (!(riskE.getAllele() == (var1RefAllele.getAlleleAsSnp()) || riskE.getAllele() == (var1RefAllele.getComplement().getAlleleAsSnp()))) {
+                                    if (!(riskE.getAlleleAsSnp() == (var1RefAllele.getAlleleAsSnp())
+                                            || riskE.getAlleleAsSnp() == (var1RefAllele.getComplement().getAlleleAsSnp()))) {
                                         riskCodedAsTwo = false;
                                     }
                                 }
@@ -441,7 +445,7 @@ public class SimplePolyGenicScoreCalculator {
                                             try {
                                                 if (calculateRsquare(var1, var2) >= rSquared) {
                                                     excludeSNPs[t] = true;
-                                                    excludeList.add(riskE2.getVariantId());
+                                                    excludeList.add(riskE2.getPrimaryVariantId());
                                                 }
                                             } catch (LdCalculatorException ex) {
                                                 LOGGER.error(ex);

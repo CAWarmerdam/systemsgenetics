@@ -8,11 +8,9 @@ import gnu.trove.map.hash.THashMap;
 import gnu.trove.set.hash.THashSet;
 import nl.systemsgenetics.polygenicscorecalculator.RiskEntry;
 import org.apache.log4j.Logger;
-import org.molgenis.genotype.Allele;
 import org.molgenis.genotype.RandomAccessGenotypeData;
 import org.molgenis.genotype.variant.GeneticVariant;
 import umcg.genetica.containers.Pair;
-import umcg.genetica.math.matrix2.DoubleMatrixDataset;
 
 import java.io.FileWriter;
 import java.io.IOException;

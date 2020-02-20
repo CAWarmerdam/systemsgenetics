@@ -571,7 +571,7 @@ public class VcfGenotypeData extends AbstractRandomAccessGenotypeData implements
         };
     }
 
-    protected VcfRecord getVcfRecord(GeneticVariant variant) {
+    public VcfRecord getVcfRecord(GeneticVariant variant) {
         if (!variant.equals(cachedGeneticVariant)) {
             TabixIterator it;
             String line;

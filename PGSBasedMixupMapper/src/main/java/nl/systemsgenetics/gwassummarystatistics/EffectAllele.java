@@ -5,22 +5,69 @@ import org.molgenis.genotype.variant.GeneticVariant;
 
 import java.util.*;
 
+/**
+ * Represents an effect allele, possibly originating from a genome wide association study.
+ * @author Robert Warmerdam
+ */
 public abstract class EffectAllele implements Comparable<EffectAllele> {
 
-    public abstract String getSequenceName();
-
-    public abstract int getStartPos();
-
-    public abstract double getEffectSize();
-
-    public abstract double getPValue();
-
-    public abstract double getLogTransformedPValue();
-
-    public abstract Allele getAllele();
-
+    /**
+     * Get the primary variant ID
+     *
+     * @return String
+     */
     public abstract String getPrimaryVariantId();
 
+    /**
+     * Get the Sequence this variant is located on
+     *
+     * @return the Sequence
+     */
+    public abstract String getSequenceName();
+
+    /**
+     * Gets the starting position on the sequence
+     *
+     * @return int
+     */
+    public abstract int getStartPos();
+
+    /**
+     * Gets the effect size of this allele.
+     * Either a GWAS beta coefficient or log odds.
+     *
+     * @return the effect size as a double
+     */
+    public abstract double getEffectSize();
+
+    /**
+     * Gets the P-value corresponding to the effect.
+     *
+     * @return the P-value.
+     */
+    public abstract double getPValue();
+
+    /**
+     * Gets the -log10 transformed P-value corresponding to the effect.
+     *
+     * @return The -log10 transformed P-value.
+     */
+    public abstract double getLogTransformedPValue();
+
+    /**
+     * Gets the allele to which the effect corresponds.
+     *
+     * @return the allele.
+     */
+    public abstract Allele getAllele();
+
+    /**
+     * Returns whether or not the given variant corresponds to this effect allele.
+     *
+     * @param variant The genetic variant to compare with.
+     * @return true if the variant matches at least the primary variant id,
+     * sequence name and the starting position.
+     */
     public boolean matchesVariant(GeneticVariant variant) {
         return variant != null
                 && this.getPrimaryVariantId().equals(variant.getPrimaryVariantId())
@@ -28,6 +75,28 @@ public abstract class EffectAllele implements Comparable<EffectAllele> {
                 && this.getStartPos() == variant.getStartPos();
     }
 
+    /**
+     * <p>Compares this effect allele with the specified effect allele for order.
+     * Returns a negative integer, zero, or a positive integer as this object is less than,
+     * equal to, or greater than the specified object.</p>
+     *
+     * <p>This effect allele is considered less than the specified effect allele if this effect allele's <i>p</i>-value
+     * is less than the specified effect allele's <i>p</i>-value, or when these values are equal,
+     * if this effect allele's effect size is greater than the specified effect allele's effect size.</p>
+     *
+     * <p>The opposite is of course also true:
+     * This effect allele is considered greater than the specified effect allele if this effect allele's <i>p</i>-value
+     * is greater than the specified effect allele's <i>p</i>-value, or when these values are equal,
+     * if this effect allele's effect size is less than the specified effect allele's effect size.</p>
+     *
+     * <p>When ordering effect alleles this definition consequently will result in a more significant
+     * (or a more affecting) effect allele being ordered prior to a less significant (or a less affecting)
+     * effect allele.</p>
+     *
+     * @param other the effect allele being compared.
+     * @return a negative integer, zero, or a positive integer as this effect allele is less than, equal to or greater
+     * than the specified object as defined above.
+     */
     @Override
     public int compareTo(EffectAllele other) {
         if (this.getPValue() < other.getPValue()){
@@ -53,6 +122,18 @@ public abstract class EffectAllele implements Comparable<EffectAllele> {
 
     }
 
+    /**
+     * Method that sorts an iterator of unordered effect alleles according to the implemented compareTo method,
+     * for every sequence.
+     *
+     * For every sequence the method fills a sorted cache of effect alleles, and empties this one by one.
+     * This is done for every consecutive sequence input sequence, and thus, the unordered iterator is at least
+     * expected to be grouped by sequence. If this is not the case an exception will be thrown.
+     *
+     * @param unorderedIterator An iterator of effect alleles grouped by sequence.
+     * @return An iterator of effect alleles grouped by sequence.
+     * Within every sequence group the effect alleles are sorted.
+     */
     public static Iterator<EffectAllele> sortEffectAllelesPerSequence(Iterator<EffectAllele> unorderedIterator) {
         return new Iterator<EffectAllele>() {
             TreeSet<EffectAllele> cachedSortedEffectAlleles = new TreeSet<>();

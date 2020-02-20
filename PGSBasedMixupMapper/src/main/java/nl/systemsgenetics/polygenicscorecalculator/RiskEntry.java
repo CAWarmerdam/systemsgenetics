@@ -57,10 +57,12 @@ public class RiskEntry extends EffectAllele {
         return effectSize;
     }
 
+    @Override
     public int getStartPos() {
         return startPos;
     }
 
+    @Override
     public String getSequenceName() {
         return String.valueOf(sequenceName);
     }

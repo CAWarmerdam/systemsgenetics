@@ -456,9 +456,8 @@ public class SimplePolyGenicScoreCalculator {
                             }
                         }
                     }
-                    if (LOGGER.isDebugEnabled()) {
-                        LOGGER.debug("Total SNPs used: " + nrSNPs);
-                    }
+                    LOGGER.info(String.format("Risk entries used for chromosome %s, P-value %f: %d",
+                            chrOrder[counter], pVal, nrSNPs));
                 }
                 p.iterate();
             }

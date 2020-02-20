@@ -12,6 +12,7 @@ import org.molgenis.genotype.RandomAccessGenotypeData;
 import org.molgenis.genotype.variant.GeneticVariant;
 import umcg.genetica.containers.Pair;
 
+import javax.annotation.Nonnull;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Path;
@@ -44,7 +45,7 @@ public class MatrixBasedGwasSummaryStatistics implements GwasSummaryStatistics{
         this.pValues = pValues;
     }
 
-    public MatrixBasedGwasSummaryStatistics(String gwasId) {
+    public MatrixBasedGwasSummaryStatistics(RandomAccessGenotypeData genotypeData, String gwasId) {
         this.gwasId = gwasId;
         this.variantIds = new LinkedHashMap<>();
         this.betaCoefficients = new DenseDoubleMatrix1D(0);
@@ -75,6 +76,7 @@ public class MatrixBasedGwasSummaryStatistics implements GwasSummaryStatistics{
     }
 
     @Override
+    @Nonnull
     public Iterator<EffectAllele> iterator() {
         throw new UnsupportedOperationException("Not currently supported");
     }

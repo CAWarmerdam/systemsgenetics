@@ -4,6 +4,12 @@ import org.molgenis.genotype.Allele;
 import org.molgenis.genotype.Alleles;
 import org.molgenis.genotype.variant.GeneticVariant;
 
+/**
+ * Represents an effect allele, possibly originating from a genome wide association study.
+ * This effect allele is backed by a genetic variant. This variant may or may not be able
+ * to provide sample genotypes.
+ * @author Robert Warmerdam
+ */
 public class GeneticVariantBackedEffectAllele extends EffectAllele {
     private final int alleleIndex;
     private final GeneticVariant variant;
@@ -55,6 +61,15 @@ public class GeneticVariantBackedEffectAllele extends EffectAllele {
         return variant.getPrimaryVariantId();
     }
 
+    /**
+     * Returns whether or not the given variant corresponds to this effect allele.
+     *
+     * @param variant The genetic variant to compare with.
+     * @return true if the variant matches the primary variant id,
+     * sequence name and the starting position. Additionally, the given variant should
+     * have the same alleles as the variant backing this effect allele, or their complement alleles,
+     * for this method to return true.
+     */
     @Override
     public boolean matchesVariant(GeneticVariant variant) {
         return super.matchesVariant(variant)

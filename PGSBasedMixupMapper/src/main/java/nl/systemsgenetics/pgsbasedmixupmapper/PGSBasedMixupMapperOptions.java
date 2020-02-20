@@ -21,39 +21,36 @@ import java.util.*;
  */
 public class PGSBasedMixupMapperOptions {
 
+    private static final Options OPTIONS;
     private static final double DEFAULT_CLUMPING_R_SQUARED = 0.2;
+    private static final double DEFAULT_MAF_THRESHOLD = 0;
     private static final List<Double> DEFAULT_P_VALUE_THRESHOLDS = new ArrayList<>(Collections.singletonList(1e-5));
     private static final String[] HSA_DEFAULT_SEQUENCES =
             {"1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11",
                     "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "22"};
 
-    private static final Options OPTIONS;
     private static int numberOfThreadsToUse = Runtime.getRuntime().availableProcessors();//Might be changed
     private static final Logger LOGGER = Logger.getLogger(PGSBasedMixupMapperOptions.class);
 
-    private final String[] inputGenotypePath;
-    private final RandomAccessGenotypeDataReaderFormats inputGenotypeType;
-    private final File outputBasePath;
-    private final Path gwasSummaryStatisticsPath;
     private final boolean debugMode;
     private final boolean calculateNewGenomeWideAssociationsEnabled;
     private final boolean writeNewGenomeWideAssociationsEnabled;
-    private final double mafFilter;
+    private final double minorAlleleFrequencyThreshold;
     private final double rSquared;
     private final String forceSeqName;
     private final String gwasSummaryStatisticsPhenotypeCouplingFile;
+    private final String genotypeToPhenotypeSampleCouplingFile;
     private final List<Integer> windowSize;
     private final List<Double> pValueThresholds;
     private final List<String> genomicRangesToExclude;
-
+    private final RandomAccessGenotypeDataReaderFormats inputGenotypeType;
+    private final String[] inputGenotypePath;
     private final String[] sequences;
-
+    private final Path gwasSummaryStatisticsPath;
+    private final File outputBasePath;
     private final File inputPhenotypePath;
     private final File logFile;
     private final File debugFolder;
-    private final String genotypeToPhenotypeSampleCouplingFile;
-
-
 
     static {
 
@@ -74,7 +71,8 @@ public class PGSBasedMixupMapperOptions {
 
         OptionBuilder.withArgName("type");
         OptionBuilder.hasArg();
-        OptionBuilder.withDescription("The input genotype data type. If not defined will attempt to automatically select the first matching dataset on the specified path\n"
+        OptionBuilder.withDescription("The input genotype data type. " +
+                "If not defined will attempt to automatically select the first matching dataset on the specified path\n"
                 + "* PED_MAP - plink PED MAP files.\n"
                 + "* PLINK_BED - plink BED BIM FAM files.\n"
                 + "* VCF - bgziped vcf with tabix index file\n"
@@ -109,7 +107,8 @@ public class PGSBasedMixupMapperOptions {
 
         OptionBuilder.withArgName("path");
         OptionBuilder.hasArg();
-        OptionBuilder.withDescription("CSV file representing the coupling between GWAS summary statistics files and phenotypes.");
+        OptionBuilder.withDescription("CSV file representing the coupling between " +
+                "GWAS summary statistics files and phenotypes.");
         OptionBuilder.withLongOpt("gwasStatsToPhenCoupling");
         OptionBuilder.isRequired();
         OPTIONS.addOption(OptionBuilder.create("wpc"));
@@ -144,7 +143,9 @@ public class PGSBasedMixupMapperOptions {
         OPTIONS.addOption(OptionBuilder.create("er"));
 
         OptionBuilder.withArgName("boolean");
-        OptionBuilder.withDescription("Activate debug mode. This will result in a more verbose log file and will save many intermediate results to files. Not recommended for large analysis.");
+        OptionBuilder.withDescription("Activate debug mode. " +
+                "This will result in a more verbose log file and will save many intermediate results to files. " +
+                "Not recommended for large analysis.");
         OptionBuilder.withLongOpt("debug");
         OPTIONS.addOption(OptionBuilder.create("d"));
 
@@ -153,11 +154,6 @@ public class PGSBasedMixupMapperOptions {
         OptionBuilder.withDescription("Minimum MAF");
         OptionBuilder.withLongOpt("maf");
         OPTIONS.addOption(OptionBuilder.create("maf"));
-
-        OptionBuilder.withArgName("boolean");
-        OptionBuilder.withDescription("Quantile normalize the permutations gene p-values before pathway enrichments to fit the real gene p-value distribution");
-        OptionBuilder.withLongOpt("qnorm");
-        OPTIONS.addOption(OptionBuilder.create("qn"));
 
         OptionBuilder.withArgName("double");
         OptionBuilder.hasArg();
@@ -240,20 +236,41 @@ public class PGSBasedMixupMapperOptions {
         // Get the input phenotype path.
         inputPhenotypePath = parseInputPhenotypePath(commandLine);
 
+        // Parse the genomic ranges to exclude in PGS calculations
         genomicRangesToExclude = parseRangesToExclude(commandLine);
 
+        // Parse the minor allele frequency threshold to use for the input genotype data
+        minorAlleleFrequencyThreshold = parseMinorAlleleFrequencyThreshold(commandLine);
+    }
+
+    /**
+     * Parses the minor allele frequency thresholds from the provided command line arguments.
+     *
+     * @param commandLine the command line that could contain the minor allele frequency threshold in option "maf".
+     * @return a double with the MAF threshold provided or its the default value.
+     * @throws ParseException the MAF value was not able to be parsed to a double.
+     */
+    private double parseMinorAlleleFrequencyThreshold(CommandLine commandLine) throws ParseException {
+        // Initialize minor allele frequency to return
+        double mafThreshold = DEFAULT_MAF_THRESHOLD;
 
         if (commandLine.hasOption("maf")) {
             try {
-                mafFilter = Double.parseDouble(commandLine.getOptionValue("maf"));
+                mafThreshold =  Double.parseDouble(commandLine.getOptionValue("maf"));
             } catch (NumberFormatException e) {
-                throw new ParseException("Error parsing --maf \"" + commandLine.getOptionValue("maf") + "\" is not an double");
+                throw new ParseException(String.format(
+                        "Error parsing --maf \"%s\" is not a double", commandLine.getOptionValue("maf")));
             }
-        } else {
-            mafFilter = 0;
         }
+        return mafThreshold;
     }
 
+    /**
+     * Gets the ranges to exclude from the command line.
+     *
+     * @param commandLine The commandline that could contain the ranges to exclude in option "excludeRange".
+     * @return A list of ranges to exclude. Could be empty if the option was not present.
+     */
     private List<String> parseRangesToExclude(CommandLine commandLine) {
         List<String> ranges = new ArrayList<>();
 
@@ -269,7 +286,7 @@ public class PGSBasedMixupMapperOptions {
      *
      * @param commandLine the command line that could contain the P-value thresholds in option 'pv'.
      * @return a list with every P-value threshold provided or the default value of 1e-5.
-     * @throws ParseException If any of the window size values were not able to be parsed to a double.
+     * @throws ParseException if any of the P-values were not able to be parsed to a double.
      */
     private List<Double> parsePValueThresholds(CommandLine commandLine) throws ParseException {
 
@@ -302,7 +319,7 @@ public class PGSBasedMixupMapperOptions {
      *
      * @param commandLine the command line that could contain the window sizes in option 'bp'.
      * @return a list with every window size provided or the default value of 50000.
-     * @throws ParseException If any of the window size values were not able to be parsed to an integer.
+     * @throws ParseException if any of the window size values were not able to be parsed to an integer.
      */
     private List<Integer> parseWindowSizes(CommandLine commandLine) throws ParseException {
 
@@ -364,12 +381,20 @@ public class PGSBasedMixupMapperOptions {
         return HSA_DEFAULT_SEQUENCES;
     }
 
+    /**
+     * Method that gets the input phenotype filepath from the command line.
+     *
+     * @param commandLine A command line that contains the input phenotype filepath in option "inputPhenotype"
+     * @return the provided input phenotype filepath
+     * @throws ParseException if either the option "inputPhenotype" was not present in the command line,
+     * or if the provided path does not point to an existing file.
+     */
     private File parseInputPhenotypePath(CommandLine commandLine) throws ParseException {
         if (!commandLine.hasOption("inputPhenotype")) {
             throw new ParseException("--inputPhenotype not specified");
         } else {
             File inputPhenotypePath = new File(commandLine.getOptionValue("inputPhenotype"));
-            if (inputPhenotypePath.exists()) {
+            if (inputPhenotypePath.isFile()) {
                 return inputPhenotypePath;
             }
             throw new ParseException(String.format("Input phenotype file \"%s\"does not exist",
@@ -377,7 +402,19 @@ public class PGSBasedMixupMapperOptions {
         }
     }
 
+    /**
+     * Method that gets the output base path from the command line.
+     *
+     * @param commandLine The command line that contains the output base path in '-o'
+     * @return the output base path as a file.
+     * @throws ParseException if either the option '-o' was not present in the command line,
+     * or if the provided path does not point to an existing directory.
+     */
     private File getOutputBasePath(CommandLine commandLine) throws ParseException {
+        if (!commandLine.hasOption('o')) {
+            throw new ParseException("-o / --output not specified");
+        }
+
         File outputBasePath = new File(commandLine.getOptionValue('o'));
         if (outputBasePath.isDirectory()) {
             throw new ParseException(String.format("Specified output path '%s' is a directory. " +
@@ -390,7 +427,7 @@ public class PGSBasedMixupMapperOptions {
     private String getForceSeqName(CommandLine commandLine) throws ParseException {
         boolean isForceSeqPresent = commandLine.hasOption('f');
         if (
-                isForceSeqPresent &&
+                isForceSeqPresent && this.getInputGenotypeType() != null &&
                         this.getInputGenotypeType() != RandomAccessGenotypeDataReaderFormats.SHAPEIT2 &&
                         this.getInputGenotypeType() != RandomAccessGenotypeDataReaderFormats.GEN
         ) {
@@ -514,8 +551,8 @@ public class PGSBasedMixupMapperOptions {
         return debugFolder;
     }
 
-    public double getMafFilter() {
-        return mafFilter;
+    public double getMinorAlleleFrequencyThreshold() {
+        return minorAlleleFrequencyThreshold;
     }
 
     public String getForceSeqName() {

@@ -36,13 +36,13 @@ public abstract class WritableGwasSummaryStatistics implements GwasSummaryStatis
         writer.writeNext(new String[]{"variant", "AssessedAllele", "ES", "pvalue"});
 
         // Write risk entries
-//        for (RiskEntry riskEntry : riskEntryList) {
-//            writer.writeNext(new String[]{
-//                    riskEntry.getVariantId(),
-//                    String.valueOf(riskEntry.getAllele()),
-//                    String.valueOf(riskEntry.getEffectSize()),
-//                    String.valueOf(riskEntry.getpValue())});
-//        }
+        for (EffectAllele effectAllele : this) {
+            writer.writeNext(new String[]{
+                    effectAllele.getPrimaryVariantId(),
+                    String.valueOf(effectAllele.getAllele()),
+                    String.valueOf(effectAllele.getEffectSize()),
+                    String.valueOf(effectAllele.getPValue())});
+        }
 
         writer.close();
     }

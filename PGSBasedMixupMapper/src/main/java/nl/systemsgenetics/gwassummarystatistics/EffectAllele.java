@@ -84,7 +84,7 @@ public abstract class EffectAllele implements Comparable<EffectAllele> {
      * is less than the specified effect allele's <i>p</i>-value, or when these values are equal,
      * if this effect allele's effect size is greater than the specified effect allele's effect size.</p>
      *
-     * <p>The opposite is of course also true:
+     * <p>The opposite is of also true:
      * This effect allele is considered greater than the specified effect allele if this effect allele's <i>p</i>-value
      * is greater than the specified effect allele's <i>p</i>-value, or when these values are equal,
      * if this effect allele's effect size is less than the specified effect allele's effect size.</p>

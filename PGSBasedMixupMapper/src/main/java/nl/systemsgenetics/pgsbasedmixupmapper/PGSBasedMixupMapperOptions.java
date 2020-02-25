@@ -51,6 +51,8 @@ public class PGSBasedMixupMapperOptions {
     private final File inputPhenotypePath;
     private final File logFile;
     private final File debugFolder;
+    private final CommandLine commandLine;
+
 
     static {
 
@@ -199,7 +201,7 @@ public class PGSBasedMixupMapperOptions {
 
         // Parse the raw command line input
         final CommandLineParser parser = new PosixParser();
-        CommandLine commandLine = parser.parse(OPTIONS, args, false);
+        commandLine = parser.parse(OPTIONS, args, false);
         setNumberOfThreadsToUse(commandLine);
 
         outputBasePath = getOutputBasePath(commandLine);
@@ -605,5 +607,13 @@ public class PGSBasedMixupMapperOptions {
 
     public boolean isWriteNewGenomeWideAssociationsEnabled() {
         return writeNewGenomeWideAssociationsEnabled;
+    }
+
+    protected static Options getOptions() {
+        return OPTIONS;
+    }
+
+    public CommandLine getCommandLine() {
+        return commandLine;
     }
 }

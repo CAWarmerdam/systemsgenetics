@@ -23,9 +23,9 @@ import static org.molgenis.genotype.util.LdCalculator.calculateRsquare;
 /**
  * @author MarcJan
  */
-public class SimplePolyGenicScoreCalculator {
+public class SimplePolygenicScoreCalculator {
 
-    private static final Logger LOGGER = Logger.getLogger(SimplePolyGenicScoreCalculator.class);
+    private static final Logger LOGGER = Logger.getLogger(SimplePolygenicScoreCalculator.class);
     private static final String[] chrOrder = {"1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "22"};
     private final RandomAccessGenotypeData genotypeData;
     private final List<Integer> windowSizeList;
@@ -34,11 +34,11 @@ public class SimplePolyGenicScoreCalculator {
     private final boolean sumRisk;
     private final String[] genomicRangesToExclude;
 
-    public SimplePolyGenicScoreCalculator (RandomAccessGenotypeData genotypeData,
-                                           List<Integer> windowSizeList,
-                                           List<Double> pValueThresholds,
-                                           double rSquared, boolean sumRisk,
-                                           String[] genomicRangesToExclude) {
+    public SimplePolygenicScoreCalculator(RandomAccessGenotypeData genotypeData,
+                                          List<Integer> windowSizeList,
+                                          List<Double> pValueThresholds,
+                                          double rSquared, boolean sumRisk,
+                                          String[] genomicRangesToExclude) {
 
         this.genotypeData = genotypeData;
         this.windowSizeList = windowSizeList;

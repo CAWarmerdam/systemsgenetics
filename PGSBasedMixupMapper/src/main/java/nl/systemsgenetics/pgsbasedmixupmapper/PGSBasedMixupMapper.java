@@ -31,12 +31,14 @@ import umcg.genetica.genomicboundaries.GenomicBoundaries;
 import umcg.genetica.genomicboundaries.GenomicBoundary;
 import umcg.genetica.math.matrix2.DoubleMatrixDataset;
 import umcg.genetica.math.stats.PearsonRToPValueBinned;
+import edu.princeton.cs.algs4.AssignmentProblem;
 
 import java.io.*;
 import java.nio.file.Path;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.Date;
 import java.util.stream.Collectors;
 
 /**
@@ -45,7 +47,7 @@ import java.util.stream.Collectors;
 public class PGSBasedMixupMapper {
 
     private static final char CSV_DELIMITER = ',';
-    private static final String VERSION = ResourceBundle.getBundle("verion").getString("application.version");
+    private static final String VERSION = ResourceBundle.getBundle("version").getString("application.version");
     private static final DateFormat DATE_TIME_FORMAT = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
     private static final Logger LOGGER = Logger.getLogger(PGSBasedMixupMapper.class);
     private static final String HEADER
@@ -57,7 +59,7 @@ public class PGSBasedMixupMapper {
     private final RandomAccessGenotypeData genotypeData;
     private Map<String, GwasSummaryStatistics> gwasSummaryStatisticsMap;
     private final Map<String, String> genotypeSampleToPhenotypeSampleCoupling;
-    private SimplePolyGenicScoreCalculator polyGenicScoreCalculator;
+    private SimplePolygenicScoreCalculator polyGenicScoreCalculator;
     private final DoubleMatrixDataset<String, String> phenotypeMatrix;
     private final DoubleMatrixDataset<String, String> zScoreMatrix;
     private final Map<String, DoubleMatrixDataset<String, String>> zScoresMap = new HashMap<>();
@@ -77,14 +79,12 @@ public class PGSBasedMixupMapper {
      *                                                with the original phenotype sample identifiers as values.
      * @param gwasSummaryStatisticsMap A map with GwasSummaryStatistics data per trait or phenotype.
      * @param polyGenicScoreCalculator An object with which polygenic scores are calculated.
-     * @throws PGSBasedMixupMapperException if
      */
     public PGSBasedMixupMapper(RandomAccessGenotypeData genotypeData,
                                DoubleMatrixDataset<String, String> phenotypeMatrix,
                                Map<String, String> genotypeSampleToPhenotypeSampleCoupling,
                                Map<String, GwasSummaryStatistics> gwasSummaryStatisticsMap,
-                               SimplePolyGenicScoreCalculator polyGenicScoreCalculator)
-            throws PGSBasedMixupMapperException, PolyGenicScoreCalculatorException {
+                               SimplePolygenicScoreCalculator polyGenicScoreCalculator) {
         this.genotypeData = genotypeData;
         this.gwasSummaryStatisticsMap = gwasSummaryStatisticsMap;
         this.genotypeSampleToPhenotypeSampleCoupling = genotypeSampleToPhenotypeSampleCoupling;
@@ -104,10 +104,19 @@ public class PGSBasedMixupMapper {
             throw new IllegalArgumentException("The number of samples cannot be zero (0)");
         }
 
-        // Scale phenotypes
-        DoubleMatrixDataset<String, String> rankedPhenotypes = rankPhenotypes(this.phenotypeMatrix);
         zScoreMatrix = initializeGenotypePhenotypeMatrix();
         presenceArray = new DenseDoubleMatrix1D(phenotypeSampleIdentifiers.size());
+
+//        zScoreMatrix.normalizeRows();
+//        zScoreMatrix.normalizeColumns();
+
+        // Get the samples
+    }
+
+    public void run() throws PGSBasedMixupMapperException {
+        // Scale phenotypes
+        DoubleMatrixDataset<String, String> normalizedPhenotypeMatrix = this.phenotypeMatrix.duplicate();
+        normalizedPhenotypeMatrix.normalizeColumns();
 
         for (String phenotype : this.phenotypeMatrix.getColObjects()) {
             System.out.println(String.format("Calculating PGSs and corresponding Z-scores for trait '%s'", phenotype));
@@ -119,7 +128,7 @@ public class PGSBasedMixupMapper {
 
                 DoubleMatrixDataset<String, String> phenotypeSpecificZScoreMatrix = calculateZScoreMatrix(
                         polygenicScores,
-                        rankedPhenotypes,
+                        normalizedPhenotypeMatrix,
                         phenotype);
 
                 zScoresMap.put(phenotype, phenotypeSpecificZScoreMatrix);
@@ -136,14 +145,17 @@ public class PGSBasedMixupMapper {
             }
         }
 
+        // Check if the presence array is equal for every sample
+        // This should be the case since the missing phenotypes map is not being updated.
+        assert presenceArray.equals(presenceArray.getMaxLocation()[0]);
         // Create a 2D matrix from the 1D matrix representing a counter for the number of traits to divide the total
         // Z-scores with for every phenotype sample.
-        DoubleMatrix2D otherMatrix = DoubleFactory2D.dense.repeat(
+        DoubleMatrix2D divisionMatrix = DoubleFactory2D.dense.repeat(
                 DoubleFactory2D.dense.make(presenceArray.toArray(), 1),
                 zScoreMatrix.rows(), 1);
 
         // Divide the Z-scores by the number of traits used for getting this Z-score
-        zScoreMatrix.getMatrix().assign(otherMatrix, DoubleFunctions.div);
+        zScoreMatrix.getMatrix().assign(divisionMatrix, DoubleFunctions.div);
 
         // Check if there is a phenotype sample for which no presence was detected
         if (presenceArray.getMinLocation()[0] == 0) {
@@ -165,13 +177,6 @@ public class PGSBasedMixupMapper {
                     "All Z-scores are equal (%f). Cannot determine best matching samples.",
                     zScoreMatrix.getElementQuick(0, 0)));
         }
-
-//        // Normalize Z-scores to have mean at 0 along rows and cols
-//        // Normalize Z-scores to have an SD of 1
-//        zScoreMatrix.normalizeRows();
-//        zScoreMatrix.normalizeColumns();
-
-        // Get the samples
     }
 
     private void reportResiduals(File outputBasePath) throws IOException {
@@ -225,17 +230,7 @@ public class PGSBasedMixupMapper {
         }
     }
 
-    private Map<String, String> getSampleAssignments() {
-        Map<String, String> bestMatchingPhenotypeSamplePerGenotype = new HashMap<>();
-        for (String genotypeSample : genotypeSampleIdentifiers) {
-            determineBestMatchingPhenotypeSample(genotypeSample, bestMatchingPhenotypeSamplePerGenotype);
-        }
-
-        return resolveMixUps(bestMatchingPhenotypeSamplePerGenotype);
-    }
-
     private Map<String, String> getSampleAssignmentsNew() {
-        return null;
 
         // Can we think of a more 'advanced' / convoluted method to report sample mix-ups
 
@@ -243,6 +238,17 @@ public class PGSBasedMixupMapper {
         //  A row or column for which even the best value is likely not correct (Z-score above a certain threshold)
         //  should be removed
         //  For the remaining combination, perform a solution for the assignment problem
+
+        AssignmentProblem assignmentProblem = new AssignmentProblem(zScoreMatrix.getMatrixAs2dDoubleArray());
+
+        Map<String, String> solution = new HashMap<>();
+
+        for (int i = 0; i < zScoreMatrix.getRowObjects().size(); i++) {
+            int bestMatchingColumn = assignmentProblem.sol(i);
+            solution.put(zScoreMatrix.getRowObjects().get(i), zScoreMatrix.getColObjects().get(bestMatchingColumn));
+        }
+
+        return solution;
     }
 
     private DoubleMatrixDataset<String, String> getResiduals(
@@ -299,7 +305,7 @@ public class PGSBasedMixupMapper {
         DoubleMatrixDataset<String, String> residualsMatrix = new DoubleMatrixDataset<>(
                 polygenicScores.getRowObjects(), polygenicScores.getColObjects());
 
-        List<Integer> presentValuesIndices = new ArrayList<>();
+//        List<Integer> presentValuesIndices = new ArrayList<>();
 
         // Calculate the polygenic score for every genotype sample
         for (int i = 0; i < polygenicScores.getColObjects().size(); i++) {
@@ -312,15 +318,16 @@ public class PGSBasedMixupMapper {
 
             // Check if the Phenotype Score is missing
             // If this is missing, skip this phenotype score
-            if (!missingPhenotypes.contains(new ImmutablePair<>(phenotypeSampleIdentifier, phenotype))) {
-                presentValuesIndices.add(i);
-            }
+//            if (!missingPhenotypes.contains(new ImmutablePair<>(phenotypeSampleIdentifier, phenotype))) {
+//                presentValuesIndices.add(i);
+//            }
 
+            // Copy the actual phenotype scores for this specific sample to the residuals matrix
             residualsMatrix.viewCol(i).assign(actualPhenotypeScore);
         }
 
         // Get an array with an index for every sample for which the phenotype value is missing
-        int[] indicesOfPresentPhenotypeValues = presentValuesIndices.stream().mapToInt(Integer::intValue).toArray();
+//        int[] indicesOfPresentPhenotypeValues = presentValuesIndices.stream().mapToInt(Integer::intValue).toArray();
 
         // Index corresponding to the index of the residuals array with the lowest sum,
         // indicating that the p-value is the best
@@ -329,9 +336,10 @@ public class PGSBasedMixupMapper {
         double absoluteMinimumResiduals = Double.MAX_VALUE;
         // Calculate for every row the residuals and get the row with the lowest sum of residuals
         for (int rowIndex = 0; rowIndex < residualsMatrix.getRowObjects().size(); rowIndex++) {
-            double[] values = rankArray(polygenicScores.viewRow(rowIndex).toArray());
-            polygenicScores.viewRow(rowIndex).assign(
-                    values);
+//            double[] values = rankArray(polygenicScores.viewRow(rowIndex).toArray());
+//            polygenicScores.viewRow(rowIndex).assign(
+//                    values);
+            polygenicScores.normalizeRows();
 
             // Calculate the residuals
             residualsMatrix.viewRow(rowIndex).assign(polygenicScores.viewRow(rowIndex),
@@ -339,7 +347,7 @@ public class PGSBasedMixupMapper {
 
             // Determine if the current row is the lowest
             double absoluteSumOfResiduals = Math.abs(residualsMatrix.viewRow(rowIndex)
-                    .viewSelection(indicesOfPresentPhenotypeValues)
+//                    .viewSelection(indicesOfPresentPhenotypeValues)
                     .copy() // Copying since assigning the absolute values will
                     // otherwise be reflected in the residualsMatrix
                     .assign(DoubleFunctions.abs).zSum());
@@ -352,7 +360,8 @@ public class PGSBasedMixupMapper {
 
         // Get the residuals corresponding to the best P-value
         double[] residuals = residualsMatrix.viewRow(minimumResidualsIndex)
-                .viewSelection(indicesOfPresentPhenotypeValues).toArray();
+//                .viewSelection(indicesOfPresentPhenotypeValues)
+                .toArray();
 
         minimumAbsoluteResidualsIndices.put(phenotype, minimumResidualsIndex);
 
@@ -378,6 +387,7 @@ public class PGSBasedMixupMapper {
                     zScoreMatrixOfPolygenicScoreDeviations.setElement(
                             genotypeSample,
                             phenotypeSample, 0);
+                    throw new UnsupportedOperationException();
                 } else {
 
                     // For the current combination, calculate the residual.
@@ -464,6 +474,11 @@ public class PGSBasedMixupMapper {
             String genotypeSample = newLink.getKey();
             String phenotypeSample = newLink.getValue();
 
+            System.out.printf("'%s', matched with '%s' (z = %.4f vs %.4f for '%s')%n",
+                    genotypeSample, phenotypeSample, zScoreMatrix.getElement(genotypeSample, phenotypeSample),
+                    zScoreMatrix.getElement(genotypeSample, genotypeSampleToPhenotypeSampleCoupling.get(genotypeSample)),
+                    genotypeSampleToPhenotypeSampleCoupling.get(genotypeSample));
+
             // First check if the genotype sample matches the trait sample enough
             if (!isBestMatchSufficient(genotypeSample, phenotypeSample)) {
                 // Not including this in the new assigned coupling
@@ -478,14 +493,16 @@ public class PGSBasedMixupMapper {
                 // Check if the originally matched genotype is correctly matched to the trait sample.
                 if (phenotypeSample.equals(bestMatchingPhenotypeSamplePerGenotypeSample.get(
                         traitSampleToGenotypeSample.get(phenotypeSample)))) {
-                    System.out.printf("Phenotype sample %s has been matched with genotype sample:%n" +
-                            "    %s (original), and%n    %s (newly assigned)%n",
+                    System.out.printf("Phenotype sample %s has been matched with genotype sample:" +
+                            "%s (original), and %s (newly assigned)%n",
                             phenotypeSample, traitSampleToGenotypeSample.get(phenotypeSample), genotypeSample);
                     // Discard the genotype sample currently being assessed.
                     System.out.printf("Should discard %s%n", genotypeSample);
                 } else {
                     // Treat as a mix-up
-                    System.out.printf("%s Mixed up with %s%n", genotypeSample, traitSampleToGenotypeSample.get(phenotypeSample));
+                    System.out.printf("Sample mix-up for genotype sample %s:" +
+                                    " %s (original), and %s (newly assigned)%n",
+                            phenotypeSample, traitSampleToGenotypeSample.get(phenotypeSample), genotypeSample);
                     newAssignments.put(genotypeSample, phenotypeSample);
                 }
             }
@@ -501,15 +518,31 @@ public class PGSBasedMixupMapper {
         return true;
     }
 
+    /**
+     * Initializes a double matrix data set with the genotype sample identifiers,
+     * ordered exactly as in the genotype data, as the row names, and
+     * phenotype sample identifiers, as the column names.
+     *
+     * @return A double matrix data set with genotype samples as rows,
+     * and phenotype samples as columns.
+     */
     private DoubleMatrixDataset<String, String> initializeGenotypePhenotypeMatrix() {
-        return new DoubleMatrixDataset<>(Arrays.asList(genotypeData.getSampleNames()), phenotypeSampleIdentifiers);
+        return new DoubleMatrixDataset<>(genotypeSampleIdentifiers, phenotypeSampleIdentifiers);
     }
 
-    private void determineBestMatchingPhenotypeSample(String genotypeSample, Map<String, String> bestMatchingPhenotypeSamplePerGenotype) {
-        DoubleMatrix1D scores = zScoreMatrix.getCol(genotypeSample);
+    private String determineBestMatchingPhenotypeSample(String genotypeSample) {
+        DoubleMatrix1D scores = zScoreMatrix.getRow(genotypeSample);
         int minimumValueIndex = (int) scores.getMinLocation()[1];
-        bestMatchingPhenotypeSamplePerGenotype.put(genotypeSample,
-                phenotypeMatrix.getRowObjects().get(minimumValueIndex));
+        return zScoreMatrix.getColObjects().get(minimumValueIndex);
+    }
+
+    public Map<String, String> getSampleAssignments() {
+        Map<String, String> bestMatchingPhenotypeSamplePerGenotype = new HashMap<>();
+        for (String genotypeSample : genotypeSampleIdentifiers) {
+            bestMatchingPhenotypeSamplePerGenotype.put(genotypeSample, determineBestMatchingPhenotypeSample(genotypeSample));
+        }
+
+        return resolveMixUps(bestMatchingPhenotypeSamplePerGenotype);
     }
 
     private static DoubleMatrixDataset<String, String> phenotypesToStandardDeviations(DoubleMatrixDataset<String, String> phenotypeMatrix) {
@@ -551,7 +584,7 @@ public class PGSBasedMixupMapper {
         return zScoresMap;
     }
 
-    private DoubleMatrixDataset<String, String> getZScoreMatrix() {
+    DoubleMatrixDataset<String, String> getZScoreMatrix() {
         return zScoreMatrix;
     }
 
@@ -576,12 +609,6 @@ public class PGSBasedMixupMapper {
 
         // Initialize an instance for command line options.
         PGSBasedMixupMapperOptions options;
-
-        // Print a help whenever the arguments have a length of zero.
-        if (args.length == 0) {
-            PGSBasedMixupMapperOptions.printHelp();
-            return;
-        }
 
         // Parse the arguments list
         options = getPgsBasedMixupMapperOptions(args);
@@ -615,33 +642,53 @@ public class PGSBasedMixupMapper {
         RandomAccessGenotypeData genotypeData = loadGenotypeData(options,
                 genotypeToPhenotypeSampleCoupling.keySet());
 
-        // Get the P-value thresholds to use in PGS calculation
-        List<Double> pValueThresholds = options.getpValueThresholds();
+        RobustnessAnalyzer robustnessAnalyzer = new RobustnessAnalyzer(genotypeToPhenotypeSampleCoupling);
+        int numberOfPermutedSamples = robustnessAnalyzer.permute(Math.round(
+                ((float) genotypeToPhenotypeSampleCoupling.size()) / 100 * 1));
 
-        // Get the gwas summary statistics map
-        Map<String, GwasSummaryStatistics> gwasSummaryStatisticsMap = getGwasSummaryStatisticsMap(options,
-                genotypeToPhenotypeSampleCoupling, gwasPhenotypeCoupling, phenotypeData, genotypeData);
+        genotypeToPhenotypeSampleCoupling = robustnessAnalyzer.getPermutedMap();
+
+        System.out.println("numberOfShuffledSamples = " + numberOfPermutedSamples);
+
+        float percentageOfMixedUpSamples =
+                (numberOfPermutedSamples / (float) genotypeToPhenotypeSampleCoupling.size()) * 100;
+
+        System.out.println("percentageOfMixedUpSamples = " + percentageOfMixedUpSamples);
+
+        // Initialize an Simple polygenic score calculator
+        SimplePolygenicScoreCalculator polygenicScoreCalculator = new SimplePolygenicScoreCalculator(
+                genotypeData,
+                options.getWindowSize(),
+                options.getpValueThresholds(),
+                options.getrSquared(),
+                false,
+                options.getGenomicRangesToExclude());
 
         try {
-            // Initialize an Simple polygenic score calculator
-            SimplePolyGenicScoreCalculator polyGenicScoreCalculator = new SimplePolyGenicScoreCalculator(
-                    genotypeData, // The genotype data to calculate an LD matrix in.
-                    options.getWindowSize(), // Get the window size in number of base pairs,
-                    pValueThresholds,
-                    options.getrSquared(),
-                    false,
-                    options.getGenomicRangesToExclude());
+            // Get the gwas summary statistics map
+            Map<String, GwasSummaryStatistics> gwasSummaryStatisticsMap = getGwasSummaryStatisticsMap(options,
+                    genotypeToPhenotypeSampleCoupling, gwasPhenotypeCoupling, phenotypeData, genotypeData);
 
             // Initialize the Mix-up mapper
             PGSBasedMixupMapper pgsBasedMixupMapper = new PGSBasedMixupMapper(
                     genotypeData, phenotypeData.duplicate(), genotypeToPhenotypeSampleCoupling,
-                    gwasSummaryStatisticsMap, polyGenicScoreCalculator);
+                    gwasSummaryStatisticsMap, polygenicScoreCalculator);
+
+            pgsBasedMixupMapper.run();
             // Report results
-            reportResults(options, pgsBasedMixupMapper, phenotypeData);
+            Map<String, String> sampleAssignments = pgsBasedMixupMapper.getSampleAssignments();
+            Map<String, Integer> results = robustnessAnalyzer.analyzeMapperResults(sampleAssignments);
+            robustnessAnalyzer.save(sampleAssignments, options.getOutputBasePath());
 
-            pgsBasedMixupMapper.reportResiduals(options.getOutputBasePath());
+            System.out.println("numberOfPermutedSamples = " + numberOfPermutedSamples);
+            System.out.println("percentageOfMixedUpSamples = " + percentageOfMixedUpSamples);
+            System.out.println("results = " + results);
 
-        } catch (PGSBasedMixupMapperException | PolyGenicScoreCalculatorException e) {
+            reportResults(options.getOutputBasePath(), pgsBasedMixupMapper, phenotypeData, sampleAssignments);
+
+//            pgsBasedMixupMapper.reportResiduals(options.getOutputBasePath());
+
+        } catch (PGSBasedMixupMapperException e) {
             System.err.println("Error running PGS Based Mixup Mapper: " + e.getMessage());
             System.err.println("See log file for stack trace");
             LOGGER.fatal("Error running PGS Based Mixup Mapper: " + e.getMessage(), e);
@@ -657,17 +704,20 @@ public class PGSBasedMixupMapper {
     /**
      * Method responsible for obtaining summary statistics for every phenotype.
      *
-     * @param options
-     * @param genotypeToPhenotypeSampleCoupling
-     * @param gwasPhenotypeCoupling
-     * @param phenotypeData
-     * @param genotypeData
-     * @return
+     * @param options The command line options provided by the user.
+     * @param genotypeToPhenotypeCoupling A map with the genotype sample identifiers as keys and
+     *                                    the corresponding phenotype sample identifiers as values.
+     * @param gwasPhenotypeCoupling A map with GWAS VCF file prefixes as keys and corresponding trait identifiers as
+     *                              values.
+     * @param phenotypeData The phenotype data.
+     * @param genotypeData The genotype data.
+     * @return A map with for every phenotype an entry containing the phenotype identifier as the key,
+     * and the corresponding gwas summary statistics containing the calculated associations as values.
      */
-    private static Map<String, GwasSummaryStatistics> getGwasSummaryStatisticsMap(
-            PGSBasedMixupMapperOptions options, Map<String, String> genotypeToPhenotypeSampleCoupling,
+    static Map<String, GwasSummaryStatistics> getGwasSummaryStatisticsMap(
+            PGSBasedMixupMapperOptions options, Map<String, String> genotypeToPhenotypeCoupling,
             Map<String, String> gwasPhenotypeCoupling, DoubleMatrixDataset<String, String> phenotypeData,
-            RandomAccessGenotypeData genotypeData) {
+            RandomAccessGenotypeData genotypeData) throws PGSBasedMixupMapperException {
 
         // Initialize a map
         Map<String, GwasSummaryStatistics> gwasSummaryStatisticsMap;
@@ -689,12 +739,9 @@ public class PGSBasedMixupMapper {
             try {
                 MatrixBasedGwasSummaryStatisticsMap = calculateGenomeWideAssociations(
                         genotypeData, phenotypeData,
-                        genotypeToPhenotypeSampleCoupling);
+                        genotypeToPhenotypeCoupling);
             } catch (PGSBasedMixupMapperException e) {
-                System.err.println("Could not calculate genome wide associations." + e.getMessage());
-                System.err.println("See log file for stack trace");
-                LOGGER.warn("Could not calculate genome wide associations.", e);
-                System.exit(1);
+                throw new PGSBasedMixupMapperException("Could not calculate genome wide associations.", e);
             }
 
             gwasSummaryStatisticsMap = new HashMap<>();
@@ -955,10 +1002,10 @@ public class PGSBasedMixupMapper {
 
     }
 
-    private static void reportResults(PGSBasedMixupMapperOptions options, PGSBasedMixupMapper pgsBasedMixupMapper, DoubleMatrixDataset<String, String> phenotypeData) throws IOException {
+    public static void reportResults(File outputPath, PGSBasedMixupMapper pgsBasedMixupMapper, DoubleMatrixDataset<String, String> phenotypeData, Map<String, String> sampleAssignments) throws IOException {
         for (Map.Entry<String, DoubleMatrixDataset<String, String>> zScores : pgsBasedMixupMapper.getZScoresMap().entrySet()) {
             zScores.getValue().save(String.format("%s_zScoreMatrix_%s.tsv",
-                    options.getOutputBasePath(), zScores.getKey().replace(' ', '-')));
+                    outputPath, zScores.getKey().replace(' ', '-')));
             DoubleMatrixDataset<String, String> polyGenicScores = pgsBasedMixupMapper
                     .polyGenicScoresMap.get(zScores.getKey());
             DoubleMatrix1D firstPolygenicScores = pgsBasedMixupMapper.getBestPolygenicScores(zScores.getKey());
@@ -969,21 +1016,20 @@ public class PGSBasedMixupMapper {
             comparison.viewCol(0).assign(actualTraits);
             comparison.viewCol(1).assign(firstPolygenicScores);
             comparison.save(String.format("%s_TraitsVsPGSs_%s.tsv",
-                    options.getOutputBasePath(), zScores.getKey().replace(' ', '-')));
+                    outputPath, zScores.getKey().replace(' ', '-')));
             polyGenicScores.save(String.format("%s_PGSs_%s.tsv",
-                    options.getOutputBasePath(), zScores.getKey().replace(' ', '-')));
+                    outputPath, zScores.getKey().replace(' ', '-')));
         }
 
         pgsBasedMixupMapper.getZScoreMatrix().save(
                 String.format("%s_zScoreMatrix_%s.tsv",
-                        options.getOutputBasePath(), "overall"));
+                        outputPath, "overall"));
 
         // Save the new coupling map
-        Map<String, String> sampleAssignments = pgsBasedMixupMapper.getSampleAssignments();
 
         CSVWriter writer = new CSVWriter(new FileWriter(
                 String.format("%s_newSampleCoupling.tsv",
-                options.getOutputBasePath())), CSVWriter.DEFAULT_SEPARATOR, CSVWriter.NO_QUOTE_CHARACTER,
+                        outputPath)), CSVWriter.DEFAULT_SEPARATOR, CSVWriter.NO_QUOTE_CHARACTER,
                 CSVWriter.DEFAULT_ESCAPE_CHARACTER, CSVWriter.DEFAULT_LINE_END);
 
         for (Map.Entry<String, String> entry : sampleAssignments.entrySet()) {
@@ -1260,9 +1306,9 @@ public class PGSBasedMixupMapper {
      *                                            load phenotypes for.
      * @return A List of samples with the phenotypes annotated within these samples.
      */
-    private static DoubleMatrixDataset<String, String> loadPhenotypeData(PGSBasedMixupMapperOptions options,
-                                                                         Set<String> phenotypeSampleIdentifiersToInclude,
-                                                                         Set<String> traitsToInclude) {
+    static DoubleMatrixDataset<String, String> loadPhenotypeData(PGSBasedMixupMapperOptions options,
+                                                                 Set<String> phenotypeSampleIdentifiersToInclude,
+                                                                 Set<String> traitsToInclude) {
         DoubleMatrixDataset<String, String> phenotypeMatrix = null;
         try {
             phenotypeMatrix = loadPhenotypeMatrix(options.getInputPhenotypePath(),

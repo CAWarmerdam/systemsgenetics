@@ -76,7 +76,15 @@ public class GeneticVariantBackedEffectAllele extends EffectAllele {
                 && matchesVariantAllelesOrComplement(variant);
     }
 
-    public boolean matchesVariantAllelesOrComplement(GeneticVariant variant) {
+    /**
+     * Method that assesses whether or not the alleles, or their complements, of the specified genetic variant match
+     * the alleles of the variant backing this effect allele.
+     *
+     * @param variant The variant to assess the alleles from.
+     * @return true if the alleles of the specified variant, or their complement alleles,
+     * match the alleles of the genetic variant backing this effect allele.
+     */
+    private boolean matchesVariantAllelesOrComplement(GeneticVariant variant) {
         if (variant.getVariantAlleles().sameAlleles(this.variant.getVariantAlleles())) {
             return true;
         }

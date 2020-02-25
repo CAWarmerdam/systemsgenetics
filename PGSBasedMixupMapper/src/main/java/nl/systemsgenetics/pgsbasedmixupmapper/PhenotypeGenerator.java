@@ -137,7 +137,7 @@ public class PhenotypeGenerator {
         DoubleMatrixDataset<String, String> geneticRiskScoreMatrix = null;
 
         // Initialize an Simple polygenic score calculator
-        SimplePolyGenicScoreCalculator polyGenicScoreCalculator = new SimplePolyGenicScoreCalculator(
+        SimplePolygenicScoreCalculator polyGenicScoreCalculator = new SimplePolygenicScoreCalculator(
                 genotypeData, // The genotype data to calculate an LD matrix in.
                 options.getWindowSize(), // Get the window size in number of base pairs,
                 pValThres,

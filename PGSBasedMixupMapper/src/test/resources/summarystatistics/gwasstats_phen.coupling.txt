@@ -1,2 +1,1 @@
-ieu-a-780,HDL cholesterol
-ieu-a-781,LDL cholesterol
+ieu-a-780-filtered,HDL cholesterol

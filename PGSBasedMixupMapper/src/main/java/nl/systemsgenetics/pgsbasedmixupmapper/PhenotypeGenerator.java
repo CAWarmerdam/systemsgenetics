@@ -66,7 +66,14 @@ public class PhenotypeGenerator {
                 options.getGenotypeToPhenotypeSampleCouplingFile(), CSV_DELIMITER);
 
         // Load Genotype and trait data
-        RandomAccessGenotypeData genotypeData = loadGenotypeData(options, genotypeToPhenotypeSampleCoupling.keySet());
+        RandomAccessGenotypeData genotypeData = loadGenotypeData(
+                options.getInputGenotypePaths(),
+                options.getInputGenotypeType(),
+                genotypeToPhenotypeSampleCoupling.keySet(),
+                options.getGenomicRangesToExclude(),
+                options.getMinorAlleleFrequencyThreshold(),
+                options.shouldForceSeqName());
+
         VariantFilter variantFilter = getVariantFilter(genotypeData);
 
         // Load GWAS summary statistics
@@ -88,8 +95,7 @@ public class PhenotypeGenerator {
 //        phenotypeMatrix.viewCol("Height").assign(height);
         phenotypeMatrix.viewCol("LDL cholesterol").assign(ldl);
         phenotypeMatrix.viewCol("HDL cholesterol").assign(hdl);
-//        phenotypeMatrix.viewCol("LDL cholesterol").assign(ldl);
-//        phenotypeMatrix.viewCol("BMI").assign(bmi);
+
         phenotypeMatrix.save(options.getOutputBasePath() + "_simphenotypes.tsv");
     }
 

@@ -198,9 +198,9 @@ public class RobustnessAnalyzer {
                 options.getGwasSummaryStatisticsPhenotypeCouplingFile(), CSV_DELIMITER);
 
         // Load trait data, only including the samples specified in the coupling map.
-        DoubleMatrixDataset<String, String> phenotypeData = loadPhenotypeData(options,
+        DoubleMatrixDataset<String, String> phenotypeData = loadPhenotypeData(
                 new HashSet<>(correctSampleCouplingMap.values()),
-                new HashSet<>(gwasPhenotypeCoupling.values()));
+                new HashSet<>(gwasPhenotypeCoupling.values()), options.getInputPhenotypePath());
 
         // Get the filter out the samples from the coupling file that could not be found.
         correctSampleCouplingMap = correctSampleCouplingMap.entrySet()
@@ -209,8 +209,13 @@ public class RobustnessAnalyzer {
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 
         // Load Genotype data, only including the samples specified in the coupling map.
-        RandomAccessGenotypeData genotypeData = loadGenotypeData(options,
-                correctSampleCouplingMap.keySet());
+        RandomAccessGenotypeData genotypeData = loadGenotypeData(
+                options.getInputGenotypePaths(),
+                options.getInputGenotypeType(),
+                correctSampleCouplingMap.keySet(),
+                options.getGenomicRangesToExclude(),
+                options.getMinorAlleleFrequencyThreshold(),
+                options.shouldForceSeqName());
 
         // Initialize an Simple polygenic score calculator
         SimplePolygenicScoreCalculator polygenicScoreCalculator = new SimplePolygenicScoreCalculator(

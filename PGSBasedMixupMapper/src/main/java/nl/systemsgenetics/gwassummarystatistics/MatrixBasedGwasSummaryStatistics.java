@@ -26,8 +26,10 @@ public class MatrixBasedGwasSummaryStatistics implements GwasSummaryStatistics{
     private final LinkedHashMap<String, Integer> variantIds;
     private DoubleMatrix1D betaCoefficients;
     private DoubleMatrix1D pValues;
+    private final List<String> alleles;
 
     public MatrixBasedGwasSummaryStatistics(String gwasId, LinkedHashMap<String, Integer> variantIds,
+                                            List<String> alleles,
                                             DoubleMatrix1D betaCoefficients, DoubleMatrix1D pValues) {
         // Set the gwas identifier
         this.gwasId = gwasId;
@@ -43,6 +45,7 @@ public class MatrixBasedGwasSummaryStatistics implements GwasSummaryStatistics{
         this.variantIds = variantIds;
         this.betaCoefficients = betaCoefficients;
         this.pValues = pValues;
+        this.alleles = alleles;
     }
 
     public MatrixBasedGwasSummaryStatistics(RandomAccessGenotypeData genotypeData, String gwasId) {
@@ -50,9 +53,11 @@ public class MatrixBasedGwasSummaryStatistics implements GwasSummaryStatistics{
         this.variantIds = new LinkedHashMap<>();
         this.betaCoefficients = new DenseDoubleMatrix1D(0);
         this.pValues = new DenseDoubleMatrix1D(0);
+        this.alleles = new ArrayList<>();
     }
 
-    public void add(LinkedHashMap<String, Integer> variantIds, DoubleMatrix1D betaCoefficients, DoubleMatrix1D pValues) {
+    public void add(LinkedHashMap<String, Integer> variantIds, List<String> alleles,
+                    DoubleMatrix1D betaCoefficients, DoubleMatrix1D pValues) {
         if (variantIds.size() != betaCoefficients.size() || variantIds.size() != pValues.size()) {
             throw new GwasSummaryStatisticsException(
                     String.format("Trying to add summary statistics with unequal number of variants, " +
@@ -60,8 +65,11 @@ public class MatrixBasedGwasSummaryStatistics implements GwasSummaryStatistics{
                             variantIds.size(), betaCoefficients.size(), pValues.size()));
         }
 
+        assert alleles.size() == variantIds.size();
+
         this.betaCoefficients = DoubleFactory1D.dense.append(this.betaCoefficients, betaCoefficients);
         this.pValues = DoubleFactory1D.dense.append(this.pValues, pValues);
+        this.alleles.addAll(alleles);
 
         int originalSize = this.variantIds.size();
 
@@ -221,7 +229,7 @@ public class MatrixBasedGwasSummaryStatistics implements GwasSummaryStatistics{
                 // Only write the association whenever the p-value is below the threshold
                 writer.writeNext(new String[]{
                         variantAssociation.getKey(),
-                        "LastAlternativeAllele",
+                        alleles.get(variantAssociation.getValue()),
                         String.valueOf(betaCoefficients.getQuick(variantAssociation.getValue())),
                         String.valueOf(pValues.getQuick(variantAssociation.getValue()))});
             }

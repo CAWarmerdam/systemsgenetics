@@ -9,6 +9,8 @@ import gnu.trove.map.hash.THashMap;
 import nl.systemsgenetics.gwassummarystatistics.GwasSummaryStatistics;
 import org.molgenis.genotype.Allele;
 import org.molgenis.genotype.RandomAccessGenotypeData;
+import org.molgenis.genotype.sampleFilter.SampleFilter;
+import org.molgenis.genotype.sampleFilter.SampleFilterableGenotypeDataDecorator;
 import org.molgenis.genotype.util.LdCalculatorException;
 import org.molgenis.genotype.variant.GeneticVariant;
 import umcg.genetica.console.ProgressBar;
@@ -51,37 +53,43 @@ public class SimplePolygenicScoreCalculator {
     public DoubleMatrixDataset<String, String> calculate(
             GwasSummaryStatistics summaryStatistics) {
 
+        return calculate(summaryStatistics, genotypeData);
+    }
+
+    public DoubleMatrixDataset<String, String> calculate(
+            GwasSummaryStatistics summaryStatistics, SampleFilter sampleFilter) {
+
+        return calculate(
+                summaryStatistics,
+                new SampleFilterableGenotypeDataDecorator(genotypeData, sampleFilter));
+    }
+
+    private DoubleMatrixDataset<String, String> calculate(
+            GwasSummaryStatistics summaryStatistics, RandomAccessGenotypeData genotypeData) {
+
         double[] pValThres = this.getpValueThresholds()
                 .stream().mapToDouble(Double::doubleValue).toArray();
         boolean unweighted = false;
         String[] genomicRangesToExclude = this.getGenomicRangesToExclude();
         THashMap<String, THashMap<String, THashMap<String, ArrayList<RiskEntry>>>> risks =
                 summaryStatistics.riskEntries(genotypeData,
-                pValThres, genomicRangesToExclude,
-                unweighted);
+                        pValThres, genomicRangesToExclude,
+                        unweighted);
+
+        DoubleMatrixDataset<String, String> scores = initializePolygenicScoreMatrix(genotypeData, risks);
 
         if (windowSizeList.size() == 1) {
-            return calculate(risks, windowSizeList.get(0));
+            return calculate(scores, risks, windowSizeList.get(0), genotypeData);
         } else if (windowSizeList.size() == 2) {
-            return calculateTwoStages(risks, windowSizeList.stream().mapToInt(i->i).toArray());
+            return calculateTwoStages(scores, risks, windowSizeList.stream().mapToInt(i->i).toArray(), genotypeData);
         }
         throw new UnsupportedOperationException("More than two window sizes not supported");
     }
 
     public DoubleMatrixDataset<String, String> calculate(
+            DoubleMatrixDataset<String, String> scores,
             THashMap<String, THashMap<String, THashMap<String, ArrayList<RiskEntry>>>> risks,
-            double windowSize) {
-
-        // Select the keys that correspond to the different combinations to test for
-        ArrayList<String> keys = new ArrayList<>();
-        for (Entry<String, THashMap<String, THashMap<String, ArrayList<RiskEntry>>>> riskScorePheno : risks.entrySet()) {
-            for (Entry<String, THashMap<String, ArrayList<RiskEntry>>> riskScorePheno2 : riskScorePheno.getValue().entrySet()) {
-                keys.add(riskScorePheno2.getKey());
-            }
-        }
-
-        // Initialize the scores matrix
-        DoubleMatrixDataset<String, String> scores = new DoubleMatrixDataset<String, String>(keys, Arrays.asList(genotypeData.getSampleNames()));
+            double windowSize, RandomAccessGenotypeData genotypeData) {
 
         ProgressBar p = new ProgressBar(risks.size() * chrOrder.length);
 
@@ -248,16 +256,10 @@ public class SimplePolygenicScoreCalculator {
     }
 
     public DoubleMatrixDataset<String, String> calculateTwoStages(
+            DoubleMatrixDataset<String, String> scores,
             THashMap<String, THashMap<String, THashMap<String, ArrayList<RiskEntry>>>> risks,
-            int[] windowSize) {
-        ArrayList<String> keys = new ArrayList<String>();
-        for (Entry<String, THashMap<String, THashMap<String, ArrayList<RiskEntry>>>> riskScorePheno : risks.entrySet()) {
-            for (Entry<String, THashMap<String, ArrayList<RiskEntry>>> riskScorePheno2 : riskScorePheno.getValue().entrySet()) {
-                keys.add(riskScorePheno.getKey() + riskScorePheno2.getKey());
-            }
-        }
+            int[] windowSize, RandomAccessGenotypeData genotypeData) {
 
-        DoubleMatrixDataset<String, String> scores = new DoubleMatrixDataset<String, String>(keys, Arrays.asList(genotypeData.getSampleNames()));
         ProgressBar p = new ProgressBar(risks.size() * chrOrder.length);
 
         for (int counter = 0; counter < chrOrder.length; counter++) {
@@ -464,6 +466,31 @@ public class SimplePolygenicScoreCalculator {
         }
         p.close();
         return scores;
+    }
+
+    public DoubleMatrixDataset<String, String> initializePolygenicScoreMatrix(
+            RandomAccessGenotypeData genotypeData,
+            THashMap<String, THashMap<String, THashMap<String, ArrayList<RiskEntry>>>> risks) {
+
+        // Initialize an array list with concatenated strings with a combination of P-values and gwas id.
+        ArrayList<String> keys = new ArrayList<String>();
+        for (Entry<String, THashMap<String, THashMap<String, ArrayList<RiskEntry>>>> riskScorePheno : risks.entrySet()) {
+            for (Entry<String, THashMap<String, ArrayList<RiskEntry>>> riskScorePheno2 : riskScorePheno.getValue().entrySet()) {
+                keys.add(riskScorePheno.getKey() + riskScorePheno2.getKey());
+            }
+        }
+
+        // Initialize
+        return new DoubleMatrixDataset<>(keys, Arrays.asList(genotypeData.getSampleNames()));
+    }
+
+    public DoubleMatrixDataset<String, String> initializePolygenicScoreMatrix(String phenotype) {
+        ArrayList<String> keys = new ArrayList<>();
+        for (Double pValue : pValueThresholds) {
+            keys.add(phenotype + pValue);
+        }
+
+        return new DoubleMatrixDataset<>(keys, Arrays.asList(genotypeData.getSampleNames()));
     }
 
     public String[] getGenomicRangesToExclude() {

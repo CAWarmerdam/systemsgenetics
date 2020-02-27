@@ -7,7 +7,6 @@ import org.molgenis.genotype.RandomAccessGenotypeDataReaderFormats;
 import umcg.genetica.math.matrix2.DoubleMatrixDataset;
 
 import java.io.File;
-import java.io.IOException;
 import java.net.URISyntaxException;
 import java.nio.file.Path;
 import java.util.*;
@@ -96,9 +95,11 @@ public class PGSBasedMixupMapperTest {
             // Initialize the Mix-up mapper
             PGSBasedMixupMapper pgsBasedMixupMapper = new PGSBasedMixupMapper(
                     genotypeData, phenotypeData.duplicate(), genotypeToPhenotypeSampleCoupling,
-                    gwasSummaryStatisticsMap, polygenicScoreCalculator);
+                    polygenicScoreCalculator);
 
-            pgsBasedMixupMapper.run();
+            pgsBasedMixupMapper.calculatePolygenicScores(gwasSummaryStatisticsMap);
+
+            pgsBasedMixupMapper.calculateZScoreMatrix();
             DoubleMatrixDataset<String, String> actualPolygenicScores = pgsBasedMixupMapper
                     .getPolygenicScores("HDL cholesterol");
 

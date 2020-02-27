@@ -48,7 +48,7 @@ public class MatrixBasedGwasSummaryStatistics implements GwasSummaryStatistics{
         this.alleles = alleles;
     }
 
-    public MatrixBasedGwasSummaryStatistics(RandomAccessGenotypeData genotypeData, String gwasId) {
+    public MatrixBasedGwasSummaryStatistics(String gwasId) {
         this.gwasId = gwasId;
         this.variantIds = new LinkedHashMap<>();
         this.betaCoefficients = new DenseDoubleMatrix1D(0);

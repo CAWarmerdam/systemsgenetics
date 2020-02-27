@@ -279,11 +279,12 @@ public class RobustnessAnalyzer {
 
                 // Initialize the Mix-up mapper
                 PGSBasedMixupMapper pgsBasedMixupMapper = new PGSBasedMixupMapper(
-                        genotypeData, phenotypeData.duplicate(), permutedSampleCouplingMap,
-                        gwasSummaryStatisticsMap, polygenicScoreCalculator);
+                        genotypeData, phenotypeData.duplicate(), permutedSampleCouplingMap, polygenicScoreCalculator);
+
+                pgsBasedMixupMapper.calculatePolygenicScores(gwasSummaryStatisticsMap);
 
                 // Run the mix-up mapper
-                pgsBasedMixupMapper.run();
+                pgsBasedMixupMapper.calculateZScoreMatrix();
 
                 // Report results
                 Map<String, String> resolvedSampleCouplingMap = pgsBasedMixupMapper.getSampleAssignments();

@@ -105,15 +105,15 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>org.apache.commons</groupId>
-            <artifactId>commons-math3</artifactId>
-            <version>3.6.1</version>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
             <groupId>nl.systemsgenetics</groupId>
             <artifactId>genetica-libraries</artifactId>
             <version>1.0.10-SNAPSHOT</version>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-collections4</artifactId>
+            <version>4.3</version>
             <scope>compile</scope>
         </dependency>
     </dependencies>

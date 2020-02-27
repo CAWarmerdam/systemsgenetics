@@ -9,6 +9,7 @@ import com.opencsv.*;
 import nl.systemsgenetics.gwassummarystatistics.*;
 import nl.systemsgenetics.polygenicscorecalculator.*;
 import org.apache.commons.cli.ParseException;
+import org.apache.commons.collections4.ListUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.math3.stat.StatUtils;
@@ -25,6 +26,7 @@ import org.molgenis.genotype.Sample;
 import org.molgenis.genotype.Sequence;
 import org.molgenis.genotype.multipart.MultiPartGenotypeData;
 import org.molgenis.genotype.sampleFilter.SampleFilter;
+import org.molgenis.genotype.sampleFilter.SampleIdExcludeFilter;
 import org.molgenis.genotype.sampleFilter.SampleIdIncludeFilter;
 import org.molgenis.genotype.variant.GeneticVariant;
 import org.molgenis.genotype.variantFilter.*;
@@ -41,6 +43,7 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.Date;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * @author Robert Warmerdam
@@ -58,7 +61,6 @@ public class PGSBasedMixupMapper {
             + "  |  University Medical Center Groningen  |\n"
             + "  \\---------------------------------------/";
     private final RandomAccessGenotypeData genotypeData;
-    private Map<String, GwasSummaryStatistics> gwasSummaryStatisticsMap;
     private final Map<String, String> genotypeSampleToPhenotypeSampleCoupling;
     private SimplePolygenicScoreCalculator polyGenicScoreCalculator;
     private final DoubleMatrixDataset<String, String> phenotypeMatrix;
@@ -78,16 +80,13 @@ public class PGSBasedMixupMapper {
      * @param phenotypeMatrix The individual's phenotype data to resolve sample mix-ups in.
      * @param genotypeSampleToPhenotypeSampleCoupling Map with genotype sample identifiers as the keys
      *                                                with the original phenotype sample identifiers as values.
-     * @param gwasSummaryStatisticsMap A map with GwasSummaryStatistics data per trait or phenotype.
      * @param polyGenicScoreCalculator An object with which polygenic scores are calculated.
      */
     public PGSBasedMixupMapper(RandomAccessGenotypeData genotypeData,
                                DoubleMatrixDataset<String, String> phenotypeMatrix,
                                Map<String, String> genotypeSampleToPhenotypeSampleCoupling,
-                               Map<String, GwasSummaryStatistics> gwasSummaryStatisticsMap,
                                SimplePolygenicScoreCalculator polyGenicScoreCalculator) {
         this.genotypeData = genotypeData;
-        this.gwasSummaryStatisticsMap = gwasSummaryStatisticsMap;
         this.genotypeSampleToPhenotypeSampleCoupling = genotypeSampleToPhenotypeSampleCoupling;
         this.polyGenicScoreCalculator = polyGenicScoreCalculator;
         this.phenotypeMatrix = phenotypeMatrix;
@@ -114,45 +113,272 @@ public class PGSBasedMixupMapper {
         // Get the samples
     }
 
-    public PGSBasedMixupMapper(RandomAccessGenotypeData genotypeData,
-                               DoubleMatrixDataset<String, String> phenotypeMatrix,
-                               Map<String, String> genotypeSampleToPhenotypeSampleCoupling,
-                               SimplePolygenicScoreCalculator polyGenicScoreCalculator) {
+    /**
+     * Calculates genome wide associations and polygenic scores in an independent manner for K folds.
+     * The K folds are defined as K non-overlapping lists of randomly selected samples so that all samples
+     * are in exactly a single fold.
+     *
+     * In every iteration, a single fold is used to calculate genome wide associations in. In the other folds
+     * polygenic scores are calculated. This is done per chromosome.
+     *
+     * Polygenic scores are averaged afterwards by dividing the scores by K folds - 1.
+     *
+     * @param folds k folds to perform the procedure for.
+     * @throws PGSBasedMixupMapperException If correlations unexpectedly were not able to be calculated due to
+     * unequal number of samples.
+     */
+    public void calculatePolygenicScoresWithKFoldProcedure(int folds) throws PGSBasedMixupMapperException {
+        // Perform KFold procedure
 
-        this.genotypeData = genotypeData;
-        this.genotypeSampleToPhenotypeSampleCoupling = genotypeSampleToPhenotypeSampleCoupling;
-        this.polyGenicScoreCalculator = polyGenicScoreCalculator;
-        this.phenotypeMatrix = phenotypeMatrix;
+        // First define the folds and split the samples into k subsamples with approximately equal sizes
+        List<List<String>> randomSamplePartitions = getRandomSamplePartitions(folds);
 
-        // Get the genotype sample identifiers, and check if all samples from the coupling file are present.
-        this.genotypeSampleIdentifiers = this.getGenotypeSampleIdentifiers();
-        // Get the phenotype sample identifiers, and check if all samples from the coupling file are present.
-        this.phenotypeSampleIdentifiers = this.getPhenotypeSampleIdentifiers();
+        // TODO: Write the random sample partitions to a file (something like a column for every fold)
 
-        // Check if all phenotype samples are unique.
-        assertUniquePhenotypeSamples(genotypeSampleToPhenotypeSampleCoupling);
+        // Order phenotype data according to the genotype data.
+        DoubleMatrixDataset<String, String> phenotypeData = getOrderedNormalizedPhenotypeData();
 
-        // Check if there are more than 0 phenotype samples.
-        if (this.phenotypeMatrix.getRowObjects().size() < 1) {
-            throw new IllegalArgumentException("The number of samples cannot be zero (0)");
+        // Initialize PGS scores
+        for (String phenotype : phenotypeData.getColObjects()) {
+            this.polyGenicScoresMap.put(phenotype, polyGenicScoreCalculator.initializePolygenicScoreMatrix(phenotype));
         }
 
-        zScoreMatrix = initializeGenotypePhenotypeMatrix();
-        presenceArray = new DenseDoubleMatrix1D(phenotypeSampleIdentifiers.size());
+        // Get the variant ID map to be able to get the alleles corresponding to the association quickly
+        HashMap<String, GeneticVariant> variantIdMap = genotypeData.getVariantIdMap();
+
+        LinkedHashMap<String, Integer> sampleHash = getGenotypeSampleHash();
+
+        LOGGER.debug("Initializing PearsonRToPvalueBinned object");
+        // Use a binned approach for determining p values per correlation
+        PearsonRToPValueBinned rToPValue = new PearsonRToPValueBinned(10000000,
+                sampleHash.size() / folds);
+
+        GenomicBoundaries<String> boundaries = getGenomicBoundaries(genotypeData, -1);
+
+        for (GenomicBoundary<String> boundary : boundaries) {
+            LOGGER.info(String.format("Calculating associations for genomic region '%s'", boundary.getAnnotation()));
+            LOGGER.debug(String.format("Loading variant scaled dosage matrix for range %s", boundary.getAnnotation()));
+            // Get normalized genotypes
+            DoubleMatrixDataset<String, String> variantScaledDosages = loadVariantScaledAlternativeDosageMatrix(
+                    genotypeData, boundary, sampleHash);
+
+            // For every fold, subset the dosages and phenotype matrices, and calculate the correlation matrix.
+            int foldIndex = 0;
+            for (List<String> randomSamplePartition : randomSamplePartitions) {
+
+                // Report which fold we are at.
+                LOGGER.info(String.format("Fold %d / %d", ++foldIndex, folds));
+
+                // Obtain a sample filter for obtaining those samples in all other partitions.
+                SampleFilter sampleIdExcludeFilter = new SampleIdExcludeFilter(randomSamplePartition);
+
+                // Subset the phenotype and genotype data to include only the samples that
+                // are within the random sample partition.
+                DoubleMatrixDataset<String, String> dosageMatrixSubset = variantScaledDosages
+                        .viewRowSelection(randomSamplePartition);
+                DoubleMatrixDataset<String, String> phenotypeMatrixSubset = phenotypeData
+                        .viewRowSelection(mapToPhenotypeSamples(randomSamplePartition.stream()));
+
+                // Get a matrix of correlations.
+                DoubleMatrixDataset<String, String> pearsonRValues =
+                        calculateCorrelationOfScaledDosagesAndScaledPhenotypes(
+                        dosageMatrixSubset, phenotypeMatrixSubset);
+
+                // Duplicate the pearson R values to calculate p values
+                DoubleMatrixDataset<String, String> pValues = pearsonRValues.duplicate();
+
+                LOGGER.debug("Getting P-values...");
+
+                // Get actual pValues
+                rToPValue.inplaceRToPValue(pValues);
+
+                LOGGER.debug("Getting P-values done!");
+
+                LOGGER.info(String.format("Calculated associations for %d variants",
+                        pearsonRValues.rows()));
+
+                // Get the alleles that correspond to the
+                List<String> alleles = new ArrayList<>();
+                for (String variantIdentifiers : pearsonRValues.getRowObjects()) {
+                    GeneticVariant variant = variantIdMap.get(variantIdentifiers);
+                    alleles.add(variant.getVariantAlleles().get(variant.getAlleleCount() - 1).getAlleleAsString());
+                }
+
+                for (int i = 0; i < phenotypeData.columns(); i++) {
+                    // Get the phenotype identifier
+                    String phenotype = phenotypeData.getColObjects().get(i);
+
+                    // Wrap the pearson values and p values inside a summary statistics object
+                    MatrixBasedGwasSummaryStatistics summaryStatistics = new MatrixBasedGwasSummaryStatistics(phenotype,
+                            pearsonRValues.getHashRows(), alleles, pearsonRValues.viewCol(i), pValues.viewCol(i));
+
+                    DoubleMatrixDataset<String, String> polygenicScores = polyGenicScoreCalculator.calculate(
+                            summaryStatistics, sampleIdExcludeFilter);
+
+                    DoubleMatrixDataset<String, String> preliminaryPolygenicScores = polyGenicScoresMap.get(phenotype);
+
+                    preliminaryPolygenicScores.viewColSelection(polygenicScores.getColObjects())
+                            .getMatrix().assign(polygenicScores.getMatrix(), DoubleFunctions.plus);
+                }
+            }
+        }
+
+        // average the PGSs per sample by the number of times a polygenic score was calculated for the specific
+        // sample.
+        dividePolygenicScores(folds - 1);
     }
 
-    public void run() throws PGSBasedMixupMapperException {
+    private LinkedHashMap<String, Integer> getGenotypeSampleHash() {
+        // Initialize map of summary statistics
+        String[] samples = genotypeData.getSampleNames();
+
+        // Get a linked hash map of the samples in the genotype data
+        LinkedHashMap<String, Integer> sampleHash = new LinkedHashMap<>(samples.length);
+
+
+        // Fill the hash map with sample names
+        int s = 0;
+        for (String sample : samples) {
+            sampleHash.put(sample, s++);
+        }
+        return sampleHash;
+    }
+
+    /**
+     * Method that calculates correlations between genotypes and phenotypes.
+     * The rows of both the dosage matrix and the phenotype matrix should be
+     * correspond to each other, and be in the same order.
+     *
+     * @param dosageMatrix A data set of dosages,
+     *                     with rows and columns corresponding to samples and variants respectively.
+     *                     The dosages should be normalized so that the mean per variant is zero (0),
+     *                     and that te standard deviation is one (1).
+     * @param phenotypeMatrix A data set of quantitative phenotype values,
+     *                        with rows and columns corresponding to samples and traits respectively.
+     *                        The phenotype values should be normalized so that the mean per trait is zero (0),
+     *                        and that te standard deviation is one (1).
+     * @return A matrix of pearson correlations with rows and columns representing variants and traits respectively.
+     * @throws PGSBasedMixupMapperException If the samples do not correspond.
+     */
+    private static DoubleMatrixDataset<String, String> calculateCorrelationOfScaledDosagesAndScaledPhenotypes(
+            DoubleMatrixDataset<String, String> dosageMatrix,
+            DoubleMatrixDataset<String, String> phenotypeMatrix) throws PGSBasedMixupMapperException {
+
+        // Initialize the pearson R values.
+        DoubleMatrixDataset<String, String> pearsonRValues;
+
+        LOGGER.debug("Starting correlating variants and phenotypes...");
+        try {
+            // Perform actual correlation calculations.
+            pearsonRValues = DoubleMatrixDataset.correlateColumnsOf2ColumnNormalizedDatasets(
+                    phenotypeMatrix, dosageMatrix);
+        } catch (Exception e) {
+            throw new PGSBasedMixupMapperException(
+                    "Number of samples between phenotypes and genotypes were unexpectedly not equal", e);
+        }
+        LOGGER.debug(String.format("Finished correlating columns of 2 column normalized datasets.%n shape is %d x %d",
+                pearsonRValues.rows(), pearsonRValues.columns()));
+
+        // Columns are columns of normalized phenotypes (phenotypes)
+        // Rows are the variants (columns of normalized dosages)
+
+        // Remove rows with NaN values
+
+        LOGGER.debug("Checking for NaN values...");
+        // Initialize a linked list to which variant ids should be appended that do not show NaN values.
+        List<String> variantsWherePearsonRIsNotNaN = new LinkedList<>();
+        ArrayList<String> variants = pearsonRValues.getRowObjects();
+        // Loop through the variants, checking if the pearson R is not NaN for the first phenotype.
+        for (int variantIndex = 0; variantIndex < pearsonRValues.rows(); variantIndex++) {
+            // Check the for a NaN in this variant
+            if (Arrays.stream(pearsonRValues.viewRow(variantIndex).toArray()).noneMatch(Double::isNaN)) {
+                // Add the variant identifier to the list.
+                String variantIdentifier = variants.get(variantIndex);
+                variantsWherePearsonRIsNotNaN.add(variantIdentifier);
+            }
+        }
+
+        LOGGER.debug(String.format("Found %d / %d variants that do not have a NaN value in the pearson R values",
+                variantsWherePearsonRIsNotNaN.size(), pearsonRValues.rows()));
+
+        // Perform the row selection, removing the rows where pearson R is NaN.
+        pearsonRValues = pearsonRValues.viewRowSelection(variantsWherePearsonRIsNotNaN);
+        return pearsonRValues;
+    }
+
+    /**
+     * Method that divides all polygenic scores in the polygenic scores map by the given number.
+     *
+     * @param number The number with which to divide the polygenic scores.
+     */
+    private void dividePolygenicScores(int number) {
+        // Loop through the columns of phenotype matrix, which contains the phenotype names / ids.
+        for (String phenotype : phenotypeMatrix.getColObjects()) {
+            polyGenicScoresMap.get(phenotype).getMatrix().assign(DoubleFunctions.div(
+                    number));
+        }
+    }
+
+    private List<String> mapToPhenotypeSamples(Stream<String> stream) {
+        return stream
+        .map(this.genotypeSampleToPhenotypeSampleCoupling::get)
+        .collect(Collectors.toList());
+    }
+
+    private DoubleMatrixDataset<String, String> getOrderedNormalizedPhenotypeData() {
+        List<String> orderedPhenotypeIdentifiers = mapToPhenotypeSamples(
+                Arrays.stream(genotypeData.getSampleNames()));
+        LOGGER.debug(String.format("Ordering / selecting %d phenotype identifiers...",
+                orderedPhenotypeIdentifiers.size()));
+
+        DoubleMatrixDataset<String, String> phenotypeData =
+                this.phenotypeMatrix.viewRowSelection(orderedPhenotypeIdentifiers);
+        LOGGER.debug("Ordering phenotype identifiers done!");
+
+        // Phenotypes have to be normalized. This can be done here, but also in an earlier stage
+
+        LOGGER.debug(String.format("Normalizing %d phenotypes...", phenotypeData.columns()));
+        phenotypeData.normalizeColumns(); // Normalizes so that the mean of columns is 0 and SD is 1
+
+        LOGGER.debug(String.format("Normalizing %d phenotypes done!", phenotypeData.columns()));
+        return phenotypeData;
+    }
+
+    private List<List<String>> getRandomSamplePartitions(int folds) {
+        List<String> shufflingSamples = new ArrayList<>(this.genotypeSampleIdentifiers);
+        Collections.shuffle(shufflingSamples);
+        return ListUtils.partition(shufflingSamples, shufflingSamples.size() / folds);
+    }
+
+    /**
+     * Method for calculating polygenic scores for every phenotype.
+     *
+     * @param gwasSummaryStatisticsMap A map with GwasSummaryStatistics data per trait or phenotype.
+     */
+    public void calculatePolygenicScores(Map<String, GwasSummaryStatistics> gwasSummaryStatisticsMap) {
+
+        for (String phenotype : this.phenotypeMatrix.getColObjects()) {
+
+            System.out.println(String.format("Calculating PGSs for trait '%s'", phenotype));
+            // Calculate the Z scores for every phenotype
+            // Initialize polygenic scores
+            DoubleMatrixDataset<String, String> polygenicScores = polyGenicScoreCalculator
+                    .calculate(gwasSummaryStatisticsMap.get(phenotype));
+            polyGenicScoresMap.put(phenotype, polygenicScores.duplicate());
+
+        }
+    }
+
+    public void calculateZScoreMatrix() throws PGSBasedMixupMapperException {
         // Scale phenotypes
         DoubleMatrixDataset<String, String> normalizedPhenotypeMatrix = this.phenotypeMatrix.duplicate();
         normalizedPhenotypeMatrix.normalizeColumns();
 
         for (String phenotype : this.phenotypeMatrix.getColObjects()) {
-            System.out.println(String.format("Calculating PGSs and corresponding Z-scores for trait '%s'", phenotype));
+            System.out.println(String.format("Calculating Z-scores for trait '%s'", phenotype));
             // Calculate the Z scores for every phenotype
             try {
-                // Initialize polygenic scores
-                DoubleMatrixDataset<String, String> polygenicScores = calculatePolyGenicScores(phenotype);
-                polyGenicScoresMap.put(phenotype, polygenicScores.duplicate());
+                DoubleMatrixDataset<String, String> polygenicScores = polyGenicScoresMap.get(phenotype);
 
                 DoubleMatrixDataset<String, String> phenotypeSpecificZScoreMatrix = calculateZScoreMatrix(
                         polygenicScores,
@@ -492,12 +718,6 @@ public class PGSBasedMixupMapper {
         }
     }
 
-    private DoubleMatrixDataset<String, String> calculatePolyGenicScores(String phenotype) {
-        GwasSummaryStatistics summaryStatistics = gwasSummaryStatisticsMap.get(phenotype);
-
-        return polyGenicScoreCalculator.calculate(summaryStatistics);
-    }
-
     private Map<String, String> resolveMixUps(Map<String, String> bestMatchingPhenotypeSamplePerGenotypeSample) {
         Map<String, String> traitSampleToGenotypeSample =
                 genotypeSampleToPhenotypeSampleCoupling.entrySet()
@@ -714,20 +934,26 @@ public class PGSBasedMixupMapper {
                 false,
                 options.getGenomicRangesToExclude());
 
+        // Initialize the polygenic score mixUp mapper
+        PGSBasedMixupMapper pgsBasedMixupMapper = new PGSBasedMixupMapper(
+                genotypeData, phenotypeData.duplicate(), genotypeToPhenotypeSampleCoupling,
+                polygenicScoreCalculator);
+
         try {
-            // Get the gwas summary statistics map
-            Map<String, GwasSummaryStatistics> gwasSummaryStatisticsMap = getGwasSummaryStatisticsMap(options,
-                    genotypeToPhenotypeSampleCoupling, gwasPhenotypeCoupling, phenotypeData, genotypeData);
+            if (options.isCalculateNewGenomeWideAssociationsEnabled()) {
+                pgsBasedMixupMapper.calculatePolygenicScoresWithKFoldProcedure(4);
+            } else {
+                Map<String, GwasSummaryStatistics> gwasSummaryStatisticsMap = loadFilteredGwasSummaryStatisticsMap(
+                        gwasPhenotypeCoupling, genotypeData, options.getGwasSummaryStatisticsPath());
 
-            // Initialize the Mix-up mapper
-            PGSBasedMixupMapper pgsBasedMixupMapper = new PGSBasedMixupMapper(
-                    genotypeData, phenotypeData.duplicate(), genotypeToPhenotypeSampleCoupling,
-                    gwasSummaryStatisticsMap, polygenicScoreCalculator);
+                pgsBasedMixupMapper.calculatePolygenicScores(gwasSummaryStatisticsMap);
+            }
 
-            pgsBasedMixupMapper.run();
+            pgsBasedMixupMapper.calculateZScoreMatrix();
             // Report results
             Map<String, String> sampleAssignments = pgsBasedMixupMapper.getSampleAssignments();
             Map<String, Integer> results = robustnessAnalyzer.analyzeMapperResults(sampleAssignments);
+
             System.out.println("results = " + results);
             robustnessAnalyzer.save(sampleAssignments, options.getOutputBasePath());
 
@@ -880,7 +1106,7 @@ public class PGSBasedMixupMapper {
             // Get the phenotype identifier
             String phenotype = phenotypeData.getColObjects().get(i);
 
-            MatrixBasedGwasSummaryStatistics summaryStatistics = new MatrixBasedGwasSummaryStatistics(genotypeData,
+            MatrixBasedGwasSummaryStatistics summaryStatistics = new MatrixBasedGwasSummaryStatistics(
                     phenotype);
             summaryStatisticsMap.put(phenotype, summaryStatistics);
         }
@@ -908,49 +1134,10 @@ public class PGSBasedMixupMapper {
             LOGGER.info(String.format("Calculating associations for genomic region '%s'", boundary.getAnnotation()));
             LOGGER.debug(String.format("Loading variant scaled dosage matrix for range %s", boundary.getAnnotation()));
             // Get normalized genotypes
-            DoubleMatrixDataset<String, String> variantScaledDosages = loadVariantScaledDosageMatrix(genotypeData, boundary, sampleHash);
+            DoubleMatrixDataset<String, String> variantScaledDosages = loadVariantScaledAlternativeDosageMatrix(genotypeData, boundary, sampleHash);
 
-            LOGGER.debug("Negating variant scaled dosages...");
-            // We want to test the alternative allele, so we reverse this.
-            variantScaledDosages.getMatrix().assign(DoubleFunctions.neg);
-
-            DoubleMatrixDataset<String, String> pearsonRValues = null;
-
-            LOGGER.debug("Starting correlating variants and phenotypes...");
-            try {
-                // Get the correlations
-                pearsonRValues = DoubleMatrixDataset.correlateColumnsOf2ColumnNormalizedDatasets(
-                        normalizedPhenotypes, variantScaledDosages);
-            } catch (Exception e) {
-                throw new PGSBasedMixupMapperException("Number of samples between phenotypes and genotypes were not equal.", e);
-            }
-            LOGGER.debug(String.format("Finished correlating columns of 2 column normalized datasets.%n shape is %d x %d",
-                    pearsonRValues.rows(), pearsonRValues.columns()));
-
-            // Columns are columns of normalized phenotypes (phenotypes)
-            // Rows are the variants (columns of normalized dosages)
-
-            // Remove rows with NaN values
-
-            LOGGER.debug("Checking for NaN values...");
-            // Initialize a linked list to which variant ids should be appended that do not show NaN values.
-            List<String> variantsWherePearsonRIsNotNaN = new LinkedList<>();
-            ArrayList<String> variants = pearsonRValues.getRowObjects();
-            // Loop through the variants, checking if the pearson R is not NaN for the first phenotype.
-            for (int variantIndex = 0; variantIndex < pearsonRValues.rows(); variantIndex++) {
-                // Check the for a NaN in this variant
-                if (Arrays.stream(pearsonRValues.viewRow(variantIndex).toArray()).noneMatch(Double::isNaN)) {
-                    // Add the variant identifier to the list.
-                    String variantIdentifier = variants.get(variantIndex);
-                    variantsWherePearsonRIsNotNaN.add(variantIdentifier);
-                }
-            }
-
-            LOGGER.debug(String.format("Found %d / %d variants that do not have a NaN value in the pearson R values",
-                    variantsWherePearsonRIsNotNaN.size(), pearsonRValues.rows()));
-
-            // Perform the row selection, removing the rows where pearson R is NaN.
-            pearsonRValues = pearsonRValues.viewRowSelection(variantsWherePearsonRIsNotNaN);
+            DoubleMatrixDataset<String, String> pearsonRValues =
+                    calculateCorrelationOfScaledDosagesAndScaledPhenotypes(variantScaledDosages, normalizedPhenotypes);
 
             // Duplicate the pearson R values to calculate p values
             DoubleMatrixDataset<String, String> pValues = pearsonRValues.duplicate();
@@ -1014,11 +1201,18 @@ public class PGSBasedMixupMapper {
     }
 
     /**
+     * Method that loads dosages for the genotype data.
+     *
      * The dosages for each variants will be scaled to have mean of 0 and sd of
      * 1. This will allow fast correlation calculations
      *
+     * @param genotypeData
+     * @param boundary
+     * @param sampleHash
+     * @return the matrix of alternative allele dosages,
+     * with rows and columns representing the samples and variants respectively.
      */
-    private static DoubleMatrixDataset<String, String> loadVariantScaledDosageMatrix(
+    private static DoubleMatrixDataset<String, String> loadVariantScaledAlternativeDosageMatrix(
             RandomAccessGenotypeData genotypeData,
             GenomicBoundary<String> boundary, LinkedHashMap<String, Integer> sampleHash) {
 
@@ -1060,6 +1254,10 @@ public class PGSBasedMixupMapper {
 
         //Inplace normalize per variants to mean of 0 and sd of 1 too
         dosageDataset.normalizeColumns();
+
+        LOGGER.debug("Negating variant scaled dosages...");
+        // We want to test the alternative allele, so we reverse this.
+        dosageDataset.getMatrix().assign(DoubleFunctions.neg);
 
         return dosageDataset;
 

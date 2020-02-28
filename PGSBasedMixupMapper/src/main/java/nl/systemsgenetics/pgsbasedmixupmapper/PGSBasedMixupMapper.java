@@ -26,7 +26,6 @@ import org.molgenis.genotype.Sample;
 import org.molgenis.genotype.Sequence;
 import org.molgenis.genotype.multipart.MultiPartGenotypeData;
 import org.molgenis.genotype.sampleFilter.SampleFilter;
-import org.molgenis.genotype.sampleFilter.SampleIdExcludeFilter;
 import org.molgenis.genotype.sampleFilter.SampleIdIncludeFilter;
 import org.molgenis.genotype.variant.GeneticVariant;
 import org.molgenis.genotype.variantFilter.*;
@@ -311,19 +310,6 @@ public class PGSBasedMixupMapper {
         return pearsonRValues;
     }
 
-    /**
-     * Method that divides all polygenic scores in the polygenic scores map by the given number.
-     *
-     * @param number The number with which to divide the polygenic scores.
-     */
-    private void dividePolygenicScores(int number) {
-        // Loop through the columns of phenotype matrix, which contains the phenotype names / ids.
-        for (String phenotype : phenotypeMatrix.getColObjects()) {
-            polyGenicScoresMap.get(phenotype).getMatrix().assign(DoubleFunctions.div(
-                    number));
-        }
-    }
-
     private List<String> mapToPhenotypeSamples(Stream<String> stream) {
         return stream
         .map(this.genotypeSampleToPhenotypeSampleCoupling::get)
@@ -386,7 +372,7 @@ public class PGSBasedMixupMapper {
             // Initialize polygenic scores
             DoubleMatrixDataset<String, String> polygenicScores = polyGenicScoreCalculator
                     .calculate(gwasSummaryStatisticsMap.get(phenotype));
-            polyGenicScoresMap.put(phenotype, polygenicScores.duplicate());
+            polyGenicScoresMap.put(phenotype, polygenicScores);
 
         }
     }
@@ -400,7 +386,7 @@ public class PGSBasedMixupMapper {
             System.out.println(String.format("Calculating Z-scores for trait '%s'", phenotype));
             // Calculate the Z scores for every phenotype
             try {
-                DoubleMatrixDataset<String, String> polygenicScores = polyGenicScoresMap.get(phenotype);
+                DoubleMatrixDataset<String, String> polygenicScores = polyGenicScoresMap.get(phenotype).duplicate();
 
                 DoubleMatrixDataset<String, String> phenotypeSpecificZScoreMatrix = calculateZScoreMatrix(
                         polygenicScores,
@@ -1325,16 +1311,18 @@ public class PGSBasedMixupMapper {
 
         // Save the random sample partitions
 
-        CSVWriter randomSamplePartitionsWriter = new CSVWriter(new FileWriter(
-                String.format("%s_samplePartitioning.tsv",
-                        outputPath)), CSVWriter.DEFAULT_SEPARATOR, CSVWriter.NO_QUOTE_CHARACTER,
-                CSVWriter.DEFAULT_ESCAPE_CHARACTER, CSVWriter.DEFAULT_LINE_END);
+        if (pgsBasedMixupMapper.getRandomSamplePartitions() != null) {
+            CSVWriter randomSamplePartitionsWriter = new CSVWriter(new FileWriter(
+                    String.format("%s_samplePartitioning.tsv",
+                            outputPath)), CSVWriter.DEFAULT_SEPARATOR, CSVWriter.NO_QUOTE_CHARACTER,
+                    CSVWriter.DEFAULT_ESCAPE_CHARACTER, CSVWriter.DEFAULT_LINE_END);
 
-        for (List<String> randomSamplePartition : pgsBasedMixupMapper.getRandomSamplePartitions()) {
-            String[] lines = new String[randomSamplePartition.size()];
-            randomSamplePartitionsWriter.writeNext(randomSamplePartition.toArray(lines));
+            for (List<String> randomSamplePartition : pgsBasedMixupMapper.getRandomSamplePartitions()) {
+                String[] lines = new String[randomSamplePartition.size()];
+                randomSamplePartitionsWriter.writeNext(randomSamplePartition.toArray(lines));
+            }
+            randomSamplePartitionsWriter.close();
         }
-        randomSamplePartitionsWriter.close();
     }
 
     private DoubleMatrix1D getBestPolygenicScores(String key) {

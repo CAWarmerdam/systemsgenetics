@@ -296,7 +296,7 @@ public class RobustnessAnalyzer {
 
                 statistics = robustnessAnalyzer.analyzeMapperResults(resolvedSampleCouplingMap);
                 robustnessAnalyzer.save(
-                        resolvedSampleCouplingMap, 
+                        resolvedSampleCouplingMap,
                         mixUpPercentageOutputPath);
 
                 System.out.println("statistics = " + statistics);

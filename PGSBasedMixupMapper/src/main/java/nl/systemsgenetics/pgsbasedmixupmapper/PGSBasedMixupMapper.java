@@ -148,7 +148,7 @@ public class PGSBasedMixupMapper {
         LOGGER.debug("Initializing PearsonRToPvalueBinned object");
         // Use a binned approach for determining p values per correlation
         PearsonRToPValueBinned rToPValue = new PearsonRToPValueBinned(10000000,
-                sampleHash.size() / folds);
+                randomSamplePartitions.get(0).size());
 
         GenomicBoundaries<String> boundaries = getGenomicBoundaries(genotypeData, -1);
 
@@ -167,14 +167,17 @@ public class PGSBasedMixupMapper {
                 LOGGER.info(String.format("Fold %d / %d", ++foldIndex, folds));
 
                 // Obtain a sample filter for obtaining those samples in all other partitions.
-                SampleFilter sampleIdExcludeFilter = new SampleIdExcludeFilter(randomSamplePartition);
+                SampleFilter sampleIdIncludeFilter = new SampleIdIncludeFilter(randomSamplePartition);
+
+                // Obtain a list of samples within all other partitions
+                List<String> samplesNotInCurrentPartition = getSamplesNotInCurrentPartition(randomSamplePartition);
 
                 // Subset the phenotype and genotype data to include only the samples that
                 // are within the random sample partition.
                 DoubleMatrixDataset<String, String> dosageMatrixSubset = variantScaledDosages
-                        .viewRowSelection(randomSamplePartition);
+                        .viewRowSelection(samplesNotInCurrentPartition);
                 DoubleMatrixDataset<String, String> phenotypeMatrixSubset = phenotypeData
-                        .viewRowSelection(mapToPhenotypeSamples(randomSamplePartition.stream()));
+                        .viewRowSelection(mapToPhenotypeSamples(samplesNotInCurrentPartition.stream()));
 
                 // Get a matrix of correlations.
                 DoubleMatrixDataset<String, String> pearsonRValues =
@@ -213,7 +216,7 @@ public class PGSBasedMixupMapper {
                     // and the summarystatistics for the
                     // current chromosome
                     DoubleMatrixDataset<String, String> polygenicScores = polyGenicScoreCalculator.calculate(
-                            summaryStatistics, sampleIdExcludeFilter);
+                            summaryStatistics, sampleIdIncludeFilter);
 
                     DoubleMatrixDataset<String, String> preliminaryPolygenicScores = polyGenicScoresMap.get(phenotype);
 
@@ -222,10 +225,12 @@ public class PGSBasedMixupMapper {
                 }
             }
         }
+    }
 
-        // average the PGSs per sample by the number of times a polygenic score was calculated for the specific
-        // sample.
-        dividePolygenicScores(randomSamplePartitions.size());
+    private List<String> getSamplesNotInCurrentPartition(List<String> currentSamplePartition) {
+        List<String> allSamples = new ArrayList<>(this.genotypeSampleIdentifiers);
+        allSamples.removeAll(currentSamplePartition);
+        return allSamples;
     }
 
     private LinkedHashMap<String, Integer> getGenotypeSampleHash() {

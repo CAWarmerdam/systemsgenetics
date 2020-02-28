@@ -200,6 +200,7 @@ public class PGSBasedMixupMapperOptions {
         OPTIONS.addOption(OptionBuilder.create("w"));
 
         OptionBuilder.withArgName("int");
+        OptionBuilder.hasArg();
         OptionBuilder.withDescription("K folds to iterate over and split samples.");
         OptionBuilder.withLongOpt("folds");
         OPTIONS.addOption(OptionBuilder.create('K'));

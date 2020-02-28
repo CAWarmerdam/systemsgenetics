@@ -93,26 +93,7 @@ public class MatrixBasedGwasSummaryStatistics implements GwasSummaryStatistics{
     public THashMap<String, THashMap<String, THashMap<String, ArrayList<RiskEntry>>>> riskEntries(
             RandomAccessGenotypeData genotypeData, double[] pValThres,
             String[] genomicRangesToExclude, boolean unweighted) {
-        THashMap<String, ArrayList<Pair<Integer, Integer>>> exclussionRanges = new THashMap<>();
 
-        if (genomicRangesToExclude != null) {
-            System.out.println("Trying to exclude genomic ranges.");
-            int ranges = 0;
-            for (String s : genomicRangesToExclude) {
-                String[] parts = s.split(":");
-                String key = parts[0];
-                parts = parts[1].split("-");
-
-                if (!exclussionRanges.contains(key)) {
-                    exclussionRanges.put(key, new ArrayList<Pair<Integer, Integer>>());
-                }
-                exclussionRanges.get(key).add(new Pair(Integer.parseInt(parts[0]), Integer.parseInt(parts[1])));
-                ranges++;
-            }
-            if (LOGGER.isDebugEnabled()) {
-                System.out.println("Number of ranges excluded: " + ranges + " on: " + exclussionRanges.size() + " chromosomes");
-            }
-        }
         // A risk entry (value?) per variant? per sequence? per pval threshold? per file?
         THashMap<String, THashMap<String, THashMap<String, ArrayList<RiskEntry>>>> risks = new THashMap<>();
 
@@ -148,30 +129,18 @@ public class MatrixBasedGwasSummaryStatistics implements GwasSummaryStatistics{
                     }
                 }
 
-                if (exclussionRanges.contains(snpObject.getSequenceName())) {
-                    chromosomesExcluded.add(snpObject.getSequenceName());
-                    for (Pair<Integer, Integer> p : exclussionRanges.get(snpObject.getSequenceName())) {
-                        if (p.getLeft() <= snpObject.getStartPos() && p.getRight() >= snpObject.getStartPos()) {
-                            addEntry = false;
-                            snpsExcluded++;
-                        }
-                    }
-                }
+                for (double p : pValThres) {
+                    if (currentP < p) {
+                        String name2 = "_P" + p;
 
-                if (addEntry) {
-                    for (double p : pValThres) {
-                        if (currentP < p) {
-                            String name2 = "_P" + p;
-
-                            if (!filehash.get(name2).containsKey(snpObject.getSequenceName())) {
-                                filehash.get(name2).put(snpObject.getSequenceName(), new ArrayList<>());
-                            }
-                            filehash.get(name2).get(snpObject.getSequenceName()).add(new RiskEntry(
-                                    variantAssociation.getKey(), snpObject.getSequenceName(), snpObject.getStartPos(),
-                                    snpObject.getAlternativeAlleles()
-                                            .get(snpObject.getAlternativeAlleles().getAlleleCount() - 1).getAlleleAsSnp(),
-                                    or, currentP));
+                        if (!filehash.get(name2).containsKey(snpObject.getSequenceName())) {
+                            filehash.get(name2).put(snpObject.getSequenceName(), new ArrayList<>());
                         }
+                        filehash.get(name2).get(snpObject.getSequenceName()).add(new RiskEntry(
+                                variantAssociation.getKey(), snpObject.getSequenceName(), snpObject.getStartPos(),
+                                snpObject.getAlternativeAlleles()
+                                        .get(snpObject.getAlternativeAlleles().getAlleleCount() - 1).getAlleleAsSnp(),
+                                or, currentP));
                     }
                 }
             }

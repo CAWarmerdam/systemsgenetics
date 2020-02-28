@@ -458,8 +458,10 @@ public class SimplePolygenicScoreCalculator {
                             }
                         }
                     }
-                    LOGGER.info(String.format("Risk entries used for chromosome %s, P-value %f: %d",
-                            chrOrder[counter], pVal, nrSNPs));
+                    if (nrSNPs > 0) {
+                        LOGGER.info(String.format("Risk entries used for chromosome %s, P-value %f: %d",
+                                chrOrder[counter], pVal, nrSNPs));
+                    }
                 }
                 p.iterate();
             }

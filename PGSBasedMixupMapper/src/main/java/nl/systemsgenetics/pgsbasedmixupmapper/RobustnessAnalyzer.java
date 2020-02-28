@@ -94,15 +94,16 @@ public class RobustnessAnalyzer {
      * the used phenotype coupling in the third column and
      * the output coupling in the last column.
      *
-     * @param resolvedSampleCouplings
-     * @param output
-     * @throws IOException
+     * @param resolvedSampleCouplings A map with genotype identifiers as keys and
+     *                                mapped phenotype identifiers as values.
+     * @param outputFile The file to write the results to.
+     * @throws IOException If an I/O error occurred.
      */
-    public void save(Map<String, String> resolvedSampleCouplings, File output) throws IOException {
+    public void save(Map<String, String> resolvedSampleCouplings, File outputFile) throws IOException {
 
         // Initialize the CSV writer for outputting the differences.
         CSVWriter writer = new CSVWriter(new FileWriter(
-                String.format("%s_inducedMixUps.tsv", output)),
+                String.format("%s_inducedMixUps.tsv", outputFile)),
                 CSVWriter.DEFAULT_SEPARATOR, CSVWriter.NO_QUOTE_CHARACTER,
                 CSVWriter.DEFAULT_ESCAPE_CHARACTER, CSVWriter.DEFAULT_LINE_END);
 
@@ -119,10 +120,12 @@ public class RobustnessAnalyzer {
     }
 
     /**
-     * Method that analyses res
+     * Method that analyses results and checks whether induced sample mix-ups are
+     * identified and resolved, if sample mix-ups are incorrectly identified.
      *
-     * @param resolvedSampleCouplings
-     * @return
+     * @param resolvedSampleCouplings A map with genotype identifiers as keys and
+     *                                mapped phenotype identifiers as values.
+     * @return The
      */
     public Map<String, Integer> analyzeMapperResults(Map<String, String> resolvedSampleCouplings) {
         // Check what the new sample assignments look like

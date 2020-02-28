@@ -73,6 +73,8 @@ public class PGSBasedMixupMapper {
     private Set<Pair<String, String>> missingPhenotypes = new HashSet<>();
     private final DenseDoubleMatrix1D presenceArray;
 
+    private List<List<String>> randomSamplePartitions;
+
     /**
      * Constructor method for resolving mix-ups based on polygenic scores.
      *
@@ -107,9 +109,6 @@ public class PGSBasedMixupMapper {
         zScoreMatrix = initializeGenotypePhenotypeMatrix();
         presenceArray = new DenseDoubleMatrix1D(phenotypeSampleIdentifiers.size());
 
-//        zScoreMatrix.normalizeRows();
-//        zScoreMatrix.normalizeColumns();
-
         // Get the samples
     }
 
@@ -131,9 +130,7 @@ public class PGSBasedMixupMapper {
         // Perform KFold procedure
 
         // First define the folds and split the samples into k subsamples with approximately equal sizes
-        List<List<String>> randomSamplePartitions = getRandomSamplePartitions(folds);
-
-        // TODO: Write the random sample partitions to a file (something like a column for every fold)
+        randomSamplePartitions = getRandomSamplePartitions(folds);
 
         // Order phenotype data according to the genotype data.
         DoubleMatrixDataset<String, String> phenotypeData = getOrderedNormalizedPhenotypeData();
@@ -212,6 +209,9 @@ public class PGSBasedMixupMapper {
                     MatrixBasedGwasSummaryStatistics summaryStatistics = new MatrixBasedGwasSummaryStatistics(phenotype,
                             pearsonRValues.getHashRows(), alleles, pearsonRValues.viewCol(i), pValues.viewCol(i));
 
+                    // Calculate the polygenic scores for all samples not in the current fold
+                    // and the summarystatistics for the
+                    // current chromosome
                     DoubleMatrixDataset<String, String> polygenicScores = polyGenicScoreCalculator.calculate(
                             summaryStatistics, sampleIdExcludeFilter);
 
@@ -225,7 +225,7 @@ public class PGSBasedMixupMapper {
 
         // average the PGSs per sample by the number of times a polygenic score was calculated for the specific
         // sample.
-        dividePolygenicScores(folds - 1);
+        dividePolygenicScores(randomSamplePartitions.size());
     }
 
     private LinkedHashMap<String, Integer> getGenotypeSampleHash() {
@@ -347,7 +347,24 @@ public class PGSBasedMixupMapper {
     private List<List<String>> getRandomSamplePartitions(int folds) {
         List<String> shufflingSamples = new ArrayList<>(this.genotypeSampleIdentifiers);
         Collections.shuffle(shufflingSamples);
-        return ListUtils.partition(shufflingSamples, shufflingSamples.size() / folds);
+
+        int numberOfExcessSamples = shufflingSamples.size() % folds;
+        int numberOfSamplesPerFold = shufflingSamples.size() / folds;
+
+        int toIndex = shufflingSamples.size() - numberOfExcessSamples * (numberOfSamplesPerFold + 1);
+
+        List<List<String>> smalPartitions = ListUtils.partition(
+                shufflingSamples.subList(0, toIndex), numberOfSamplesPerFold);
+
+        List<List<String>> largePartitions = ListUtils.partition(
+                shufflingSamples.subList(toIndex, shufflingSamples.size()), numberOfSamplesPerFold + 1);
+
+        List<List<String>> partitions = new ArrayList<>();
+
+        partitions.addAll(smalPartitions);
+        partitions.addAll(largePartitions);
+
+        return partitions;
     }
 
     /**
@@ -384,8 +401,6 @@ public class PGSBasedMixupMapper {
                         polygenicScores,
                         normalizedPhenotypeMatrix,
                         phenotype);
-
-                System.out.println("phenotypeSpecificZScoreMatrix = " + phenotypeSpecificZScoreMatrix.getMatrix());
 
                 zScoresMap.put(phenotype, phenotypeSpecificZScoreMatrix);
                 // Sum the Z score.
@@ -841,6 +856,10 @@ public class PGSBasedMixupMapper {
         return zScoresMap;
     }
 
+    public List<List<String>> getRandomSamplePartitions() {
+        return randomSamplePartitions;
+    }
+
     public DoubleMatrixDataset<String, String> getPolygenicScores(String phenotype) {
         return polyGenicScoresMap.get(phenotype);
     }
@@ -941,7 +960,7 @@ public class PGSBasedMixupMapper {
 
         try {
             if (options.isCalculateNewGenomeWideAssociationsEnabled()) {
-                pgsBasedMixupMapper.calculatePolygenicScoresWithKFoldProcedure(4);
+                pgsBasedMixupMapper.calculatePolygenicScoresWithKFoldProcedure(options.getFolds());
             } else {
                 Map<String, GwasSummaryStatistics> gwasSummaryStatisticsMap = loadFilteredGwasSummaryStatisticsMap(
                         gwasPhenotypeCoupling, genotypeData, options.getGwasSummaryStatisticsPath());
@@ -1206,9 +1225,9 @@ public class PGSBasedMixupMapper {
      * The dosages for each variants will be scaled to have mean of 0 and sd of
      * 1. This will allow fast correlation calculations
      *
-     * @param genotypeData
-     * @param boundary
-     * @param sampleHash
+     * @param genotypeData The genotype data to load dosages from.
+     * @param boundary The genomic boundary to load dosages for.
+     * @param sampleHash The samples corresponding to the samples in the genotype data.
      * @return the matrix of alternative allele dosages,
      * with rows and columns representing the samples and variants respectively.
      */
@@ -1298,6 +1317,19 @@ public class PGSBasedMixupMapper {
         }
 
         writer.close();
+
+        // Save the random sample partitions
+
+        CSVWriter randomSamplePartitionsWriter = new CSVWriter(new FileWriter(
+                String.format("%s_samplePartitioning.tsv",
+                        outputPath)), CSVWriter.DEFAULT_SEPARATOR, CSVWriter.NO_QUOTE_CHARACTER,
+                CSVWriter.DEFAULT_ESCAPE_CHARACTER, CSVWriter.DEFAULT_LINE_END);
+
+        for (List<String> randomSamplePartition : pgsBasedMixupMapper.getRandomSamplePartitions()) {
+            String[] lines = new String[randomSamplePartition.size()];
+            randomSamplePartitionsWriter.writeNext(randomSamplePartition.toArray(lines));
+        }
+        randomSamplePartitionsWriter.close();
     }
 
     private DoubleMatrix1D getBestPolygenicScores(String key) {

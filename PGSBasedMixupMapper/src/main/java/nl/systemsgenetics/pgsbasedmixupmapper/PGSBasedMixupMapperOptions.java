@@ -25,6 +25,7 @@ public class PGSBasedMixupMapperOptions {
     private static final double DEFAULT_CLUMPING_R_SQUARED = 0.2;
     private static final double DEFAULT_MAF_THRESHOLD = 0;
     private static final List<Double> DEFAULT_P_VALUE_THRESHOLDS = new ArrayList<>(Collections.singletonList(1e-5));
+    private static final int DEFAULT_NUMBER_OF_FOLDS = 10;
     private static final String[] HSA_DEFAULT_SEQUENCES =
             {"1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11",
                     "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "22"};
@@ -37,6 +38,7 @@ public class PGSBasedMixupMapperOptions {
     private final boolean writeNewGenomeWideAssociationsEnabled;
     private final double minorAlleleFrequencyThreshold;
     private final double rSquared;
+    private final int folds;
     private final String forceSeqName;
     private final String gwasSummaryStatisticsPhenotypeCouplingFile;
     private final String genotypeToPhenotypeSampleCouplingFile;
@@ -52,6 +54,7 @@ public class PGSBasedMixupMapperOptions {
     private final File logFile;
     private final File debugFolder;
     private final CommandLine commandLine;
+
 
 
     static {
@@ -195,6 +198,11 @@ public class PGSBasedMixupMapperOptions {
                 "Option is ignored without -n / --calculateNewAssociations");
         OptionBuilder.withLongOpt("writeSummaryStatistics");
         OPTIONS.addOption(OptionBuilder.create("w"));
+
+        OptionBuilder.withArgName("int");
+        OptionBuilder.withDescription("K folds to iterate over and split samples.");
+        OptionBuilder.withLongOpt("folds");
+        OPTIONS.addOption(OptionBuilder.create('K'));
     }
 
     PGSBasedMixupMapperOptions(String... args) throws ParseException {
@@ -243,6 +251,22 @@ public class PGSBasedMixupMapperOptions {
 
         // Parse the minor allele frequency threshold to use for the input genotype data
         minorAlleleFrequencyThreshold = parseMinorAlleleFrequencyThreshold(commandLine);
+
+        folds = parseKFolds(commandLine);
+    }
+
+    private int parseKFolds(CommandLine commandLine) throws ParseException {
+        int folds = DEFAULT_NUMBER_OF_FOLDS;
+
+        if (commandLine.hasOption("K")) {
+            try {
+                folds = Integer.parseInt(commandLine.getOptionValue("K"));
+            } catch (NumberFormatException e) {
+                throw new ParseException(String.format(
+                        "Error parsing --folds / -K: \"%s\" is not an integer", commandLine.getOptionValue("K")));
+            }
+        }
+        return folds;
     }
 
     /**
@@ -261,7 +285,7 @@ public class PGSBasedMixupMapperOptions {
                 mafThreshold =  Double.parseDouble(commandLine.getOptionValue("maf"));
             } catch (NumberFormatException e) {
                 throw new ParseException(String.format(
-                        "Error parsing --maf \"%s\" is not a double", commandLine.getOptionValue("maf")));
+                        "Error parsing --maf: \"%s\" is not a double", commandLine.getOptionValue("maf")));
             }
         }
         return mafThreshold;
@@ -615,5 +639,9 @@ public class PGSBasedMixupMapperOptions {
 
     public CommandLine getCommandLine() {
         return commandLine;
+    }
+
+    public int getFolds() {
+        return folds;
     }
 }

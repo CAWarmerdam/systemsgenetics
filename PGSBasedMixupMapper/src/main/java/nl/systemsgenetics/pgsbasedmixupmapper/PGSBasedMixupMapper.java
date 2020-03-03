@@ -26,6 +26,7 @@ import org.molgenis.genotype.Sample;
 import org.molgenis.genotype.Sequence;
 import org.molgenis.genotype.multipart.MultiPartGenotypeData;
 import org.molgenis.genotype.sampleFilter.SampleFilter;
+import org.molgenis.genotype.sampleFilter.SampleIdExcludeFilter;
 import org.molgenis.genotype.sampleFilter.SampleIdIncludeFilter;
 import org.molgenis.genotype.variant.GeneticVariant;
 import org.molgenis.genotype.variantFilter.*;
@@ -166,7 +167,8 @@ public class PGSBasedMixupMapper {
                 LOGGER.info(String.format("Fold %d / %d", ++foldIndex, folds));
 
                 // Obtain a sample filter for obtaining those samples in all other partitions.
-                SampleFilter sampleIdIncludeFilter = new SampleIdIncludeFilter(randomSamplePartition);
+                SampleFilter referenceSampleFilter = new SampleIdIncludeFilter(randomSamplePartition);
+                SampleFilter responseSampleFilter = new SampleIdExcludeFilter(randomSamplePartition);
 
                 // Obtain a list of samples within all other partitions
                 List<String> samplesNotInCurrentPartition = getSamplesNotInCurrentPartition(randomSamplePartition);
@@ -215,7 +217,7 @@ public class PGSBasedMixupMapper {
                     // and the summarystatistics for the
                     // current chromosome
                     DoubleMatrixDataset<String, String> polygenicScores = polyGenicScoreCalculator.calculate(
-                            summaryStatistics, sampleIdIncludeFilter);
+                            summaryStatistics, referenceSampleFilter, responseSampleFilter);
 
                     DoubleMatrixDataset<String, String> preliminaryPolygenicScores = polyGenicScoresMap.get(phenotype);
 
@@ -561,6 +563,13 @@ public class PGSBasedMixupMapper {
             DoubleMatrixDataset<String, String> polygenicScores,
             DoubleMatrixDataset<String, String> phenotypeMatrix,
             String phenotype) throws PGSBasedMixupMapperException {
+
+        // Polygenic scores can all be zero (or equal to some other value)
+        // If all values are equal, throw an exception.
+        if (polygenicScores.getMatrix().equals(polygenicScores.getMatrix().getQuick(0, 0))) {
+            throw new PGSBasedMixupMapperException(String.format("All polygenic scores are equal (%f)",
+                    polygenicScores.getMatrix().getQuick(0, 0)));
+        }
 
         // Initialize Z score matrix
         DoubleMatrixDataset<String, String> zScoreMatrixOfPolygenicScoreDeviations =

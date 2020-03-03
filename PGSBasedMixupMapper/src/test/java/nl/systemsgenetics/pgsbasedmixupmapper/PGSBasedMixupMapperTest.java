@@ -2,8 +2,11 @@ package nl.systemsgenetics.pgsbasedmixupmapper;
 
 import nl.systemsgenetics.gwassummarystatistics.GwasSummaryStatistics;
 import nl.systemsgenetics.polygenicscorecalculator.SimplePolygenicScoreCalculator;
+import org.molgenis.genotype.GenotypeData;
 import org.molgenis.genotype.RandomAccessGenotypeData;
 import org.molgenis.genotype.RandomAccessGenotypeDataReaderFormats;
+import org.molgenis.genotype.sampleFilter.SampleFilterableGenotypeDataDecorator;
+import org.molgenis.genotype.sampleFilter.SampleIdIncludeFilter;
 import umcg.genetica.math.matrix2.DoubleMatrixDataset;
 
 import java.io.File;
@@ -33,7 +36,7 @@ public class PGSBasedMixupMapperTest {
     private String[] defaultGenomicRangesToExclude = new String[]{"6:25000000-35000000"};
     private List<String> expectedSampleNames = Arrays.asList(
             "NA06986", "NA06985", "NA06989", "NA06994", "NA07000",
-            "NA07037", "NA07048", "NA07051", "NA07056", "NA07347");;
+            "NA07037", "NA07048", "NA07051", "NA07056", "NA07347");
 
     public PGSBasedMixupMapperTest() throws URISyntaxException {
     }
@@ -125,5 +128,85 @@ public class PGSBasedMixupMapperTest {
             System.err.println("See log file for stack trace");
             System.exit(1);
         }
+    }
+
+    @org.testng.annotations.Test
+    public void testCalculateSplitPolygenicScores() {
+        // Load the genotype to phenotype sample coupling map
+        Map<String, String> genotypeToPhenotypeSampleCoupling = loadGenotypeToPhenotypeSampleCoupling(
+                exampleSampleCouplingFile.toString(),
+                CSV_DELIMITER);
+
+        // Load the gwas to phenotype coupling map
+        Map<String, String> gwasPhenotypeCoupling = loadGwasSummaryStatisticsPhenotypeCouplings(
+                exampleGwasCouplingFile.toString(),
+                CSV_DELIMITER);
+
+        // Load trait data, only including the samples specified in the coupling map.
+        DoubleMatrixDataset<String, String> phenotypeData = loadPhenotypeData(
+                new HashSet<>(genotypeToPhenotypeSampleCoupling.values()),
+                new HashSet<>(gwasPhenotypeCoupling.values()),
+                examplePhenotypeFile);
+
+        // Get the filter out the samples from the coupling file that could not be found.
+        genotypeToPhenotypeSampleCoupling = genotypeToPhenotypeSampleCoupling.entrySet()
+                .stream()
+                .filter(map -> phenotypeData.getRowObjects().contains(map.getValue()))
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+
+        Map<String, String[]> inputGenotypePaths = new HashMap<>();
+        inputGenotypePaths.put(null, new String[]{exampleGenotypeData.getPath()
+                .replace(".vcf.gz", "")});
+
+        // Load Genotype data, only including the samples specified in the coupling map.
+        RandomAccessGenotypeData genotypeData = loadGenotypeData(
+                inputGenotypePaths, RandomAccessGenotypeDataReaderFormats.VCF,
+                genotypeToPhenotypeSampleCoupling.keySet(), defaultGenomicRangesToExclude,
+                0,
+                false);
+
+        // Initialize an Simple polygenic score calculator
+        SimplePolygenicScoreCalculator polygenicScoreCalculator = new SimplePolygenicScoreCalculator(
+                genotypeData,
+                new ArrayList<>(Arrays.asList(5000, 1000)),
+                new ArrayList<>(Collections.singletonList(0.01)),
+                0.2,
+                false,
+                defaultGenomicRangesToExclude);
+
+        // Get the gwas summary statistics map
+        Map<String, GwasSummaryStatistics> gwasSummaryStatisticsMap = loadFilteredGwasSummaryStatisticsMap(
+                gwasPhenotypeCoupling,
+                genotypeData,
+                gwasSummaryStatisticsPath);
+
+        SampleIdIncludeFilter referenceSampleFilter = new SampleIdIncludeFilter(expectedSampleNames.subList(0, 5));
+        List<String> expectedSampleSubset = expectedSampleNames.subList(0, 3);
+        SampleIdIncludeFilter responseSampleFilter = new SampleIdIncludeFilter(expectedSampleSubset);
+
+        DoubleMatrixDataset<String, String> actualPolygenicScores = polygenicScoreCalculator.calculate(
+                gwasSummaryStatisticsMap.get("HDL cholesterol"), referenceSampleFilter, responseSampleFilter);
+
+        assertEquals(actualPolygenicScores.getRowObjects(), Collections.singletonList("IEU-a-780_P0.01"));
+        assertEquals(actualPolygenicScores.getColObjects(), expectedSampleSubset);
+
+        // Calculate polygenic scores without using the subsetting method.
+        RandomAccessGenotypeData filteredGenotypeData = new SampleFilterableGenotypeDataDecorator(
+                genotypeData, referenceSampleFilter);
+
+        // Initialize an Simple polygenic score calculator
+        SimplePolygenicScoreCalculator filteredPolygenicScoreCalculator = new SimplePolygenicScoreCalculator(
+                filteredGenotypeData,
+                new ArrayList<>(Arrays.asList(5000, 1000)),
+                new ArrayList<>(Collections.singletonList(0.01)),
+                0.2,
+                false,
+                defaultGenomicRangesToExclude);
+
+        DoubleMatrixDataset<String, String> expectedPolygenicScores = filteredPolygenicScoreCalculator.calculate(
+                gwasSummaryStatisticsMap.get("HDL cholesterol"));
+
+        assertEquals(actualPolygenicScores.getRow(0).toArray(),
+                expectedPolygenicScores.viewColSelection(expectedSampleSubset).getRow(0).toArray(), 1e-5);
     }
 }

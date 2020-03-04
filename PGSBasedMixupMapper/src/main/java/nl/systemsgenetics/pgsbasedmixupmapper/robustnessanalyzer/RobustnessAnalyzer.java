@@ -1,7 +1,10 @@
-package nl.systemsgenetics.pgsbasedmixupmapper;
+package nl.systemsgenetics.pgsbasedmixupmapper.robustnessanalyzer;
 
 import com.opencsv.CSVWriter;
 import nl.systemsgenetics.gwassummarystatistics.GwasSummaryStatistics;
+import nl.systemsgenetics.pgsbasedmixupmapper.PGSBasedMixupMapper;
+import nl.systemsgenetics.pgsbasedmixupmapper.PGSBasedMixupMapperException;
+import nl.systemsgenetics.pgsbasedmixupmapper.PGSBasedMixupMapperOptions;
 import nl.systemsgenetics.polygenicscorecalculator.SimplePolygenicScoreCalculator;
 import org.apache.commons.cli.ParseException;
 import org.apache.log4j.FileAppender;
@@ -38,7 +41,7 @@ public class RobustnessAnalyzer {
     private final Map<String, String> correctCouplingMap;
     private Map<String, String> permutedMap;
 
-    RobustnessAnalyzer(Map<String, String> correctCouplingMap) {
+    public RobustnessAnalyzer(Map<String, String> correctCouplingMap) {
         this.correctCouplingMap = correctCouplingMap;
     }
 

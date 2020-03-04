@@ -1,5 +1,6 @@
-package nl.systemsgenetics.pgsbasedmixupmapper;
+package nl.systemsgenetics.pgsbasedmixupmapper.robustnessanalyzer;
 
+import nl.systemsgenetics.pgsbasedmixupmapper.PGSBasedMixupMapperOptions;
 import org.apache.commons.cli.*;
 
 import java.util.ArrayList;
@@ -13,7 +14,7 @@ public class RobustnessAnalyzerOptions extends PGSBasedMixupMapperOptions {
         OPTIONS.addOption(getMixUpPercentagesOption());
     }
 
-    RobustnessAnalyzerOptions(String... args) throws ParseException {
+    public RobustnessAnalyzerOptions(String... args) throws ParseException {
         super(args);
         mixUpPercentages = parseMixUpPercentages(getCommandLine());
     }

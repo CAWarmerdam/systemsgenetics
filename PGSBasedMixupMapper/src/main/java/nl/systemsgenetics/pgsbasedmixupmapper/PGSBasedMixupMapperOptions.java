@@ -206,7 +206,7 @@ public class PGSBasedMixupMapperOptions {
         OPTIONS.addOption(OptionBuilder.create('K'));
     }
 
-    PGSBasedMixupMapperOptions(String... args) throws ParseException {
+    public PGSBasedMixupMapperOptions(String... args) throws ParseException {
 
         // Parse the raw command line input
         final CommandLineParser parser = new PosixParser();

@@ -1500,14 +1500,17 @@ public class PGSBasedMixupMapper {
     /**
      * Method for loading genotype data given the PGS based mixup mapper options.
      *
-     * @param inputGenotypePaths
-     * @param inputGenotypeType
+     * @param inputGenotypePaths A map with the an array of paths corresponding to a genotype file, and
+     *                           the corresponding chromosome identifier, or null as the key.
+     * @param inputGenotypeType The genotype data type as which the genotype data files should be loaded.
      * @param sampleIdentifiersToInclude The sample identifiers to use for
      *                                   filtering the samples in the genotype data
-     * @param genomicRangesToExclude
-     * @param minorAlleleFrequencyThreshold
-     * @param shouldForceSeqName
-     * @return Random access genotype data.
+     * @param genomicRangesToExclude An array of strings with each element representing a genomic region to filter,
+     *                               e.g.: 6:100-2000 for excluding all variants that start on chromosome 6 between
+     *                               bp 100 (inclusive) and bp 2000 (inclusive)
+     * @param minorAlleleFrequencyThreshold The minimum minor allele frequency of variants to include.
+     * @param shouldForceSeqName Whether or not the sequence name should be forced on the genotype data.
+     * @return Random access genotype data filtered depending on the given arguments.
      */
     public static RandomAccessGenotypeData loadGenotypeData(Map<String, String[]> inputGenotypePaths,
                                                      RandomAccessGenotypeDataReaderFormats inputGenotypeType,
@@ -1545,6 +1548,7 @@ public class PGSBasedMixupMapper {
         try {
             Set<RandomAccessGenotypeData> genotypeDataSet = new HashSet<>();
 
+            // If the map with input genotype paths is only of size one (1), do not create multipart genotype data.
             if (inputGenotypePaths.size() == 1) {
                 Map.Entry<String, String[]> inputGenotypePathSet = inputGenotypePaths.entrySet().iterator().next();
                 randomAccessGenotypeData = inputGenotypeType.createFilteredGenotypeData(

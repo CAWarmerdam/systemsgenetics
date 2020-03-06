@@ -168,8 +168,8 @@ public class PGSBasedMixupMapper {
                 LOGGER.info(String.format("Fold %d / %d", ++foldIndex, folds));
 
                 // Obtain a sample filter for obtaining those samples in all other partitions.
-                SampleFilter referenceSampleFilter = new SampleIdIncludeFilter(randomSamplePartition);
-                SampleFilter responseSampleFilter = new SampleIdExcludeFilter(randomSamplePartition);
+                SampleFilter referenceSampleFilter = new SampleIdExcludeFilter(randomSamplePartition);
+                SampleFilter responseSampleFilter = new SampleIdIncludeFilter(randomSamplePartition);
 
                 // Obtain a list of samples within all other partitions
                 List<String> samplesNotInCurrentPartition = getSamplesNotInCurrentPartition(randomSamplePartition);

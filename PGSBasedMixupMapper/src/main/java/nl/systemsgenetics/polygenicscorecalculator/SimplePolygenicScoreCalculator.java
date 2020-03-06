@@ -75,7 +75,8 @@ public class SimplePolygenicScoreCalculator {
     }
 
     public DoubleMatrixDataset<String, String> calculate(
-            GwasSummaryStatistics summaryStatistics, SampleFilter referenceSampleFilter,
+            GwasSummaryStatistics summaryStatistics,
+            SampleFilter referenceSampleFilter,
             SampleFilter responseSampleFilter) {
 
         double[] pValThres = this.getpValueThresholds()
@@ -675,7 +676,7 @@ public class SimplePolygenicScoreCalculator {
             DoubleMatrixDataset<String, String> scores,
             THashMap<String, THashMap<String, THashMap<String, ArrayList<RiskEntry>>>> risks,
             int[] windowSize, SampleFilterableGenotypeData referenceGenotypeData,
-            SampleFilterableGenotypeData pgsGenotypeData) {
+            SampleFilterableGenotypeData responseGenotypeData) {
 
         ProgressBar p = new ProgressBar(risks.size() * chrOrder.length);
 
@@ -766,12 +767,8 @@ public class SimplePolygenicScoreCalculator {
 
                                 // Get the reference allele from this variant 1
                                 Allele var1RefAllele = referenceVariantOne.getRefAllele();
-                                Allele alternativeAllele;
                                 if (var1RefAllele == null) {
                                     var1RefAllele = referenceVariantOne.getAlternativeAlleles().get(0);
-                                    alternativeAllele = referenceVariantOne.getAlternativeAlleles().get(1);
-                                } else {
-                                    alternativeAllele = referenceVariantOne.getAlternativeAlleles().get(0);
                                 }
 
 //                                System.out.println("p-value = " + riskE.getpValue() + " | beta = " + riskE.getOr());
@@ -794,7 +791,7 @@ public class SimplePolygenicScoreCalculator {
                                 }
 
                                 SampleFilteredReadOnlyGeneticVariant sampleFilteredVariantOne =
-                                        new SampleFilteredReadOnlyGeneticVariant(originalVariant, pgsGenotypeData);
+                                        new SampleFilteredReadOnlyGeneticVariant(originalVariant, responseGenotypeData);
 
 //                                    StringBuilder Genos = new StringBuilder();
 //                                    StringBuilder Genos1 = new StringBuilder();

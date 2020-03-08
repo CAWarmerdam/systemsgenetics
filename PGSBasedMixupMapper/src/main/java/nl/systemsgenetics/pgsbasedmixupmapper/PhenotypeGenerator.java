@@ -22,7 +22,7 @@ public class PhenotypeGenerator {
     private static final org.apache.log4j.Logger LOGGER = Logger.getLogger(PhenotypeGenerator.class);
 
 
-    public static void main(String[] args) throws InterruptedException, IOException {
+    public static void main(String[] args) throws InterruptedException, IOException, PGSBasedMixupMapperException {
 
         System.out.println();
         System.out.println("          --- Version: " + " ---");
@@ -79,6 +79,7 @@ public class PhenotypeGenerator {
         // Load GWAS summary statistics
         Map<String, String> gwasPhenotypeCoupling = loadGwasSummaryStatisticsPhenotypeCouplings(
                 options.getGwasSummaryStatisticsPhenotypeCouplingFile(), CSV_DELIMITER);
+
         Map<String, GwasSummaryStatistics> gwasSummaryStatisticsMap = loadGwasSummaryStatisticsMap(
                 options.getGwasSummaryStatisticsPath(), gwasPhenotypeCoupling, variantFilter);
 //        System.out.println("Height");

@@ -5,6 +5,7 @@ import nl.systemsgenetics.gwassummarystatistics.GwasSummaryStatistics;
 import nl.systemsgenetics.pgsbasedmixupmapper.PGSBasedMixupMapper;
 import nl.systemsgenetics.pgsbasedmixupmapper.PGSBasedMixupMapperException;
 import nl.systemsgenetics.pgsbasedmixupmapper.PGSBasedMixupMapperOptions;
+import nl.systemsgenetics.pgsbasedmixupmapper.PhenotypeData;
 import nl.systemsgenetics.polygenicscorecalculator.SimplePolygenicScoreCalculator;
 import org.apache.commons.cli.ParseException;
 import org.apache.log4j.FileAppender;
@@ -204,14 +205,15 @@ public class RobustnessAnalyzer {
                 options.getGwasSummaryStatisticsPhenotypeCouplingFile(), CSV_DELIMITER);
 
         // Load trait data, only including the samples specified in the coupling map.
-        DoubleMatrixDataset<String, String> phenotypeData = loadPhenotypeData(
+        PhenotypeData phenotypeData = loadPhenotypeData(
                 new HashSet<>(correctSampleCouplingMap.values()),
-                new HashSet<>(gwasPhenotypeCoupling.values()), options.getInputPhenotypePath());
+                new HashSet<>(gwasPhenotypeCoupling.values()),
+                new HashSet<>(), options.getInputPhenotypePath());
 
         // Get the filter out the samples from the coupling file that could not be found.
         correctSampleCouplingMap = correctSampleCouplingMap.entrySet()
                 .stream()
-                .filter(map -> phenotypeData.getRowObjects().contains(map.getValue()))
+                .filter(map -> phenotypeData.getSamples().contains(map.getValue()))
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 
         // Load Genotype data, only including the samples specified in the coupling map.
@@ -285,7 +287,7 @@ public class RobustnessAnalyzer {
 
                 // Initialize the Mix-up mapper
                 PGSBasedMixupMapper pgsBasedMixupMapper = new PGSBasedMixupMapper(
-                        genotypeData, phenotypeData.duplicate(), permutedSampleCouplingMap, polygenicScoreCalculator);
+                        genotypeData, phenotypeData, permutedSampleCouplingMap, polygenicScoreCalculator);
 
                 pgsBasedMixupMapper.calculatePolygenicScores(gwasSummaryStatisticsMap);
 

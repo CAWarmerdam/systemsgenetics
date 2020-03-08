@@ -18,7 +18,7 @@ import java.util.stream.Collectors;
  * This holds a matrix of doubles and a matrix of non-numeric data.
  * @author Robert Warmerdam
  */
-class PhenotypeData {
+public class PhenotypeData {
     private final DoubleMatrixDataset<String, String> numericValues;
     private final DoubleMatrixDataset<String, String> presenceMatrix;
     private LinkedHashMap<String, String[]> nonNumericData;
@@ -43,6 +43,28 @@ class PhenotypeData {
      *                                            load phenotypes for.
      * @param numericTraitsToInclude A set of traits to include from the given file.
      *                               These traits should match the column names in the file.
+     * @param delimiter The delimiter with which columns are separated.
+     * @return A List of samples with the phenotypes annotated within these samples.
+     * @throws IOException If an I/O error occurs while reading the phenotype data.
+     */
+    static PhenotypeData fromFile(File inputPhenotypePath,
+                                  Set<String> phenotypeSampleIdentifiersToInclude,
+                                  Set<String> numericTraitsToInclude,
+                                  char delimiter) throws IOException, PhenotypeDataException {
+
+        return fromFile(inputPhenotypePath, phenotypeSampleIdentifiersToInclude,
+                numericTraitsToInclude, new HashSet<>(),
+                delimiter);
+    }
+
+    /**
+     * Load a CSV of phenotype values as a list of samples.
+     *
+     * @param inputPhenotypePath The path that points towards the file with the phenotype data.
+     * @param phenotypeSampleIdentifiersToInclude A set of strings that contains all the sample identifiers to
+     *                                            load phenotypes for.
+     * @param numericTraitsToInclude A set of traits to include from the given file.
+     *                               These traits should match the column names in the file.
      * @param nonNumericTraitsToInclude Other columns to include from the given file.
      *                                  These columns should match the column names in the file.
      * @param delimiter The delimiter with which columns are separated.
@@ -53,7 +75,7 @@ class PhenotypeData {
                                   Set<String> phenotypeSampleIdentifiersToInclude,
                                   Set<String> numericTraitsToInclude,
                                   Set<String> nonNumericTraitsToInclude,
-                                  char delimiter) throws IOException {
+                                  char delimiter) throws IOException, PhenotypeDataException {
 
         // Create the CSV reader object with which the phenotypes can be read through
         final CSVParser parser = new CSVParserBuilder()
@@ -199,7 +221,7 @@ class PhenotypeData {
         return nonNumericTraitHashMap;
     }
 
-    private static int[] determineTraitIndices(Set<String> traitsToInclude, String[] header) {
+    private static int[] determineTraitIndices(Set<String> traitsToInclude, String[] header) throws PhenotypeDataException {
         // Create a list from the set of traits to include to be able to iterate through these traits
         // by using an indices
         List<String> traitsToIncludeList = new ArrayList<>(traitsToInclude);
@@ -210,8 +232,13 @@ class PhenotypeData {
         // Get the index for every trait to include
         int[] traitIndices = new int[traitsToInclude.size()];
         for (int i = 0; i < traitsToInclude.size(); i++) {
-            traitIndices[i] = headerAsList
+            int headerIndex = headerAsList
                     .indexOf(traitsToIncludeList.get(i));
+            if (headerIndex < 0) {
+                throw new PhenotypeDataException(String.format(
+                        "Phenotype '%s' could not be found.", traitsToIncludeList.get(i)));
+            }
+            traitIndices[i] = headerIndex;
         }
         return traitIndices;
     }
@@ -220,7 +247,7 @@ class PhenotypeData {
         return numericValues.rows();
     }
 
-    List<String> getSamples() {
+    public List<String> getSamples() {
         return numericValues.getRowObjects();
     }
 
@@ -236,12 +263,64 @@ class PhenotypeData {
                 Map::putAll);
     }
 
-    DoubleMatrixDataset<String, String> getNormalizedPhenotypeValuesOfCompleteSamples(String groupField) {
+    /**
+     * Method correcting for differences in mean and standard deviation between two groups.
+     * Per group in the given group field, the values are normalized to have a mean of 0 and a standard deviation of 1.
+     *
+     * @param groupField The field that correspond to the groups for which should be corrected.
+     * @return A matrix with rows and columns representing samples and phenotypes respectively.
+     * Phenotypes are corrected per group in the group field.
+     */
+    DoubleMatrixDataset<String, String> getGroupCorrectedValuesOfCompleteSamples(String groupField) {
         // First get a copy of the original data and isolate the samples that have complete records.
         LinkedHashSet<String> sampleIdentifiersOfCompleteSamples = getCompleteSamples(presenceMatrix);
         DoubleMatrixDataset<String, String> copiedValueMatrix = numericValues.duplicate()
                 .viewRowSelection(sampleIdentifiersOfCompleteSamples);
 
+        // For every group in the field to normalize separately for,
+        // get sample identifiers that belong to the group
+        Map<String, LinkedHashSet<String>> groupedSampleIdentifiers = groupSamples(
+                sampleIdentifiersOfCompleteSamples, groupField);
+
+        for (String groupValue : groupedSampleIdentifiers.keySet()) {
+            copiedValueMatrix.viewRowSelection(groupedSampleIdentifiers.get(groupValue)).normalizeColumns();
+        }
+
+        return copiedValueMatrix;
+    }
+
+    /**
+     * Method correcting for differences in mean and standard deviation between two groups.
+     * Per group in the given group field, the values are normalized to have a mean of 0 and a standard deviation of 1.
+     *
+     * @param groupFields A map with a phenotype as the key and
+     *                   a corresponding field (like gender) for which should be corrected as its value.
+     * @return A matrix with rows and columns representing samples and phenotypes respectively.
+     * Phenotypes are corrected per group in the group field.
+     */
+    DoubleMatrixDataset<String, String> getGroupCorrectedValuesOfCompleteSamples(Map<String, String> groupFields) {
+        // First get a copy of the original data and isolate the samples that have complete records.
+        LinkedHashSet<String> sampleIdentifiersOfCompleteSamples = getCompleteSamples(presenceMatrix);
+        DoubleMatrixDataset<String, String> copiedValueMatrix = numericValues.duplicate()
+                .viewRowSelection(sampleIdentifiersOfCompleteSamples);
+
+        for (String phenotype : groupFields.keySet()) {
+            Map<String, LinkedHashSet<String>> groupedSampleIdentifiers = groupSamples(
+                    sampleIdentifiersOfCompleteSamples, groupFields.get(phenotype));
+
+            for (String groupValue : groupedSampleIdentifiers.keySet()) {
+                copiedValueMatrix.viewSelection(
+                        groupedSampleIdentifiers.get(groupValue),
+                        Collections.singletonList(phenotype))
+                        .normalizeColumns();
+            }
+        }
+
+        return copiedValueMatrix;
+    }
+
+    private Map<String, LinkedHashSet<String>> groupSamples(
+            LinkedHashSet<String> sampleIdentifiersToInclude, String groupField) {
         // For every group in the field to normalize separately for,
         // get sample identifiers that belong to the group
         Map<String, LinkedHashSet<String>> groupedSampleIdentifiers = new HashMap<>();
@@ -252,7 +331,7 @@ class PhenotypeData {
             String sampleIdentifier = entry.getKey();
 
             // Check if this sample is complete.
-            if (sampleIdentifiersOfCompleteSamples.contains(sampleIdentifier)) {
+            if (sampleIdentifiersToInclude.contains(sampleIdentifier)) {
                 // Get the value this individual has for the given field.
                 String groupValue = entry.getValue()[nonNumericDataFieldHashMap.get(groupField)];
                 // Put a linked hash set in the grouped sample identifiers map if it is not present yet.
@@ -261,12 +340,7 @@ class PhenotypeData {
                 groupedSampleIdentifiers.get(groupValue).add(sampleIdentifier);
             }
         }
-
-        for (String groupValue : groupedSampleIdentifiers.keySet()) {
-            copiedValueMatrix.viewRowSelection(groupedSampleIdentifiers.get(groupValue)).normalizeColumns();
-        }
-
-        return copiedValueMatrix;
+        return groupedSampleIdentifiers;
     }
 
     DoubleMatrixDataset<String, String> getNormalizedPhenotypeValuesOfCompleteSamples() {

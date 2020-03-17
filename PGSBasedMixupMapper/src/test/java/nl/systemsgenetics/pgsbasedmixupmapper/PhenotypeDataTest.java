@@ -39,7 +39,7 @@ public class PhenotypeDataTest {
     }
 
     @org.testng.annotations.Test
-    public void testFromFile() throws IOException {
+    public void testFromFile() throws IOException, PhenotypeDataException {
 
         PhenotypeData phenotypeData = PhenotypeData.fromFile(
                 examplePhenotypeFile, samples, numericTraits, nonNumericData, CSV_DELIMITER);
@@ -50,9 +50,24 @@ public class PhenotypeDataTest {
 
         assertEquals(phenotypeData.getNumericPhenotypes(), expectedNumericTraits);
 
+        Map<String, String> fieldsToCorrectFor = new HashMap<>();
+        fieldsToCorrectFor.put("hdc", "sex");
+
         DoubleMatrixDataset<String, String> sexNormalizedPhenotypeData =
-                phenotypeData.getNormalizedPhenotypeValuesOfCompleteSamples("sex");
+                phenotypeData.getGroupCorrectedValuesOfCompleteSamples(fieldsToCorrectFor);
+
         assertEquals(sexNormalizedPhenotypeData.getCol("hdc").toArray(), expectedHdcValues, 1e-7);
+        assertEquals(sexNormalizedPhenotypeData.getCol("ldc").toArray(),
+                phenotypeData.getValueMatrix().getCol("ldc").toArray());
+
+        fieldsToCorrectFor = new HashMap<>();
+        fieldsToCorrectFor.put("ldc", "sex");
+
+        sexNormalizedPhenotypeData =
+                phenotypeData.getGroupCorrectedValuesOfCompleteSamples(fieldsToCorrectFor);
+
+        assertEquals(sexNormalizedPhenotypeData.getCol("hdc").toArray(),
+                phenotypeData.getValueMatrix().getCol("hdc").toArray());
         assertEquals(sexNormalizedPhenotypeData.getCol("ldc").toArray(), expectedLdcValues, 1e-7);
     }
 }

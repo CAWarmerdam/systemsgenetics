@@ -2,7 +2,6 @@ package nl.systemsgenetics.pgsbasedmixupmapper;
 
 import nl.systemsgenetics.gwassummarystatistics.GwasSummaryStatistics;
 import nl.systemsgenetics.polygenicscorecalculator.SimplePolygenicScoreCalculator;
-import org.molgenis.genotype.GenotypeData;
 import org.molgenis.genotype.RandomAccessGenotypeData;
 import org.molgenis.genotype.RandomAccessGenotypeDataReaderFormats;
 import org.molgenis.genotype.sampleFilter.SampleFilterableGenotypeDataDecorator;
@@ -57,7 +56,7 @@ public class PGSBasedMixupMapperTest {
                 CSV_DELIMITER);
 
         // Load trait data, only including the samples specified in the coupling map.
-        DoubleMatrixDataset<String, String> phenotypeData = loadPhenotypeData(
+        PhenotypeData phenotypeData = loadPhenotypeData(
                 new HashSet<>(genotypeToPhenotypeSampleCoupling.values()),
                 new HashSet<>(gwasPhenotypeCoupling.values()),
                 examplePhenotypeFile);
@@ -65,7 +64,7 @@ public class PGSBasedMixupMapperTest {
         // Get the filter out the samples from the coupling file that could not be found.
         genotypeToPhenotypeSampleCoupling = genotypeToPhenotypeSampleCoupling.entrySet()
                 .stream()
-                .filter(map -> phenotypeData.getRowObjects().contains(map.getValue()))
+                .filter(map -> phenotypeData.getSamples().contains(map.getValue()))
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 
         Map<String, String[]> inputGenotypePaths = new HashMap<>();
@@ -97,7 +96,7 @@ public class PGSBasedMixupMapperTest {
 
             // Initialize the Mix-up mapper
             PGSBasedMixupMapper pgsBasedMixupMapper = new PGSBasedMixupMapper(
-                    genotypeData, phenotypeData.duplicate(), genotypeToPhenotypeSampleCoupling,
+                    genotypeData, phenotypeData, genotypeToPhenotypeSampleCoupling,
                     polygenicScoreCalculator);
 
             pgsBasedMixupMapper.calculatePolygenicScores(gwasSummaryStatisticsMap);
@@ -143,7 +142,7 @@ public class PGSBasedMixupMapperTest {
                 CSV_DELIMITER);
 
         // Load trait data, only including the samples specified in the coupling map.
-        DoubleMatrixDataset<String, String> phenotypeData = loadPhenotypeData(
+        PhenotypeData phenotypeData = loadPhenotypeData(
                 new HashSet<>(genotypeToPhenotypeSampleCoupling.values()),
                 new HashSet<>(gwasPhenotypeCoupling.values()),
                 examplePhenotypeFile);
@@ -151,7 +150,7 @@ public class PGSBasedMixupMapperTest {
         // Get the filter out the samples from the coupling file that could not be found.
         genotypeToPhenotypeSampleCoupling = genotypeToPhenotypeSampleCoupling.entrySet()
                 .stream()
-                .filter(map -> phenotypeData.getRowObjects().contains(map.getValue()))
+                .filter(map -> phenotypeData.getSamples().contains(map.getValue()))
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 
         Map<String, String[]> inputGenotypePaths = new HashMap<>();

@@ -208,7 +208,7 @@ public class RobustnessAnalyzer {
         PhenotypeData phenotypeData = loadPhenotypeData(
                 new HashSet<>(correctSampleCouplingMap.values()),
                 new HashSet<>(gwasPhenotypeCoupling.values()),
-                new HashSet<>(), options.getInputPhenotypePath());
+                options.getInputPhenotypePath());
 
         // Get the filter out the samples from the coupling file that could not be found.
         correctSampleCouplingMap = correctSampleCouplingMap.entrySet()

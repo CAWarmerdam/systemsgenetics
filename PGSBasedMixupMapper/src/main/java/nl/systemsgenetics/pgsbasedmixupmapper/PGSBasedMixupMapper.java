@@ -150,16 +150,14 @@ public class PGSBasedMixupMapper {
         PearsonRToPValueBinned rToPValue = new PearsonRToPValueBinned(10000000,
                 randomSamplePartitions.get(0).size());
 
-        GenomicBoundaries<String> boundaries = getGenomicBoundaries(genotypeData, -1);
+        Map<String, GenomicBoundaries<String>> boundaries = getGenomicBoundaries(genotypeData, 100000);
 
-        for (GenomicBoundary<String> boundary : boundaries) {
-            LOGGER.info(String.format("Calculating associations for genomic region '%s'", boundary.getAnnotation()));
-            LOGGER.debug(String.format("Loading variant scaled dosage matrix for range %s", boundary.getAnnotation()));
-            // Get normalized genotypes
-            DoubleMatrixDataset<String, String> variantScaledDosages = loadVariantScaledAlternativeDosageMatrix(
-                    genotypeData, boundary, sampleHash);
+        // We can calculate genome wide associations and polygenic scores per chromosomes as the sentinel variants
+        // can be calculated within a single chromosome.
+        for (String chromosome : boundaries.keySet()) {
+            GenomicBoundaries<String> interChromosomalBoundaries = boundaries.get(chromosome);
 
-            // For every fold, subset the dosages and phenotype matrices, and calculate the correlation matrix.
+            // For every fold, for every chromosome, calculate genome wide associations and polygenic scores.
             int foldIndex = 0;
             for (List<String> randomSamplePartition : randomSamplePartitions) {
 
@@ -173,51 +171,71 @@ public class PGSBasedMixupMapper {
                 // Obtain a list of samples within all other partitions
                 List<String> samplesNotInCurrentPartition = getSamplesNotInCurrentPartition(randomSamplePartition);
 
-                // Subset the phenotype and genotype data to include only the samples that
-                // are within the random sample partition.
-                DoubleMatrixDataset<String, String> dosageMatrixSubset = variantScaledDosages
-                        .viewRowSelection(samplesNotInCurrentPartition);
-                DoubleMatrixDataset<String, String> phenotypeMatrixSubset = phenotypeData
-                        .viewRowSelection(mapToPhenotypeSamples(samplesNotInCurrentPartition.stream()));
-
-                // Get a matrix of correlations.
-                DoubleMatrixDataset<String, String> pearsonRValues =
-                        calculateCorrelationOfScaledDosagesAndScaledPhenotypes(
-                        dosageMatrixSubset, phenotypeMatrixSubset);
-
-                // Duplicate the pearson R values to calculate p values
-                DoubleMatrixDataset<String, String> pValues = pearsonRValues.duplicate();
-
-                LOGGER.debug("Getting P-values...");
-
-                // Get actual pValues
-                rToPValue.inplaceRToPValue(pValues);
-
-                LOGGER.debug("Getting P-values done!");
-
-                LOGGER.info(String.format("Calculated associations for %d variants",
-                        pearsonRValues.rows()));
-
-                // Get the alleles that correspond to the
-                List<String> alleles = new ArrayList<>();
-                for (String variantIdentifiers : pearsonRValues.getRowObjects()) {
-                    GeneticVariant variant = variantIdMap.get(variantIdentifiers);
-                    alleles.add(variant.getVariantAlleles().get(variant.getAlleleCount() - 1).getAlleleAsString());
-                }
-
+                List<MatrixBasedGwasSummaryStatistics> summaryStatisticsList = new ArrayList<>(phenotypeData.columns());
+                // For every phenotype, initialize a matrix based summary statistics object.
                 for (int i = 0; i < phenotypeData.columns(); i++) {
                     // Get the phenotype identifier
                     String phenotype = phenotypeData.getColObjects().get(i);
+                    summaryStatisticsList.add(new MatrixBasedGwasSummaryStatistics(phenotype));
+                }
 
-                    // Wrap the pearson values and p values inside a summary statistics object
-                    MatrixBasedGwasSummaryStatistics summaryStatistics = new MatrixBasedGwasSummaryStatistics(phenotype,
-                            pearsonRValues.getHashRows(), alleles, pearsonRValues.viewCol(i), pValues.viewCol(i));
+                for (GenomicBoundary<String> boundary : interChromosomalBoundaries) {
 
+                    LOGGER.debug(String.format("Calculating associations for genomic region '%s'", boundary.getAnnotation()));
+                    LOGGER.debug(String.format("Loading variant scaled dosage matrix for range %s", boundary.getAnnotation()));
+                    // Get normalized genotypes
+                    DoubleMatrixDataset<String, String> variantScaledDosages = loadVariantScaledAlternativeDosageMatrix(
+                            genotypeData, boundary, sampleHash);
+
+                    // Subset the phenotype and genotype data to include only the samples that
+                    // are within the random sample partition.
+                    DoubleMatrixDataset<String, String> dosageMatrixSubset = variantScaledDosages
+                            .viewRowSelection(samplesNotInCurrentPartition);
+                    DoubleMatrixDataset<String, String> phenotypeMatrixSubset = phenotypeData
+                            .viewRowSelection(mapToPhenotypeSamples(samplesNotInCurrentPartition.stream()));
+
+                    // Get a matrix of correlations.
+                    DoubleMatrixDataset<String, String> pearsonRValues =
+                            calculateCorrelationOfScaledDosagesAndScaledPhenotypes(
+                                    dosageMatrixSubset, phenotypeMatrixSubset);
+
+                    // Duplicate the pearson R values to calculate p values
+                    DoubleMatrixDataset<String, String> pValues = pearsonRValues.duplicate();
+
+                    LOGGER.debug("Getting P-values...");
+
+                    // Get actual pValues
+                    rToPValue.inplaceRToPValue(pValues);
+
+                    LOGGER.debug("Getting P-values done!");
+
+                    LOGGER.debug(String.format("Calculated associations for %d variants in region '%s'",
+                            pearsonRValues.rows(), boundary.getAnnotation()));
+
+                    // Get the alleles that correspond to the
+                    List<String> alleles = new ArrayList<>();
+                    for (String variantIdentifiers : pearsonRValues.getRowObjects()) {
+                        GeneticVariant variant = variantIdMap.get(variantIdentifiers);
+                        alleles.add(variant.getVariantAlleles().get(variant.getAlleleCount() - 1).getAlleleAsString());
+                    }
+
+                    for (int i = 0; i < phenotypeData.columns(); i++) {
+                        summaryStatisticsList.get(i).add(pearsonRValues.getHashRows(), alleles,
+                                pearsonRValues.viewCol(i), pValues.viewCol(i));
+                    }
+                }
+
+                for (int i = 0; i < phenotypeData.columns(); i++) {
+                    String phenotype = phenotypeData.getColObjects().get(i);
                     // Calculate the polygenic scores for all samples not in the current fold
                     // and the summarystatistics for the
                     // current chromosome
+
+                    LOGGER.info(String.format("Calculated associations for %d variants in chromosome '%s'",
+                            summaryStatisticsList.get(i).size(), chromosome));
+
                     DoubleMatrixDataset<String, String> polygenicScores = polyGenicScoreCalculator.calculate(
-                            summaryStatistics, referenceSampleFilter, responseSampleFilter);
+                            summaryStatisticsList.get(i), referenceSampleFilter, responseSampleFilter);
 
                     DoubleMatrixDataset<String, String> preliminaryPolygenicScores = polyGenicScoresMap.get(phenotype);
 
@@ -368,7 +386,7 @@ public class PGSBasedMixupMapper {
      */
     public void calculatePolygenicScores(Map<String, GwasSummaryStatistics> gwasSummaryStatisticsMap) {
 
-        for (String phenotype : this.phenotypeData.getNumericPhenotypes()) {
+        for (String phenotype : gwasSummaryStatisticsMap.keySet()) {
 
             System.out.println(String.format("Calculating PGSs for trait '%s'", phenotype));
             // Calculate the Z scores for every phenotype
@@ -388,8 +406,7 @@ public class PGSBasedMixupMapper {
     public void calculateZScoreMatrix() throws PGSBasedMixupMapperException {
         // Scale phenotypes, correcting differences in mean and sd for the given group
         DoubleMatrixDataset<String, String> correctedPhenotypeMatrix = this.phenotypeData
-                .getGroupCorrectedValuesOfCompleteSamples(fieldsToCorrectFor);
-        correctedPhenotypeMatrix.normalizeColumns();
+                .getNormalizedPhenotypeValuesOfCompleteSamples();
 
         for (String phenotype : this.phenotypeData.getNumericPhenotypes()) {
             System.out.println(String.format("Calculating Z-scores for trait '%s'", phenotype));
@@ -517,8 +534,8 @@ public class PGSBasedMixupMapper {
 //                    values);
             polygenicScores.normalizeRows();
 
-            System.out.println("polygenicScores = " + polygenicScores.getMatrix());
-            System.out.println("phenotypeMatrix = " + residualsMatrix.getMatrix());
+//            System.out.println("polygenicScores = " + polygenicScores.getMatrix());
+//            System.out.println("phenotypeMatrix = " + residualsMatrix.getMatrix());
 
             // Calculate the residuals
             residualsMatrix.viewRow(rowIndex).assign(polygenicScores.viewRow(rowIndex),
@@ -738,10 +755,6 @@ public class PGSBasedMixupMapper {
         return rank;
     }
 
-    public void setFieldsToCorrectFor(Map<String, String> fieldsToCorrectFor) {
-        this.fieldsToCorrectFor = fieldsToCorrectFor;
-    }
-
     private Map<String, DoubleMatrixDataset<String, String>> getZScoresMap() {
         return zScoresMap;
     }
@@ -797,15 +810,11 @@ public class PGSBasedMixupMapper {
         Map<String, String> gwasPhenotypeCoupling = loadGwasSummaryStatisticsPhenotypeCouplings(
                 options.getGwasSummaryStatisticsPhenotypeCouplingFile(), CSV_DELIMITER);
 
-        // Load the gwas to phenotype coupling map
-        Map<String, String> fieldsToCorrectFor = loadFieldsToCorrectFor(
-                options.getGwasSummaryStatisticsPhenotypeCouplingFile(), CSV_DELIMITER);
-
         // Load trait data, only including the samples specified in the coupling map.
         PhenotypeData phenotypeData = loadPhenotypeData(
                 new HashSet<>(genotypeToPhenotypeSampleCoupling.values()),
                 new HashSet<>(gwasPhenotypeCoupling.values()),
-                new HashSet<>(fieldsToCorrectFor.values()), options.getInputPhenotypePath());
+                options.getInputPhenotypePath());
 
         // Get the filter out the samples from the coupling file that could not be found.
         genotypeToPhenotypeSampleCoupling = genotypeToPhenotypeSampleCoupling.entrySet()
@@ -852,9 +861,6 @@ public class PGSBasedMixupMapper {
         PGSBasedMixupMapper pgsBasedMixupMapper = new PGSBasedMixupMapper(
                 genotypeData, phenotypeData, genotypeToPhenotypeSampleCoupling,
                 polygenicScoreCalculator);
-
-        // Set the field to correct phenotypes for.
-        pgsBasedMixupMapper.setFieldsToCorrectFor(fieldsToCorrectFor);
 
         try {
             if (options.isCalculateNewGenomeWideAssociationsEnabled()) {
@@ -1044,45 +1050,47 @@ public class PGSBasedMixupMapper {
         // Use a binned approach for determining p values per correlation
         PearsonRToPValueBinned rToPValue = new PearsonRToPValueBinned(10000000, sampleHash.size());
 
-        GenomicBoundaries<String> boundaries = getGenomicBoundaries(genotypeData, -1);
+        Map<String, GenomicBoundaries<String>> boundaries = getGenomicBoundaries(genotypeData, -1);
 
-        for (GenomicBoundary<String> boundary : boundaries) {
-            LOGGER.info(String.format("Calculating associations for genomic region '%s'", boundary.getAnnotation()));
-            LOGGER.debug(String.format("Loading variant scaled dosage matrix for range %s", boundary.getAnnotation()));
-            // Get normalized genotypes
-            DoubleMatrixDataset<String, String> variantScaledDosages = loadVariantScaledAlternativeDosageMatrix(genotypeData, boundary, sampleHash);
+        for (String chromosome : boundaries.keySet()) {
+            for (GenomicBoundary<String> boundary : boundaries.get(chromosome)) {
+                LOGGER.info(String.format("Calculating associations for genomic region '%s'", boundary.getAnnotation()));
+                LOGGER.debug(String.format("Loading variant scaled dosage matrix for range %s", boundary.getAnnotation()));
+                // Get normalized genotypes
+                DoubleMatrixDataset<String, String> variantScaledDosages = loadVariantScaledAlternativeDosageMatrix(genotypeData, boundary, sampleHash);
 
-            DoubleMatrixDataset<String, String> pearsonRValues =
-                    calculateCorrelationOfScaledDosagesAndScaledPhenotypes(variantScaledDosages, normalizedPhenotypes);
+                DoubleMatrixDataset<String, String> pearsonRValues =
+                        calculateCorrelationOfScaledDosagesAndScaledPhenotypes(variantScaledDosages, normalizedPhenotypes);
 
-            // Duplicate the pearson R values to calculate p values
-            DoubleMatrixDataset<String, String> pValues = pearsonRValues.duplicate();
+                // Duplicate the pearson R values to calculate p values
+                DoubleMatrixDataset<String, String> pValues = pearsonRValues.duplicate();
 
-            LOGGER.debug("Getting P-values...");
+                LOGGER.debug("Getting P-values...");
 
-            // Get actual pValues
-            rToPValue.inplaceRToPValue(pValues);
+                // Get actual pValues
+                rToPValue.inplaceRToPValue(pValues);
 
-            LOGGER.debug("Getting P-values done!");
+                LOGGER.debug("Getting P-values done!");
 
-            List<String> alleles = new ArrayList<>();
+                List<String> alleles = new ArrayList<>();
 
-            for (String variantIdentifiers : pearsonRValues.getRowObjects()) {
-                GeneticVariant variant = variantIdMap.get(variantIdentifiers);
-                alleles.add(variant.getVariantAlleles().get(variant.getAlleleCount() - 1).getAlleleAsString());
-            }
+                for (String variantIdentifiers : pearsonRValues.getRowObjects()) {
+                    GeneticVariant variant = variantIdMap.get(variantIdentifiers);
+                    alleles.add(variant.getVariantAlleles().get(variant.getAlleleCount() - 1).getAlleleAsString());
+                }
 
-            // Wrap the pearson values and p values inside a summary statistics object
-            for (int i = 0; i < phenotypeData.numberOfNumericPhenotypes(); i++) {
-                // Get the phenotype identifier
-                String phenotype = phenotypeData.getNumericPhenotypes().get(i);
+                // Wrap the pearson values and p values inside a summary statistics object
+                for (int i = 0; i < phenotypeData.numberOfNumericPhenotypes(); i++) {
+                    // Get the phenotype identifier
+                    String phenotype = phenotypeData.getNumericPhenotypes().get(i);
 
-                MatrixBasedGwasSummaryStatistics summaryStatistics = summaryStatisticsMap.get(phenotype);
-                summaryStatistics.add(
-                        pearsonRValues.getHashRows(), alleles, pearsonRValues.viewCol(i), pValues.viewCol(i));
+                    MatrixBasedGwasSummaryStatistics summaryStatistics = summaryStatisticsMap.get(phenotype);
+                    summaryStatistics.add(
+                            pearsonRValues.getHashRows(), alleles, pearsonRValues.viewCol(i), pValues.viewCol(i));
 
-                LOGGER.info(String.format("Calculated associations between %d variants and '%s'",
-                        summaryStatistics.size(), phenotype));
+                    LOGGER.info(String.format("Calculated associations between %d variants and '%s'",
+                            summaryStatistics.size(), phenotype));
+                }
             }
         }
 
@@ -1090,28 +1098,27 @@ public class PGSBasedMixupMapper {
         return summaryStatisticsMap;
     }
 
-    private static GenomicBoundaries<String> getGenomicBoundaries(
+    private static Map<String, GenomicBoundaries<String>> getGenomicBoundaries(
             RandomAccessGenotypeData genotypeData, int windowSize) {
-        GenomicBoundaries<String> genomicBoundaries = new GenomicBoundaries<>();
+        Map<String, GenomicBoundaries<String>> genomicBoundaries = new LinkedHashMap<>();
 
         for (Sequence sequence : genotypeData.getSequences()) {
-//            int currentPosition = 0;
-//            while (currentPosition < sequence.getLength()) {
-//                System.out.println("currentPosition = " + currentPosition);
-//                int nextPosition = currentPosition + windowSize;
-//                System.out.println("nextPosition = " + nextPosition);
-//                genomicBoundaries.addBoundary(
-//                        sequence.getName(), currentPosition, nextPosition,
-//                        String.format("%s:%d-%d", sequence.getName(), currentPosition, nextPosition));
-//                currentPosition = nextPosition;
-//            }
-            if (windowSize < 0) {
-                genomicBoundaries.addBoundary(
+            GenomicBoundaries<String> interChromosomalBoundaries = new GenomicBoundaries<>();
+            if (windowSize > 0) {
+                int currentPosition = 0;
+                while (currentPosition < sequence.getLength()) {
+                    int nextPosition = currentPosition + windowSize;
+                    interChromosomalBoundaries.addBoundary(
+                            sequence.getName(), currentPosition, nextPosition,
+                            String.format("%s:%d-%d", sequence.getName(), currentPosition, nextPosition));
+                    currentPosition = nextPosition;
+                }
+            } else {
+                interChromosomalBoundaries.addBoundary(
                         sequence.getName(), 0, Integer.MAX_VALUE,
                         String.format("%s", sequence.getName()));
-            } else {
-                throw new UnsupportedOperationException("Not yet supported");
             }
+            genomicBoundaries.put(sequence.getName(), interChromosomalBoundaries);
         }
         return genomicBoundaries;
     }
@@ -1150,9 +1157,9 @@ public class PGSBasedMixupMapper {
             }
         }
 
-        long timeInLoadingGenotypeDosages = (System.currentTimeMillis() - timeStart);
-        System.out.println("timeInLoadingGenotypeDosages = " + timeInLoadingGenotypeDosages);
-        System.out.println("variantsDosages.size() = " + variantsDosages.size());
+//        long timeInLoadingGenotypeDosages = (System.currentTimeMillis() - timeStart);
+//        System.out.println("timeInLoadingGenotypeDosages = " + timeInLoadingGenotypeDosages);
+//        System.out.println("variantsDosages.size() = " + variantsDosages.size());
 
         DoubleMatrixDataset<String, String> dosageDataset = new DoubleMatrixDataset<>(sampleHash, variantHash);
 
@@ -1176,7 +1183,6 @@ public class PGSBasedMixupMapper {
         dosageDataset.getMatrix().assign(DoubleFunctions.neg);
 
         return dosageDataset;
-
     }
 
     public static void reportResults(File outputPath, PGSBasedMixupMapper pgsBasedMixupMapper, PhenotypeData phenotypeData, Map<String, String> sampleAssignments) throws IOException {
@@ -1520,13 +1526,12 @@ public class PGSBasedMixupMapper {
      */
     public static PhenotypeData loadPhenotypeData(Set<String> phenotypeSampleIdentifiersToInclude,
                                                   Set<String> numericTraitsToInclude,
-                                                  Set<String> nonNumericTraitsToInclude,
                                                   File inputPhenotypePath) {
         PhenotypeData phenotypeData = null;
 
         try {
             phenotypeData = PhenotypeData.fromFile(inputPhenotypePath,
-                    phenotypeSampleIdentifiersToInclude, numericTraitsToInclude, nonNumericTraitsToInclude,'\t');
+                    phenotypeSampleIdentifiersToInclude, numericTraitsToInclude,'\t');
             LOGGER.info(String.format("Loaded phenotype data for %d samples",
                     phenotypeData.getSampleCount()));
         } catch (IOException | PhenotypeDataException e) {

@@ -1,5 +1,6 @@
 package nl.systemsgenetics.gwassummarystatistics;
 
+import JSci.chemistry.periodictable.AlkaliEarthMetal;
 import cern.colt.matrix.tdouble.DoubleFactory1D;
 import cern.colt.matrix.tdouble.DoubleMatrix1D;
 import cern.colt.matrix.tdouble.impl.DenseDoubleMatrix1D;
@@ -18,6 +19,7 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class MatrixBasedGwasSummaryStatistics implements GwasSummaryStatistics{
 
@@ -57,15 +59,49 @@ public class MatrixBasedGwasSummaryStatistics implements GwasSummaryStatistics{
     }
 
     public void add(LinkedHashMap<String, Integer> variantIds, List<String> alleles,
-                    DoubleMatrix1D betaCoefficients, DoubleMatrix1D pValues) {
-        if (variantIds.size() != betaCoefficients.size() || variantIds.size() != pValues.size()) {
-            throw new GwasSummaryStatisticsException(
-                    String.format("Trying to add summary statistics with unequal number of variants, " +
-                            "betas or p-values (%d vs %d, %d)",
-                            variantIds.size(), betaCoefficients.size(), pValues.size()));
+                    DoubleMatrix1D betaCoefficients, DoubleMatrix1D pValues,
+                    Double leastStringentPValueThreshold) {
+
+        assertEqualLengths(variantIds, alleles, betaCoefficients, pValues);
+
+        List<Integer> significantAssociations = new ArrayList<>();
+        LinkedHashMap<String, Integer> updatedVariantIds = new LinkedHashMap<>();
+
+        double[] pValueArray = pValues.toArray();
+
+        int updatedIndex = 0;
+        for (String variantId : variantIds.keySet()) {
+            Integer index = variantIds.get(variantId);
+            double pValue = pValueArray[index];
+            if (pValue < leastStringentPValueThreshold) {
+                significantAssociations.add(index);
+                updatedVariantIds.put(variantId, updatedIndex++);
+            }
         }
 
-        assert alleles.size() == variantIds.size();
+        int[] indicesArray = significantAssociations.stream().mapToInt(Integer::intValue).toArray();
+
+        this.betaCoefficients = DoubleFactory1D.dense.append(
+                this.betaCoefficients, betaCoefficients.viewSelection(indicesArray));
+        this.pValues = DoubleFactory1D.dense.append(
+                this.pValues, pValues.viewSelection(indicesArray));
+        this.alleles.addAll(significantAssociations.stream().map(alleles::get)
+                .collect(Collectors.toList()));
+
+        int originalSize = this.variantIds.size();
+
+        for (String variantId : updatedVariantIds.keySet()) {
+            Integer variantIndex = updatedVariantIds.get(variantId);
+            this.variantIds.put(
+                    variantId,
+                    variantIndex + originalSize);
+        }
+
+    }
+
+    public void add(LinkedHashMap<String, Integer> variantIds, List<String> alleles,
+                    DoubleMatrix1D betaCoefficients, DoubleMatrix1D pValues) {
+        assertEqualLengths(variantIds, alleles, betaCoefficients, pValues);
 
         this.betaCoefficients = DoubleFactory1D.dense.append(this.betaCoefficients, betaCoefficients);
         this.pValues = DoubleFactory1D.dense.append(this.pValues, pValues);
@@ -76,6 +112,17 @@ public class MatrixBasedGwasSummaryStatistics implements GwasSummaryStatistics{
         for (String variantId : variantIds.keySet()) {
             this.variantIds.put(variantId, variantIds.get(variantId) + originalSize);
         }
+    }
+
+    private void assertEqualLengths(LinkedHashMap<String, Integer> variantIds, List<String> alleles, DoubleMatrix1D betaCoefficients, DoubleMatrix1D pValues) {
+        if (variantIds.size() != betaCoefficients.size() || variantIds.size() != pValues.size()) {
+            throw new GwasSummaryStatisticsException(
+                    String.format("Trying to add summary statistics with unequal number of variants, " +
+                            "betas or p-values (%d vs %d, %d)",
+                            variantIds.size(), betaCoefficients.size(), pValues.size()));
+        }
+
+        assert alleles.size() == variantIds.size();
     }
 
     @Override

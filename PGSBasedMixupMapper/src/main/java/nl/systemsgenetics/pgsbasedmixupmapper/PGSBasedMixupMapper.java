@@ -73,7 +73,6 @@ public class PGSBasedMixupMapper {
     private List<String> genotypeSampleIdentifiers;
     private List<String> phenotypeSampleIdentifiers;
     private Map<String, Integer> minimumAbsoluteResidualsIndices = new HashMap<>();
-    private Map<String, String> fieldsToCorrectFor = new HashMap<>();
     private List<List<String>> randomSamplePartitions;
 
     /**
@@ -128,6 +127,7 @@ public class PGSBasedMixupMapper {
      */
     public void calculatePolygenicScoresWithKFoldProcedure(int folds) throws PGSBasedMixupMapperException {
         // Perform KFold procedure
+        LOGGER.info(String.format("Performing k-fold procedure for calculating polygenic scores (%d)", folds));
 
         // First define the folds and split the samples into k subsamples with approximately equal sizes
         randomSamplePartitions = getRandomSamplePartitions(folds);
@@ -148,7 +148,7 @@ public class PGSBasedMixupMapper {
         LOGGER.debug("Initializing PearsonRToPvalueBinned object");
         // Use a binned approach for determining p values per correlation
         PearsonRToPValueBinned rToPValue = new PearsonRToPValueBinned(10000000,
-                randomSamplePartitions.get(0).size());
+                genotypeSampleIdentifiers.size() - randomSamplePartitions.get(0).size());
 
         Map<String, GenomicBoundaries<String>> boundaries = getGenomicBoundaries(genotypeData, 100000);
 
@@ -219,9 +219,10 @@ public class PGSBasedMixupMapper {
                         alleles.add(variant.getVariantAlleles().get(variant.getAlleleCount() - 1).getAlleleAsString());
                     }
 
+                    // For every phenotype, add the association details to the summary statistics
                     for (int i = 0; i < phenotypeData.columns(); i++) {
                         summaryStatisticsList.get(i).add(pearsonRValues.getHashRows(), alleles,
-                                pearsonRValues.viewCol(i), pValues.viewCol(i));
+                                pearsonRValues.viewCol(i), pValues.viewCol(i), getLeastStringentPValueThreshold());
                     }
                 }
 
@@ -231,8 +232,10 @@ public class PGSBasedMixupMapper {
                     // and the summarystatistics for the
                     // current chromosome
 
-                    LOGGER.info(String.format("Calculated associations for %d variants in chromosome '%s'",
-                            summaryStatisticsList.get(i).size(), chromosome));
+                    LOGGER.info(String.format(
+                            "Calculated associations for %d variants in chromosome '%s' " +
+                                    "for phenotype '%s'",
+                            summaryStatisticsList.get(i).size(), chromosome, phenotype));
 
                     DoubleMatrixDataset<String, String> polygenicScores = polyGenicScoreCalculator.calculate(
                             summaryStatisticsList.get(i), referenceSampleFilter, responseSampleFilter);
@@ -244,6 +247,10 @@ public class PGSBasedMixupMapper {
                 }
             }
         }
+    }
+
+    private Double getLeastStringentPValueThreshold() {
+        return Collections.max(this.polyGenicScoreCalculator.getpValueThresholds());
     }
 
     private List<String> getSamplesNotInCurrentPartition(List<String> currentSamplePartition) {
@@ -863,11 +870,11 @@ public class PGSBasedMixupMapper {
                 polygenicScoreCalculator);
 
         try {
-            if (options.isCalculateNewGenomeWideAssociationsEnabled()) {
+            if (options.isCalculateNewGenomeWideAssociationsEnabled() && options.getFolds() > 0) {
                 pgsBasedMixupMapper.calculatePolygenicScoresWithKFoldProcedure(options.getFolds());
             } else {
-                Map<String, GwasSummaryStatistics> gwasSummaryStatisticsMap = loadFilteredGwasSummaryStatisticsMap(
-                        gwasPhenotypeCoupling, genotypeData, options.getGwasSummaryStatisticsPath());
+                Map<String, GwasSummaryStatistics> gwasSummaryStatisticsMap = getGwasSummaryStatisticsMap(
+                        options, genotypeToPhenotypeSampleCoupling, gwasPhenotypeCoupling, phenotypeData, genotypeData);
 
                 pgsBasedMixupMapper.calculatePolygenicScores(gwasSummaryStatisticsMap);
             }
@@ -1106,7 +1113,15 @@ public class PGSBasedMixupMapper {
             GenomicBoundaries<String> interChromosomalBoundaries = new GenomicBoundaries<>();
             if (windowSize > 0) {
                 int currentPosition = 0;
-                while (currentPosition < sequence.getLength()) {
+                Iterable<GeneticVariant> sequenceGeneticVariants = genotypeData.getSequenceGeneticVariants(sequence.getName());
+                int maxPosition = 0;
+                for (GeneticVariant sequenceGeneticVariant : sequenceGeneticVariants) {
+                    int startPos = sequenceGeneticVariant.getStartPos();
+                    if (startPos > maxPosition) {
+                        maxPosition = startPos;
+                    }
+                }
+                while (currentPosition <= maxPosition) {
                     int nextPosition = currentPosition + windowSize;
                     interChromosomalBoundaries.addBoundary(
                             sequence.getName(), currentPosition, nextPosition,

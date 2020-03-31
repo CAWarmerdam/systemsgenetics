@@ -93,9 +93,6 @@ public class SimplePolygenicScoreCalculator {
         SampleFilterableGenotypeDataDecorator responsePhenotypeData =
                 new SampleFilterableGenotypeDataDecorator(genotypeData, responseSampleFilter);
 
-        System.out.println("reference sample count = " + referenceGenotypeData.getIncludedSampleCount());
-        System.out.println("response sample count = " + responsePhenotypeData.getIncludedSampleCount());
-
         DoubleMatrixDataset<String, String> scores = initializePolygenicScoreMatrix(responsePhenotypeData, risks);
 
         if (windowSizeList.size() == 1) {

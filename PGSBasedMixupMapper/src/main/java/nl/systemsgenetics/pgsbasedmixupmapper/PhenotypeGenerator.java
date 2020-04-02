@@ -49,12 +49,6 @@ public class PhenotypeGenerator {
         // Parse the arguments list
         options = getPgsBasedMixupMapperOptions(args);
 
-        // Check if the output directory is a prefix for output files. May not be a directory
-        if (options.getOutputBasePath().isDirectory()) {
-            System.err.println("Specified output path is a directory. Please include a prefix for the output files.");
-            return;
-        }
-
         // Create a logger (set the correct file for output)
         createLogger(startDateTime, options);
 

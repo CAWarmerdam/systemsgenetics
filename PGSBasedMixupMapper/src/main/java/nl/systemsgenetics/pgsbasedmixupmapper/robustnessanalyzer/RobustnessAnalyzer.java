@@ -15,7 +15,6 @@ import org.apache.log4j.SimpleLayout;
 import org.molgenis.genotype.RandomAccessGenotypeData;
 import umcg.genetica.math.matrix2.DoubleMatrixDataset;
 
-import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Path;
@@ -103,7 +102,7 @@ public class RobustnessAnalyzer {
      * @param outputFile The file to write the results to.
      * @throws IOException If an I/O error occurred.
      */
-    public void save(Map<String, String> resolvedSampleCouplings, File outputFile) throws IOException {
+    public void save(Map<String, String> resolvedSampleCouplings, Path outputFile) throws IOException {
 
         // Initialize the CSV writer for outputting the differences.
         CSVWriter writer = new CSVWriter(new FileWriter(
@@ -278,7 +277,7 @@ public class RobustnessAnalyzer {
                     mixUpPercentage));
             boolean mkdir = path.toFile().mkdir();
             assert mkdir;
-            File mixUpPercentageOutputPath = path.resolve("output").toFile();
+            Path mixUpPercentageOutputPath = path.resolve("output");
             
             try {
                 // Get the gwas summary statistics map

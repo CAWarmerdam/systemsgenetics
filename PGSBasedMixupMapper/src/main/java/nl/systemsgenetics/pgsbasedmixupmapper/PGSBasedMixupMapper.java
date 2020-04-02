@@ -74,6 +74,7 @@ public class PGSBasedMixupMapper {
     private List<String> phenotypeSampleIdentifiers;
     private Map<String, Integer> minimumAbsoluteResidualsIndices = new HashMap<>();
     private List<List<String>> randomSamplePartitions;
+    private Path debugOutputPath;
 
     /**
      * Constructor method for resolving mix-ups based on polygenic scores.
@@ -260,10 +261,12 @@ public class PGSBasedMixupMapper {
      * Polygenic scores are averaged afterwards by dividing the scores by K folds - 1.
      *
      * @param folds k folds to perform the procedure for.
+     * @param writeNewGenomeWideAssociations
      * @throws PGSBasedMixupMapperException If correlations unexpectedly were not able to be calculated due to
      * unequal number of samples.
      */
-    public void calculatePolygenicScoresWithKFoldProcedure(int folds) throws PGSBasedMixupMapperException {
+    public void calculatePolygenicScoresWithKFoldProcedure(
+            int folds, boolean writeNewGenomeWideAssociations) throws PGSBasedMixupMapperException {
         // Perform KFold procedure
         LOGGER.info(String.format("Performing k-fold procedure for calculating polygenic scores (%d)", folds));
 
@@ -290,27 +293,27 @@ public class PGSBasedMixupMapper {
 
         Map<String, GenomicBoundaries<String>> boundaries = getGenomicBoundaries(genotypeData, 100000);
 
+        List<List<MatrixBasedGwasSummaryStatistics>> summaryStatisticsLists = new LinkedList<>();
+
+        // For every fold, for every chromosome, calculate genome wide associations and polygenic scores.
+        for (List<String> ignored : randomSamplePartitions) {
+
+            List<MatrixBasedGwasSummaryStatistics> summaryStatisticsList = new ArrayList<>(phenotypeData.columns());
+            // For every phenotype, initialize a matrix based summary statistics object.
+            for (int i = 0; i < phenotypeData.columns(); i++) {
+                // Get the phenotype identifier
+                String phenotype = phenotypeData.getColObjects().get(i);
+                summaryStatisticsList.add(new MatrixBasedGwasSummaryStatistics(phenotype));
+            }
+            summaryStatisticsLists.add(summaryStatisticsList);
+        }
+
         // We can calculate genome wide associations and polygenic scores per chromosomes as the sentinel variants
         // can be calculated within a single chromosome.
         for (String chromosome : boundaries.keySet()) {
             GenomicBoundaries<String> interChromosomalBoundaries = boundaries.get(chromosome);
 
-            List<List<MatrixBasedGwasSummaryStatistics>> summaryStatisticsLists = new LinkedList<>();
-
-            LOGGER.debug(String.format("Calculating associations for chromosome '%s'", chromosome));
-
-            // For every fold, for every chromosome, calculate genome wide associations and polygenic scores.
-            for (List<String> ignored : randomSamplePartitions) {
-
-                List<MatrixBasedGwasSummaryStatistics> summaryStatisticsList = new ArrayList<>(phenotypeData.columns());
-                // For every phenotype, initialize a matrix based summary statistics object.
-                for (int i = 0; i < phenotypeData.columns(); i++) {
-                    // Get the phenotype identifier
-                    String phenotype = phenotypeData.getColObjects().get(i);
-                    summaryStatisticsList.add(new MatrixBasedGwasSummaryStatistics(phenotype));
-                }
-                summaryStatisticsLists.add(summaryStatisticsList);
-            }
+            LOGGER.info(String.format("Calculating associations for chromosome '%s'", chromosome));
 
             for (GenomicBoundary<String> boundary : interChromosomalBoundaries) {
 
@@ -371,38 +374,68 @@ public class PGSBasedMixupMapper {
                     }
                 }
             }
+        }
 
-            for (int partitionIndex = 0; partitionIndex < randomSamplePartitions.size(); partitionIndex++) {
+        if (writeNewGenomeWideAssociations) {
+            // Get the path
+            Path kFoldSummaryStatisticsOutputPath = debugOutputPath.resolve("kFoldSummaryStatistics");
 
-                LOGGER.info(String.format("Calculating polygenic scores for fold %d / %d", partitionIndex + 1, folds));
+            LOGGER.info(String.format("Writing associations for %d folds and %d phenotypes to '%s'",
+                    folds, phenotypeData.columns(), kFoldSummaryStatisticsOutputPath));
 
-                List<String> randomSamplePartition = randomSamplePartitions.get(partitionIndex);
-
-                // Obtain a sample filter for obtaining those samples in all other partitions.
-                SampleFilter referenceSampleFilter = new SampleIdExcludeFilter(randomSamplePartition);
-                SampleFilter responseSampleFilter = new SampleIdIncludeFilter(randomSamplePartition);
-
-                List<MatrixBasedGwasSummaryStatistics> summaryStatisticsList = summaryStatisticsLists.get(partitionIndex);
-
-                for (int i = 0; i < phenotypeData.columns(); i++) {
-                    String phenotype = phenotypeData.getColObjects().get(i);
-                    // Calculate the polygenic scores for all samples not in the current fold
-                    // and the summary statistics for the
-                    // current chromosome
-
-                    LOGGER.info(String.format(
-                            "Calculated associations for %d variants in chromosome '%s' " +
-                                    "for phenotype '%s'",
-                            summaryStatisticsList.get(i).size(), chromosome, phenotype));
-
-                    DoubleMatrixDataset<String, String> polygenicScores = polyGenicScoreCalculator.calculate(
-                            summaryStatisticsList.get(i), referenceSampleFilter, responseSampleFilter);
-
-                    DoubleMatrixDataset<String, String> preliminaryPolygenicScores = polyGenicScoresMap.get(phenotype);
-
-                    preliminaryPolygenicScores.viewColSelection(polygenicScores.getColObjects())
-                            .getMatrix().assign(polygenicScores.getMatrix(), DoubleFunctions.plus);
+            // Loop through te summary statistics
+            for (int i = 0; i < summaryStatisticsLists.size(); i++) {
+                List<MatrixBasedGwasSummaryStatistics> foldSpecificSummaryStatisticsList = summaryStatisticsLists.get(i);
+                for (MatrixBasedGwasSummaryStatistics foldPhenotypeSummaryStatistics : foldSpecificSummaryStatisticsList) {
+                    // Write the new gwas summary statistics if this option is enabled.
+                    try {
+                        String baseName = foldPhenotypeSummaryStatistics.getGwasId().replace(" ", "_");
+                        foldPhenotypeSummaryStatistics.save(
+                                // Save the summary statistics with the base output path as a prefix
+                                kFoldSummaryStatisticsOutputPath
+                                        .resolve(String.format("fold%03d", i))
+                                        .resolve(baseName),
+                                // Save only those risk entries that are not above the lowest pValue threshold
+                                getLeastStringentPValueThreshold());
+                    } catch (IOException e) {
+                        System.err.println("Could not save writableGwasSummaryStatistics." + e.getMessage());
+                        System.err.println("See log file for stack trace");
+                        LOGGER.warn("Could not save writableGwasSummaryStatistics.", e);
+                    }
                 }
+            }
+        }
+
+        for (int partitionIndex = 0; partitionIndex < randomSamplePartitions.size(); partitionIndex++) {
+
+            LOGGER.info(String.format("Calculating polygenic scores for fold %d / %d", partitionIndex + 1, folds));
+
+            List<String> randomSamplePartition = randomSamplePartitions.get(partitionIndex);
+
+            // Obtain a sample filter for obtaining those samples in all other partitions.
+            SampleFilter referenceSampleFilter = new SampleIdExcludeFilter(randomSamplePartition);
+            SampleFilter responseSampleFilter = new SampleIdIncludeFilter(randomSamplePartition);
+
+            List<MatrixBasedGwasSummaryStatistics> summaryStatisticsList = summaryStatisticsLists.get(partitionIndex);
+
+            for (int i = 0; i < phenotypeData.columns(); i++) {
+                String phenotype = phenotypeData.getColObjects().get(i);
+                // Calculate the polygenic scores for all samples not in the current fold
+                // and the summary statistics for the
+                // current chromosome
+
+                LOGGER.info(String.format(
+                        "Calculated associations for %d variants " +
+                                "for phenotype '%s'",
+                        summaryStatisticsList.get(i).size(), phenotype));
+
+                DoubleMatrixDataset<String, String> polygenicScores = polyGenicScoreCalculator.calculate(
+                        summaryStatisticsList.get(i), referenceSampleFilter, responseSampleFilter);
+
+                DoubleMatrixDataset<String, String> preliminaryPolygenicScores = polyGenicScoresMap.get(phenotype);
+
+                preliminaryPolygenicScores.viewColSelection(polygenicScores.getColObjects())
+                        .getMatrix().assign(polygenicScores.getMatrix(), DoubleFunctions.plus);
             }
         }
     }
@@ -920,6 +953,10 @@ public class PGSBasedMixupMapper {
         return rank;
     }
 
+    public void setDebugOutputPath(Path debugOutputPath) {
+        this.debugOutputPath = debugOutputPath;
+    }
+
     private Map<String, DoubleMatrixDataset<String, String>> getZScoresMap() {
         return zScoresMap;
     }
@@ -1026,10 +1063,13 @@ public class PGSBasedMixupMapper {
         PGSBasedMixupMapper pgsBasedMixupMapper = new PGSBasedMixupMapper(
                 genotypeData, phenotypeData, genotypeToPhenotypeSampleCoupling,
                 polygenicScoreCalculator);
+        pgsBasedMixupMapper.setDebugOutputPath(options.getOutputBasePath());
 
         try {
             if (options.isCalculateNewGenomeWideAssociationsEnabled() && options.getFolds() > 0) {
-                pgsBasedMixupMapper.calculatePolygenicScoresWithKFoldProcedure(options.getFolds());
+                pgsBasedMixupMapper.calculatePolygenicScoresWithKFoldProcedure(
+                        options.getFolds(),
+                        options.isWriteNewGenomeWideAssociationsEnabled());
             } else {
                 Map<String, GwasSummaryStatistics> gwasSummaryStatisticsMap = getGwasSummaryStatisticsMap(
                         options, genotypeToPhenotypeSampleCoupling, gwasPhenotypeCoupling, phenotypeData, genotypeData);
@@ -1063,7 +1103,7 @@ public class PGSBasedMixupMapper {
         }
     }
 
-    private static void writePolygenicRiskScores(File outputPath, PGSBasedMixupMapper pgsBasedMixupMapper, PhenotypeData phenotypeData) throws IOException {
+    private static void writePolygenicRiskScores(Path outputPath, PGSBasedMixupMapper pgsBasedMixupMapper, PhenotypeData phenotypeData) throws IOException {
         for (Map.Entry<String, DoubleMatrixDataset<String, String>> polygenicScoresEntry : pgsBasedMixupMapper.polyGenicScoresMap.entrySet()) {
             DoubleMatrixDataset<String, String> polyGenicScores = polygenicScoresEntry.getValue();
             DoubleMatrix1D firstPolygenicScores = pgsBasedMixupMapper.getBestPolygenicScores(polygenicScoresEntry.getKey());
@@ -1378,7 +1418,7 @@ public class PGSBasedMixupMapper {
         return dosageDataset;
     }
 
-    public static void reportResults(File outputPath, PGSBasedMixupMapper pgsBasedMixupMapper, PhenotypeData phenotypeData, Map<String, String> sampleAssignments) throws IOException {
+    public static void reportResults(Path outputPath, PGSBasedMixupMapper pgsBasedMixupMapper, PhenotypeData phenotypeData, Map<String, String> sampleAssignments) throws IOException {
         for (Map.Entry<String, DoubleMatrixDataset<String, String>> zScores : pgsBasedMixupMapper.getZScoresMap().entrySet()) {
             zScores.getValue().save(String.format("%s_zScoreMatrix_%s.tsv",
                     outputPath, zScores.getKey().replace(' ', '-')));

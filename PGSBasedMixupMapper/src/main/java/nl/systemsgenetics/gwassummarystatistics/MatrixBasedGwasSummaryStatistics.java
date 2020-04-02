@@ -224,7 +224,7 @@ public class MatrixBasedGwasSummaryStatistics implements GwasSummaryStatistics{
 
         LOGGER.info(String.format("Writing summary statistics to '%s'", outputPath));
 
-        if (!outputPath.getParent().toFile().isDirectory() && !outputPath.getParent().toFile().mkdir()) {
+        if (!outputPath.getParent().toFile().isDirectory() && !outputPath.getParent().toFile().mkdirs()) {
             throw new IOException(String.format("Could not create directory '%s'", outputPath.getParent()));
         }
 

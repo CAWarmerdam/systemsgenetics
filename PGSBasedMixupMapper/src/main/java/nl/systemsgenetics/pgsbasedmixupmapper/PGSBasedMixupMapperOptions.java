@@ -49,7 +49,7 @@ public class PGSBasedMixupMapperOptions {
     private final String[] inputGenotypePath;
     private final String[] sequences;
     private final Path gwasSummaryStatisticsPath;
-    private final File outputBasePath;
+    private final Path outputBasePath;
     private final File inputPhenotypePath;
     private final File logFile;
     private final File debugFolder;
@@ -438,7 +438,7 @@ public class PGSBasedMixupMapperOptions {
      * @throws ParseException if either the option '-o' was not present in the command line,
      * or if the provided path does not point to an existing directory.
      */
-    private File getOutputBasePath(CommandLine commandLine) throws ParseException {
+    private Path getOutputBasePath(CommandLine commandLine) throws ParseException {
         if (!commandLine.hasOption('o')) {
             throw new ParseException("-o / --output not specified");
         }
@@ -449,7 +449,7 @@ public class PGSBasedMixupMapperOptions {
                             "Please include a prefix for the output files.",
                     outputBasePath.toString()));
         }
-        return outputBasePath;
+        return outputBasePath.toPath();
     }
 
     private String getForceSeqName(CommandLine commandLine) throws ParseException {
@@ -516,7 +516,7 @@ public class PGSBasedMixupMapperOptions {
 
         LOGGER.info("Supplied options:");
 
-        LOGGER.info(" * Ouput path: " + outputBasePath.getAbsolutePath());
+        LOGGER.info(" * Ouput path: " + outputBasePath);
 
         LOGGER.info(" * Debug mode: " + (debugMode ? "on (this will result in many intermediate output files)" : "off"));
 
@@ -563,7 +563,7 @@ public class PGSBasedMixupMapperOptions {
         return inputGenotypeType;
     }
 
-    public File getOutputBasePath() {
+    public Path getOutputBasePath() {
         return outputBasePath;
     }
 

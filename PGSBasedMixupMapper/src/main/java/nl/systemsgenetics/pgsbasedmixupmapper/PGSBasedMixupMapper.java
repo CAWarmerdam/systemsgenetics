@@ -39,6 +39,7 @@ import umcg.genetica.math.stats.PearsonRToPValueBinned;
 
 import java.io.*;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.*;
@@ -378,8 +379,7 @@ public class PGSBasedMixupMapper {
 
         if (writeNewGenomeWideAssociations) {
             // Get the path
-            Path kFoldSummaryStatisticsOutputPath = debugOutputPath.resolve("kFoldSummaryStatistics");
-
+            Path kFoldSummaryStatisticsOutputPath = Paths.get(debugOutputPath.toString() + "_kFoldSummaryStatistics");
             LOGGER.info(String.format("Writing associations for %d folds and %d phenotypes to '%s'",
                     folds, phenotypeData.columns(), kFoldSummaryStatisticsOutputPath));
 

@@ -1,7 +1,7 @@
 package nl.systemsgenetics.gwassummarystatistics;
 
 import com.opencsv.CSVWriter;
-import nl.systemsgenetics.polygenicscorecalculator.RiskEntry;
+import nl.systemsgenetics.gwassummarystatistics.effectAllele.EffectAllele;
 import org.apache.log4j.Logger;
 
 import java.io.FileWriter;

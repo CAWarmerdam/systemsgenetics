@@ -1,4 +1,4 @@
-package nl.systemsgenetics.gwassummarystatistics;
+package nl.systemsgenetics.gwassummarystatistics.effectAllele;
 
 import org.molgenis.genotype.Allele;
 import org.molgenis.genotype.variant.GeneticVariant;
@@ -53,6 +53,27 @@ public abstract class EffectAllele implements Comparable<EffectAllele> {
      * @return The -log10 transformed P-value.
      */
     public abstract double getLogTransformedPValue();
+
+    /**
+     * Gets the allele frequency of this effect allele.
+     *
+     * @return the frequency of this effect allele.
+     */
+    public abstract double getAlleleFrequency();
+
+    /**
+     * Method that returns if the variant is a SNP or not.
+     *
+     * @return true if the variant is a snp.
+     */
+    public abstract boolean variantIsSnp();
+
+    /**
+     * Method that indicates if the variant is biallelic.
+     *
+     * @return true if the variant is biallelic.
+     */
+    public abstract boolean variantIsBiallelic();
 
     /**
      * Gets the allele to which the effect corresponds.

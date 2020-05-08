@@ -7,6 +7,7 @@ package nl.systemsgenetics.polygenicscorecalculator;
 
 import gnu.trove.map.hash.THashMap;
 import nl.systemsgenetics.gwassummarystatistics.GwasSummaryStatistics;
+import nl.systemsgenetics.gwassummarystatistics.effectAllele.RiskEntry;
 import org.molgenis.genotype.Allele;
 import org.molgenis.genotype.RandomAccessGenotypeData;
 import org.molgenis.genotype.sampleFilter.SampleFilter;
@@ -168,7 +169,7 @@ public class SimplePolygenicScoreCalculator {
                                 }
 
                                 if (LOGGER.isDebugEnabled()) {
-                                    LOGGER.debug(riskE.InfoToString());
+                                    LOGGER.debug(riskE.toString());
                                 }
 
                                 // Get the reference allele from this variant 1
@@ -343,7 +344,7 @@ public class SimplePolygenicScoreCalculator {
                                 }
 
                                 if (LOGGER.isDebugEnabled()) {
-                                    LOGGER.debug(riskE.InfoToString());
+                                    LOGGER.debug(riskE.toString());
                                 }
 
                                 // Get the reference allele from this variant 1
@@ -537,7 +538,7 @@ public class SimplePolygenicScoreCalculator {
                                         riskE.getSequenceName(), riskE.getStartPos());
 
                                 if (LOGGER.isDebugEnabled()) {
-                                    LOGGER.debug(riskE.InfoToString());
+                                    LOGGER.debug(riskE.toString());
                                 }
 
                                 // Get the reference allele from this variant 1
@@ -759,7 +760,7 @@ public class SimplePolygenicScoreCalculator {
                                         new SampleFilteredReadOnlyGeneticVariant(originalVariant, referenceGenotypeData);
 
                                 if (LOGGER.isDebugEnabled()) {
-                                    LOGGER.debug(riskE.InfoToString());
+                                    LOGGER.debug(riskE.toString());
                                 }
 
                                 // Get the reference allele from this variant 1

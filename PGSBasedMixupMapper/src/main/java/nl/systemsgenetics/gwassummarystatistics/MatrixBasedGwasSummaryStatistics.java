@@ -1,17 +1,19 @@
 package nl.systemsgenetics.gwassummarystatistics;
 
-import JSci.chemistry.periodictable.AlkaliEarthMetal;
 import cern.colt.matrix.tdouble.DoubleFactory1D;
 import cern.colt.matrix.tdouble.DoubleMatrix1D;
 import cern.colt.matrix.tdouble.impl.DenseDoubleMatrix1D;
 import com.opencsv.CSVWriter;
 import gnu.trove.map.hash.THashMap;
 import gnu.trove.set.hash.THashSet;
-import nl.systemsgenetics.polygenicscorecalculator.RiskEntry;
+import nl.systemsgenetics.gwassummarystatistics.effectAllele.EffectAllele;
+import nl.systemsgenetics.gwassummarystatistics.effectAllele.GeneticVariantBackedEffectAllele;
+import nl.systemsgenetics.gwassummarystatistics.effectAllele.RiskEntry;
 import org.apache.log4j.Logger;
+import org.molgenis.genotype.AbstractRandomAccessGenotypeData;
+import org.molgenis.genotype.GenotypeData;
 import org.molgenis.genotype.RandomAccessGenotypeData;
 import org.molgenis.genotype.variant.GeneticVariant;
-import umcg.genetica.containers.Pair;
 
 import javax.annotation.Nonnull;
 import java.io.FileWriter;
@@ -21,7 +23,7 @@ import java.nio.file.Paths;
 import java.util.*;
 import java.util.stream.Collectors;
 
-public class MatrixBasedGwasSummaryStatistics implements GwasSummaryStatistics{
+public class MatrixBasedGwasSummaryStatistics implements GwasSummaryStatistics {
 
     private static final Logger LOGGER = Logger.getLogger(MatrixBasedGwasSummaryStatistics.class);
     private String gwasId;
@@ -29,12 +31,15 @@ public class MatrixBasedGwasSummaryStatistics implements GwasSummaryStatistics{
     private DoubleMatrix1D betaCoefficients;
     private DoubleMatrix1D pValues;
     private final List<String> alleles;
+    private final RandomAccessGenotypeData genotypeData;
 
     public MatrixBasedGwasSummaryStatistics(String gwasId, LinkedHashMap<String, Integer> variantIds,
                                             List<String> alleles,
-                                            DoubleMatrix1D betaCoefficients, DoubleMatrix1D pValues) {
+                                            DoubleMatrix1D betaCoefficients, DoubleMatrix1D pValues,
+                                            RandomAccessGenotypeData genotypeData) {
         // Set the gwas identifier
         this.gwasId = gwasId;
+        this.genotypeData = genotypeData;
 
         // Make sure that the sizes of the three collections are equal.
         if (variantIds.size() != betaCoefficients.size() || variantIds.size() != pValues.size()) {
@@ -50,12 +55,13 @@ public class MatrixBasedGwasSummaryStatistics implements GwasSummaryStatistics{
         this.alleles = alleles;
     }
 
-    public MatrixBasedGwasSummaryStatistics(String gwasId) {
+    public MatrixBasedGwasSummaryStatistics(String gwasId, RandomAccessGenotypeData genotypeData) {
         this.gwasId = gwasId;
         this.variantIds = new LinkedHashMap<>();
         this.betaCoefficients = new DenseDoubleMatrix1D(0);
         this.pValues = new DenseDoubleMatrix1D(0);
         this.alleles = new ArrayList<>();
+        this.genotypeData = genotypeData;
     }
 
     public void add(LinkedHashMap<String, Integer> variantIds, List<String> alleles,
@@ -96,7 +102,6 @@ public class MatrixBasedGwasSummaryStatistics implements GwasSummaryStatistics{
                     variantId,
                     variantIndex + originalSize);
         }
-
     }
 
     public void add(LinkedHashMap<String, Integer> variantIds, List<String> alleles,
@@ -133,7 +138,61 @@ public class MatrixBasedGwasSummaryStatistics implements GwasSummaryStatistics{
     @Override
     @Nonnull
     public Iterator<EffectAllele> iterator() {
-        throw new UnsupportedOperationException("Not currently supported");
+        Iterator<Map.Entry<String, Integer>> riskAlleleIterator = variantIds.entrySet().iterator();
+        Map<String, GeneticVariant> variantIdMap = genotypeData.getVariantIdMap();
+        return new Iterator<EffectAllele>() {
+            private EffectAllele next;
+
+            @Override
+            public boolean hasNext() {
+                return next != null;
+            }
+
+            @Override
+            public EffectAllele next() {
+
+                if (next == null)
+                {
+                    throw new NoSuchElementException();
+                }
+
+                EffectAllele currentNext = next;
+
+                // prepare next next
+                goToNext();
+
+                return currentNext;
+            }
+
+            private void goToNext()
+            {
+                while (riskAlleleIterator.hasNext())
+                {
+                    Map.Entry<String, Integer> provisionalNext = riskAlleleIterator.next();
+
+                    String variantId = provisionalNext.getKey();
+                    if (variantIdMap.containsKey(variantId))
+                    {
+                        // skip variants on exclude list
+                        continue;
+                    }
+
+                    double pValue = pValues.getQuick(variantIds.get(variantId));
+                    double effectSize = betaCoefficients.getQuick(variantIds.get(variantId));
+
+                    GeneticVariant variant = variantIdMap.get(variantId);
+                    next = new RiskEntry(variantId, variant.getSequenceName(), variant.getStartPos(),
+                            variant.getVariantAlleles().get(variant.getAlleleCount() - 1).getAlleleAsSnp(),
+                            effectSize, pValue);
+
+                    return;
+                }
+                // We do a return if we find a non excluded next. So if we get here it
+                // is the end of the original iterator. Setting next to null so hasNext
+                // knows it is the end.
+                next = null;
+            }
+        };
     }
 
     @Override

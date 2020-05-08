@@ -1,8 +1,10 @@
 package nl.systemsgenetics.gwassummarystatistics;
 
 import gnu.trove.map.hash.THashMap;
-import nl.systemsgenetics.polygenicscorecalculator.RiskEntry;
+import nl.systemsgenetics.gwassummarystatistics.effectAllele.EffectAllele;
+import nl.systemsgenetics.gwassummarystatistics.effectAllele.RiskEntry;
 import org.molgenis.genotype.RandomAccessGenotypeData;
+import org.molgenis.genotype.variant.GeneticVariant;
 
 import java.util.ArrayList;
 

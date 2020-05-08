@@ -1,5 +1,7 @@
 package nl.systemsgenetics.gwassummarystatistics;
 
+import nl.systemsgenetics.gwassummarystatistics.effectAllele.EffectAllele;
+import nl.systemsgenetics.gwassummarystatistics.effectAllele.GeneticVariantBackedEffectAllele;
 import org.apache.commons.lang3.StringUtils;
 import org.molgenis.genotype.RandomAccessGenotypeData;
 import org.molgenis.genotype.variant.GeneticVariant;
@@ -15,6 +17,10 @@ import java.io.File;
 import java.io.IOException;
 import java.util.*;
 
+/**
+ * Object representing a VCF format as defined by https://gwas.mrcieu.ac.uk/about/
+ * @author Robert Warmerdam
+ */
 public class VcfGwasSummaryStatistics implements Closeable {
     private static final Map<String, VcfMetaFormat> RESERVED_KEYS = getReservedKeys();
     private VcfGenotypeData vcfGenotypeData;
@@ -115,6 +121,10 @@ public class VcfGwasSummaryStatistics implements Closeable {
 
     public float[][] getTransformedPValues(GeneticVariant variant) {
         return getSummaryStatisticsPerAlternativeAllele(variant, getReservedKeyFormat("LP"));
+    }
+
+    public float[][] getAlleleFrequency(GeneticVariant variant) {
+        return getSummaryStatisticsPerAlternativeAllele(variant, getReservedKeyFormat("AF"));
     }
 
     public String[] getStudyNames() {

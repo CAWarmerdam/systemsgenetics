@@ -1,5 +1,8 @@
-package nl.systemsgenetics.gwassummarystatistics;
+package nl.systemsgenetics.gwassummarystatistics.effectAllele;
 
+import nl.systemsgenetics.gwassummarystatistics.GeneticVariantBackedGwasSummaryStatistics;
+import nl.systemsgenetics.gwassummarystatistics.GwasSummaryStatistics;
+import nl.systemsgenetics.gwassummarystatistics.ReadOnlyGwasSummaryStatistics;
 import org.molgenis.genotype.Allele;
 import org.molgenis.genotype.Alleles;
 import org.molgenis.genotype.variant.GeneticVariant;
@@ -13,9 +16,10 @@ import org.molgenis.genotype.variant.GeneticVariant;
 public class GeneticVariantBackedEffectAllele extends EffectAllele {
     private final int alleleIndex;
     private final GeneticVariant variant;
-    private final ReadOnlyGwasSummaryStatistics summaryStatistics;
+    private final GeneticVariantBackedGwasSummaryStatistics summaryStatistics;
 
-    public GeneticVariantBackedEffectAllele(GeneticVariant variant, ReadOnlyGwasSummaryStatistics summaryStatistics,
+    public GeneticVariantBackedEffectAllele(GeneticVariant variant,
+                                            GeneticVariantBackedGwasSummaryStatistics summaryStatistics,
                                             int alleleIndex) {
         this.variant = variant;
         this.alleleIndex = alleleIndex;
@@ -28,17 +32,32 @@ public class GeneticVariantBackedEffectAllele extends EffectAllele {
 
     @Override
     public double getEffectSize() {
-        return summaryStatistics.getEffectSizeEstimate(variant, alleleIndex);
+        return summaryStatistics.getEffectSizeEstimate(this);
     }
 
     @Override
     public double getLogTransformedPValue() {
-        return summaryStatistics.getLogTransformedPValue(variant, alleleIndex);
+        return summaryStatistics.getLogTransformedPValue(this);
+    }
+
+    @Override
+    public double getAlleleFrequency() {
+        return summaryStatistics.getAlleleFrequency(this);
+    }
+
+    @Override
+    public boolean variantIsSnp() {
+        return variant.isSnp();
+    }
+
+    @Override
+    public boolean variantIsBiallelic() {
+        return variant.isBiallelic();
     }
 
     @Override
     public double getPValue() {
-        return summaryStatistics.getPValue(variant, alleleIndex);
+        return summaryStatistics.getPValue(this);
     }
 
     @Override
@@ -91,5 +110,9 @@ public class GeneticVariantBackedEffectAllele extends EffectAllele {
         Alleles complement = variant.getVariantAlleles().getComplement();
 
         return (complement.sameAlleles(this.variant.getVariantAlleles()));
+    }
+
+    public int getAlleleIndex() {
+        return alleleIndex;
     }
 }

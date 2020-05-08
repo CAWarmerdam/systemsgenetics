@@ -1,7 +1,6 @@
 package nl.systemsgenetics.polygenicscorecalculator;
 
-import nl.systemsgenetics.gwassummarystatistics.EffectAllele;
-import nl.systemsgenetics.gwassummarystatistics.GeneticVariantBackedEffectAllele;
+import nl.systemsgenetics.gwassummarystatistics.effectAllele.EffectAllele;
 import nl.systemsgenetics.gwassummarystatistics.GwasSummaryStatistics;
 import org.molgenis.genotype.Allele;
 import org.molgenis.genotype.RandomAccessGenotypeData;

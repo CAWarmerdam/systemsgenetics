@@ -2,7 +2,9 @@ package nl.systemsgenetics.gwassummarystatistics;
 
 import gnu.trove.map.hash.THashMap;
 import gnu.trove.set.hash.THashSet;
-import nl.systemsgenetics.polygenicscorecalculator.RiskEntry;
+import nl.systemsgenetics.gwassummarystatistics.effectAllele.EffectAllele;
+import nl.systemsgenetics.gwassummarystatistics.effectAllele.GeneticVariantBackedEffectAllele;
+import nl.systemsgenetics.gwassummarystatistics.effectAllele.RiskEntry;
 import org.apache.log4j.Logger;
 import org.molgenis.genotype.RandomAccessGenotypeData;
 import org.molgenis.genotype.variant.GeneticVariant;
@@ -11,7 +13,7 @@ import umcg.genetica.containers.Pair;
 import javax.annotation.Nonnull;
 import java.util.*;
 
-public class ReadOnlyGwasSummaryStatistics implements GwasSummaryStatistics {
+public class ReadOnlyGwasSummaryStatistics implements GeneticVariantBackedGwasSummaryStatistics {
 
     private static final Logger LOGGER = Logger.getLogger(ReadOnlyGwasSummaryStatistics.class);
     private VcfGwasSummaryStatistics vcfGwasSummaryStatistics;
@@ -36,16 +38,24 @@ public class ReadOnlyGwasSummaryStatistics implements GwasSummaryStatistics {
         return studyName;
     }
 
-    public double getEffectSizeEstimate(GeneticVariant variant, int alleleIndex) {
-        return vcfGwasSummaryStatistics.getEffectSizeEstimates(variant)[studyIndex][alleleIndex];
+    @Override
+    public double getEffectSizeEstimate(GeneticVariantBackedEffectAllele effectAllele) {
+        return vcfGwasSummaryStatistics.getEffectSizeEstimates(effectAllele.getVariant())[studyIndex][effectAllele.getAlleleIndex()];
     }
 
-    public double getLogTransformedPValue(GeneticVariant variant, int alleleIndex) {
-        return vcfGwasSummaryStatistics.getTransformedPValues(variant)[studyIndex][alleleIndex];
+    @Override
+    public double getLogTransformedPValue(GeneticVariantBackedEffectAllele effectAllele) {
+        return vcfGwasSummaryStatistics.getTransformedPValues(effectAllele.getVariant())[studyIndex][effectAllele.getAlleleIndex()];
     }
 
-    public double getPValue(GeneticVariant variant, int alleleIndex) {
-        return Math.pow(10, -this.getLogTransformedPValue(variant, alleleIndex));
+    @Override
+    public double getPValue(GeneticVariantBackedEffectAllele effectAllele) {
+        return Math.pow(10, -this.getLogTransformedPValue(effectAllele));
+    }
+
+    @Override
+    public double getAlleleFrequency(GeneticVariantBackedEffectAllele effectAllele) {
+        return vcfGwasSummaryStatistics.getAlleleFrequency(effectAllele.getVariant())[studyIndex][effectAllele.getAlleleIndex()];
     }
 
     @Override

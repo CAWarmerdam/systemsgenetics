@@ -304,7 +304,7 @@ public class PGSBasedMixupMapper {
             for (int i = 0; i < phenotypeData.columns(); i++) {
                 // Get the phenotype identifier
                 String phenotype = phenotypeData.getColObjects().get(i);
-                summaryStatisticsList.add(new MatrixBasedGwasSummaryStatistics(phenotype));
+                summaryStatisticsList.add(new MatrixBasedGwasSummaryStatistics(phenotype, genotypeData));
             }
             summaryStatisticsLists.add(summaryStatisticsList);
         }
@@ -1203,7 +1203,7 @@ public class PGSBasedMixupMapper {
 
         // Load GWAS summary statistics applying the variant filter.
         gwasSummaryStatisticsMap = loadGwasSummaryStatisticsMap(
-                gwasSummaryStatisticsPath, gwasPhenotypeCoupling, variantFilter);
+                gwasSummaryStatisticsPath, gwasPhenotypeCoupling, variantFilter, genotypeData);
         return gwasSummaryStatisticsMap;
     }
 
@@ -1254,7 +1254,7 @@ public class PGSBasedMixupMapper {
             String phenotype = phenotypeData.getNumericPhenotypes().get(i);
 
             MatrixBasedGwasSummaryStatistics summaryStatistics = new MatrixBasedGwasSummaryStatistics(
-                    phenotype);
+                    phenotype, genotypeData);
             summaryStatisticsMap.put(phenotype, summaryStatistics);
         }
 
@@ -1644,10 +1644,11 @@ public class PGSBasedMixupMapper {
      * @param variantFilter A filter to apply to the GWAS VCF file. When writing this documentation this is used to
      *                      exclude all variants not present in the genotype data that is to be assigned to phenotype
      *                      data.
+     * @param genotypeData
      * @return A map with for every phenotype (key), a list of gwas summary statistics.
      */
     static Map<String, GwasSummaryStatistics> loadGwasSummaryStatisticsMap(
-            Path gwasSummaryStatisticsPath, Map<String, String> gwasPhenotypeCoupling, VariantFilter variantFilter) {
+            Path gwasSummaryStatisticsPath, Map<String, String> gwasPhenotypeCoupling, VariantFilter variantFilter, RandomAccessGenotypeData genotypeData) {
 
         // Initialize map with, for every phenotype, a lists of vcf summary statistics as the value.
         Map<String, GwasSummaryStatistics> summaryStatisticsMap = new LinkedHashMap<>();
@@ -1711,7 +1712,7 @@ public class PGSBasedMixupMapper {
 
                     // Load the summary statistics from a legacy file
                     GwasSummaryStatistics legacyGwasSummaryStatistics = new ReadOnlyLegacyGwasSummaryStatistics(
-                            phenotype, textLegacyGwasSummaryStatisticsPath);
+                            phenotype, textLegacyGwasSummaryStatisticsPath, genotypeData);
                     LOGGER.info(String.format("Loaded GWAS summary statistics from '%s'",
                             textLegacyGwasSummaryStatisticsPath.toString()));
 
@@ -1724,7 +1725,7 @@ public class PGSBasedMixupMapper {
 
                     // Load the summary statistics from a legacy file
                     GwasSummaryStatistics legacyGwasSummaryStatistics = new ReadOnlyLegacyGwasSummaryStatistics(
-                            phenotype, gZippedLegacyGwasSummaryStatisticsPath);
+                            phenotype, gZippedLegacyGwasSummaryStatisticsPath, genotypeData);
                     LOGGER.info(String.format("Loaded GWAS summary statistics from '%s'",
                             gZippedLegacyGwasSummaryStatisticsPath.toString()));
 

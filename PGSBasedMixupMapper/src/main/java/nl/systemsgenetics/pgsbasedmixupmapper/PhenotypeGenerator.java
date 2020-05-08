@@ -75,7 +75,7 @@ public class PhenotypeGenerator {
                 options.getGwasSummaryStatisticsPhenotypeCouplingFile(), CSV_DELIMITER);
 
         Map<String, GwasSummaryStatistics> gwasSummaryStatisticsMap = loadGwasSummaryStatisticsMap(
-                options.getGwasSummaryStatisticsPath(), gwasPhenotypeCoupling, variantFilter);
+                options.getGwasSummaryStatisticsPath(), gwasPhenotypeCoupling, variantFilter, genotypeData);
 //        System.out.println("Height");
 //        DoubleMatrix1D height = generatePhenotype(genotypeData, gwasSummaryStatisticsMap.get("Height"));
         System.out.println("HDL");

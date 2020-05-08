@@ -3,9 +3,8 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package nl.systemsgenetics.polygenicscorecalculator;
+package nl.systemsgenetics.gwassummarystatistics.effectAllele;
 
-import nl.systemsgenetics.gwassummarystatistics.EffectAllele;
 import org.molgenis.genotype.Allele;
 
 /**
@@ -83,6 +82,22 @@ public class RiskEntry extends EffectAllele {
     @Override
     public double getLogTransformedPValue() {
         return -Math.log10(pValue);
+    }
+
+    @Override
+    public double getAlleleFrequency() {
+        throw new UnsupportedOperationException("Not currently supported");
+
+    }
+
+    @Override
+    public boolean variantIsSnp() {
+        throw new UnsupportedOperationException("Not currently supported");
+    }
+
+    @Override
+    public boolean variantIsBiallelic() {
+        throw new UnsupportedOperationException("Not currently supported");
     }
 
     String InfoToString() {

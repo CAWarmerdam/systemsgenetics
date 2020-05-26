@@ -205,8 +205,8 @@ public class VcfGwasSummaryStatistics implements Closeable {
         return RESERVED_KEYS.get(reservedKey);
     }
 
-    public Iterator<EffectAllele> effectAlleles(ReadOnlyGwasSummaryStatistics summaryStatistics) {
-        Iterator<GeneticVariant> variantIterator = variantIterator();
+    public Iterator<EffectAllele> effectAlleles(Iterator<GeneticVariant> variantIterator,
+                                                ReadOnlyGwasSummaryStatistics summaryStatistics) {
 
         return new Iterator<EffectAllele>() {
             GeneticVariant variant = variantIterator.hasNext() ? variantIterator.next() : null;
@@ -245,6 +245,10 @@ public class VcfGwasSummaryStatistics implements Closeable {
 
     public Iterator<GeneticVariant> variantIterator() {
         return genotypeData.iterator();
+    }
+
+    public Iterator<GeneticVariant> getVariantsByRange(String seqName, int rangeStart, int rangeEnd) {
+        return vcfGenotypeData.getVariantsByRange(seqName, rangeStart, rangeEnd).iterator();
     }
 
     @Override

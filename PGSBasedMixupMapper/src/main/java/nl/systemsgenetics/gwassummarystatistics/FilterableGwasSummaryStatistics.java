@@ -28,10 +28,9 @@ public class FilterableGwasSummaryStatistics implements GwasSummaryStatistics {
     }
 
     @Override
-    public THashMap<String, THashMap<String, THashMap<String, ArrayList<RiskEntry>>>> riskEntries(
-            RandomAccessGenotypeData genotypeData, double[] pValThres,
-            String[] genomicRangesToExclude, boolean unweighted) {
-        return null;
+    public Iterable<EffectAllele> getEffectAllelesByRange(String seqName, int rangeStart, int rangeEnd) {
+        return filteredIterable(
+                originalGwasSummaryStatistics.getEffectAllelesByRange(seqName, rangeStart, rangeEnd));
     }
 
     @Override

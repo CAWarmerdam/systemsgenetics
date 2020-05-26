@@ -136,6 +136,11 @@ public class MatrixBasedGwasSummaryStatistics implements GwasSummaryStatistics {
     }
 
     @Override
+    public Iterable<EffectAllele> getEffectAllelesByRange(String seqName, int rangeStart, int rangeEnd) {
+        throw new UnsupportedOperationException("Not yet supported");
+    }
+
+    @Override
     @Nonnull
     public Iterator<EffectAllele> iterator() {
         Iterator<Map.Entry<String, Integer>> riskAlleleIterator = variantIds.entrySet().iterator();
@@ -193,87 +198,6 @@ public class MatrixBasedGwasSummaryStatistics implements GwasSummaryStatistics {
                 next = null;
             }
         };
-    }
-
-    @Override
-    public THashMap<String, THashMap<String, THashMap<String, ArrayList<RiskEntry>>>> riskEntries(
-            RandomAccessGenotypeData genotypeData, double[] pValThres,
-            String[] genomicRangesToExclude, boolean unweighted) {
-
-        // A risk entry (value?) per variant? per sequence? per pval threshold? per file?
-        THashMap<String, THashMap<String, THashMap<String, ArrayList<RiskEntry>>>> risks = new THashMap<>();
-
-        THashSet<String> chromosomesExcluded = new THashSet<>();
-        int snpsExcluded = 0;
-
-        THashMap<String, THashMap<String, ArrayList<RiskEntry>>> filehash = new THashMap<String, THashMap<String, ArrayList<RiskEntry>>>();
-        String name = getGwasId();
-
-        for (double p : pValThres) {
-            String name2 = "_P" + p;
-            if (!filehash.containsKey(name2)) {
-                filehash.put(name2, new THashMap<>());
-            }
-        }
-
-        for (Map.Entry<String, Integer> variantAssociation : variantIds.entrySet()) {
-
-//                    System.out.println(s);
-            if (genotypeData.getVariantIdMap().containsKey(variantAssociation.getKey())) {
-                GeneticVariant snpObject = genotypeData.getVariantIdMap().get(variantAssociation.getKey());
-//                        System.out.print(snpObject.getSequenceName() + "\t" + snpObject.getStartPos() + "\n");
-                double currentP = pValues.getQuick(variantAssociation.getValue());
-                boolean addEntry = true;
-
-                double or = betaCoefficients.getQuick(variantAssociation.getValue());
-
-                if (unweighted) {
-                    if (or < 0) {
-                        or = -1;
-                    } else {
-                        or = 1;
-                    }
-                }
-
-                for (double p : pValThres) {
-                    if (currentP < p) {
-                        String name2 = "_P" + p;
-
-                        if (!filehash.get(name2).containsKey(snpObject.getSequenceName())) {
-                            filehash.get(name2).put(snpObject.getSequenceName(), new ArrayList<>());
-                        }
-                        filehash.get(name2).get(snpObject.getSequenceName()).add(new RiskEntry(
-                                variantAssociation.getKey(), snpObject.getSequenceName(), snpObject.getStartPos(),
-                                snpObject.getAlternativeAlleles()
-                                        .get(snpObject.getAlternativeAlleles().getAlleleCount() - 1).getAlleleAsSnp(),
-                                or, currentP));
-                    }
-                }
-            }
-        }
-        synchronized (risks) {
-            risks.put(name, filehash);
-        }
-
-        if (LOGGER.isDebugEnabled()) {
-            System.out.println("Chromosomes where regions are excluded: " + chromosomesExcluded);
-            System.out.println("Number of SNPs excluded: " + snpsExcluded);
-        }
-
-        for (Map.Entry<String, THashMap<String, THashMap<String, ArrayList<RiskEntry>>>> e : risks.entrySet()) {
-
-            for (Map.Entry<String, THashMap<String, ArrayList<RiskEntry>>> e2 : e.getValue().entrySet()) {
-                int entries = 0;
-                for (Map.Entry<String, ArrayList<RiskEntry>> e3 : e2.getValue().entrySet()) {
-                    Collections.sort(e3.getValue());
-                    entries += e3.getValue().size();
-                }
-//                System.out.println(e.getKey()+e2.getKey()+" has: "+entries+" entries");
-            }
-
-        }
-
-        return risks;
     }
 
     public void save(Path pathPrefix, Double pValueThreshold) throws IOException {

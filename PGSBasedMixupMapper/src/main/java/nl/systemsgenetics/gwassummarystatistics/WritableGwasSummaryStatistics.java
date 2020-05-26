@@ -9,12 +9,7 @@ import java.io.IOException;
 
 public abstract class WritableGwasSummaryStatistics implements GwasSummaryStatistics {
 
-    private static final Logger LOGGER = Logger.getLogger(WritableGwasSummaryStatistics.class);
     private String gwasId;
-
-    public WritableGwasSummaryStatistics(String gwasId) {
-        this.gwasId = gwasId;
-    }
 
     @Override
     public String getGwasId() {

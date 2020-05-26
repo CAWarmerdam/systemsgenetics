@@ -11,9 +11,15 @@ import java.util.ArrayList;
 public interface GwasSummaryStatistics extends Iterable<EffectAllele> {
     public String getGwasId();
 
-    THashMap<String, THashMap<String, THashMap<String, ArrayList<RiskEntry>>>> riskEntries(
-            RandomAccessGenotypeData genotypeData,
-            double[] pValThres,
-            String[] genomicRangesToExclude,
-            boolean unweighted);
+    /**
+     * Get all effect alleles within the specified range
+     *
+     * @param seqName
+     * @param rangeStart start of range, inclusive
+     * @param rangeEnd end of range exclusive
+     * @return
+     */
+    Iterable<EffectAllele> getEffectAllelesByRange(String seqName, int rangeStart, int rangeEnd);
+
+
 }

@@ -1,6 +1,7 @@
 package nl.systemsgenetics.gwassummarystatistics.effectAllele;
 
 import org.molgenis.genotype.Allele;
+import org.molgenis.genotype.Alleles;
 import org.molgenis.genotype.variant.GeneticVariant;
 
 import java.util.*;
@@ -81,6 +82,13 @@ public abstract class EffectAllele implements Comparable<EffectAllele> {
      * @return the allele.
      */
     public abstract Allele getAllele();
+
+    /**
+     * Alleles not corresponding to the allele.
+     *
+     * @return the alleles not corresponding to the allele.
+     */
+    public abstract Alleles getNonEffectAlleles();
 
     /**
      * Returns whether or not the given variant corresponds to this effect allele.

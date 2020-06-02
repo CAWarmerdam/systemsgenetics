@@ -1,8 +1,6 @@
 package nl.systemsgenetics.gwassummarystatistics.effectAllele;
 
 import nl.systemsgenetics.gwassummarystatistics.GeneticVariantBackedGwasSummaryStatistics;
-import nl.systemsgenetics.gwassummarystatistics.GwasSummaryStatistics;
-import nl.systemsgenetics.gwassummarystatistics.ReadOnlyGwasSummaryStatistics;
 import org.molgenis.genotype.Allele;
 import org.molgenis.genotype.Alleles;
 import org.molgenis.genotype.variant.GeneticVariant;
@@ -63,6 +61,11 @@ public class GeneticVariantBackedEffectAllele extends EffectAllele {
     @Override
     public Allele getAllele() {
         return variant.getAlternativeAlleles().get(alleleIndex);
+    }
+
+    @Override
+    public Allele getNonEffectAllele() {
+        return variant.getRefAllele();
     }
 
     @Override

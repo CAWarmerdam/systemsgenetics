@@ -71,6 +71,11 @@ public class RiskEntry extends EffectAllele {
         return Allele.create(allele);
     }
 
+    @Override
+    public Allele getNonEffectAllele() {
+        return Allele.ZERO;
+    }
+
     public char getAlleleAsSnp() {
         return allele;
     }

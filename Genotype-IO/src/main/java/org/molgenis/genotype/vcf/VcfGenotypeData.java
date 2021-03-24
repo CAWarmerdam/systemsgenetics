@@ -36,6 +36,7 @@ import org.molgenis.vcf.VcfRecord;
 import org.molgenis.vcf.VcfSample;
 import org.molgenis.vcf.meta.VcfMeta;
 import org.molgenis.vcf.meta.VcfMetaContig;
+import org.molgenis.vcf.meta.VcfMetaFormat;
 import org.molgenis.vcf.meta.VcfMetaInfo;
 
 import com.google.common.base.Function;
@@ -879,7 +880,7 @@ public class VcfGenotypeData extends AbstractRandomAccessGenotypeData implements
         };
     }
 
-    private VcfRecord getVcfRecord(GeneticVariant variant) {
+    public VcfRecord getVcfRecord(GeneticVariant variant) {
         if (!variant.equals(cachedGeneticVariant)) {
             TabixIterator it;
             String line;
@@ -983,6 +984,10 @@ public class VcfGenotypeData extends AbstractRandomAccessGenotypeData implements
     public void setPreferredGenotypeField(String preferredGenotypeField) {
         this.preferredGenotypeField = preferredGenotypeField != null ?
                 MappedGenotypeField.valueOf(preferredGenotypeField) : null;
+    }
+
+    public VcfMetaFormat getFormatMeta(String id) {
+        return vcfMeta.getFormatMeta(id);
     }
 
     /**

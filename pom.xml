@@ -143,7 +143,7 @@
         <module>GeneNetworkBackend</module>
         <module>Decon2/Decon-eQTL</module>
         <module>FunctionEnrichmentOfTransQtls</module>
-        <module>DEPICT2</module>
+        <module>Downstreamer</module>
         <module>PGSBasedMixupMapper</module>
     </modules>
 </project>

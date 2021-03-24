@@ -237,30 +237,37 @@ public class BinaryMetaAnalysisTask implements Callable<Triple<ArrayList<QTL>, S
 
 						double metaZ = ZScores.getWeightedZ(finalZScores[probe], sampleSizes);
 						int metaZNrSamples = 0;
+
+						int metaAnalysisNrDatasets = 0;
+
 						for (int s = 0; s < sampleSizes.length; s++) {
 							if (!Float.isNaN(finalZScores[probe][s])) {
 								metaZNrSamples += sampleSizes[s];
+								metaAnalysisNrDatasets++;
 							}
 						}
-						double p = Descriptives.convertZscoreToPvalue(metaZ);
+						if (metaAnalysisNrDatasets >= settings.minimalNumberOfDatasets) {
+							double p = Descriptives.convertZscoreToPvalue(metaZ);
 
-						if (settings.isMakezscoretable()) {
-							// get the correct index for trait t
-							int metaid = t.getCurrentMetaId();
-							zscoretableoutput[metaid] = metaZ;
-							zscorenrsamplestableoutput[metaid] = metaZNrSamples;
-						}
-
-						if (!Double.isNaN(p) && !Double.isNaN(metaZ)) {
-							// create output object
-							QTL q = null;
-							if (fulloutput) {
-								q = new QTL(p, t, snp, BaseAnnot.toByte(alleleAssessed), metaZ, BaseAnnot.toByteArray(alleles), finalZScores[probe], sampleSizes); // sort buffer if needed.
-							} else {
-								q = new QTL(p, t, snp, BaseAnnot.toByte(alleleAssessed), metaZ, BaseAnnot.toByteArray(alleles), null, null); // sort buffer if needed.
+							if (settings.isMakezscoretable()) {
+								// get the correct index for trait t
+								int metaid = t.getCurrentMetaId();
+								zscoretableoutput[metaid] = metaZ;
+								zscorenrsamplestableoutput[metaid] = metaZNrSamples;
 							}
-							qtlOutput.add(q);
+
+							if (!Double.isNaN(p) && !Double.isNaN(metaZ)) {
+								// create output object
+								QTL q = null;
+								if (fulloutput) {
+									q = new QTL(p, t, snp, BaseAnnot.toByte(alleleAssessed), metaZ, BaseAnnot.toByteArray(alleles), finalZScores[probe], sampleSizes); // sort buffer if needed.
+								} else {
+									q = new QTL(p, t, snp, BaseAnnot.toByte(alleleAssessed), metaZ, BaseAnnot.toByteArray(alleles), null, null); // sort buffer if needed.
+								}
+								qtlOutput.add(q);
+							}
 						}
+
 					}
 				}
 			} else {
@@ -392,14 +399,21 @@ public class BinaryMetaAnalysisTask implements Callable<Triple<ArrayList<QTL>, S
 
 					if (settings.getRescalingOfSampleSize()) {
 						weights = new double[sampleSizes.length];
-						for (int d = 0; d < datasetZScores.length; d++) {
-							Double rescaleValue = datasets[d].getFeatureOccuranceScaleMap().get(t.getPlatformIds()[d]);
-							if (!Double.isFinite(rescaleValue)) {
-								System.out.println("Warning for feature: " + t.getPlatformIds()[d] + " no rescale value set for: " + datasets[d].getName() + "\n Defaulted to weight of 1.");
+						for(int d=0; d<datasetZScores.length;d++){
+							if(debug){
+								System.out.println("Dataset: "+d);
+								System.out.println("Dataset name: "+datasets[d].getName());
+								System.out.println("Dataset platformId: "+t.getPlatformIds()[0]);
+								System.out.println("Dataset rescaling size: "+datasets[d].getFeatureOccuranceScaleMap().size());
+								System.out.println("Dataset rescaling contains key: "+datasets[d].getFeatureOccuranceScaleMap().containsKey(t.getPlatformIds()[0]));
+							}
+							Double rescaleValue = datasets[d].getFeatureOccuranceScaleMap().get(t.getPlatformIds()[0]);
+							if(rescaleValue==null || !Double.isFinite(rescaleValue)){
+								System.out.println("Warning for feature: "+ t.getPlatformIds()[0] + " no rescale value set for: " + datasets[d].getName()+"\n Defaulted to weight of 1.");
 								rescaleValue = 1.0d;
 							}
-							if (debug) {
-								System.out.println("Weight for: " + t.getPlatformIds()[d] + " is: " + rescaleValue);
+							if(debug){
+								System.out.println("Weight for: "+t.getPlatformIds()[0]+" is: "+rescaleValue);
 							}
 							weights[d] = rescaleValue;
 						}
@@ -411,7 +425,7 @@ public class BinaryMetaAnalysisTask implements Callable<Triple<ArrayList<QTL>, S
 						if (!settings.getRescalingOfSampleSize()) {
 							metaAnalysisZ = ZScores.getWeightedZ(datasetZScores, sampleSizes);
 						} else {
-							metaAnalysisZ = ZScores.getWeightedZ(datasetZScores, sampleSizes, weights);
+							metaAnalysisZ = ZScores.getDatasetSizeWeightedZ(datasetZScores, sampleSizes, weights);
 						}
 
 						if (debug && traitList[probe].getMetaTraitName().equals("ENSG00000132465")) {
@@ -433,7 +447,10 @@ public class BinaryMetaAnalysisTask implements Callable<Triple<ArrayList<QTL>, S
 
 						int metaAnalysisZNrSamples = 0;
 						int metaAnalysisNrDatasets = 0;
+
 						for (int s = 0; s < sampleSizes.length; s++) {
+
+
 							if (!Float.isNaN(datasetZScores[s])) {
 								metaAnalysisZNrSamples += sampleSizes[s];
 								metaAnalysisNrDatasets++;
@@ -459,6 +476,9 @@ public class BinaryMetaAnalysisTask implements Callable<Triple<ArrayList<QTL>, S
 									q = new QTL(metaAnalysisP, t, snp, BaseAnnot.toByte(alleleAssessed), metaAnalysisZ, BaseAnnot.toByteArray(alleles), datasetZScores, sampleSizes); // sort buffer if needed.
 								}
 
+								if (debug) {
+									System.out.println("Adding the following to results:\n" + q);
+								}
 								qtlOutput.add(q);
 							}
 						}

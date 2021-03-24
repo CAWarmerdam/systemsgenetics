@@ -22,15 +22,27 @@ public class ReadOnlyGwasSummaryStatistics implements GeneticVariantBackedGwasSu
 
     public ReadOnlyGwasSummaryStatistics(VcfGwasSummaryStatistics vcfGwasSummaryStatistics, String studyName) {
 
-        List<String> sampleNames = Arrays.asList(vcfGwasSummaryStatistics.getStudyNames());
-        if (!sampleNames.contains(studyName)) {
+        List<String> studyNames = Arrays.asList(vcfGwasSummaryStatistics.getStudyNames());
+        if (!studyNames.contains(studyName)) {
             throw new GwasSummaryStatisticsException(
                     String.format("Study name %s does not exist in the given summary statistics", studyName));
         }
 
         this.vcfGwasSummaryStatistics = vcfGwasSummaryStatistics;
         this.studyName = studyName;
-        this.studyIndex = sampleNames.indexOf(studyName);
+        this.studyIndex = studyNames.indexOf(studyName);
+    }
+
+    public ReadOnlyGwasSummaryStatistics(VcfGwasSummaryStatistics vcfGwasSummaryStatistics) {
+
+        List<String> studyNames = Arrays.asList(vcfGwasSummaryStatistics.getStudyNames());
+        if (studyNames.size() == 0) {
+            throw new GwasSummaryStatisticsException("Found no studies in the given summary statistics");
+        }
+
+        this.vcfGwasSummaryStatistics = vcfGwasSummaryStatistics;
+        this.studyIndex = 0;
+        this.studyName = studyNames.get(this.studyIndex);
     }
 
     @Override

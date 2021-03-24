@@ -185,13 +185,20 @@ public class VcfGwasSummaryStatistics implements Closeable {
                             // A dot (".") represents a missing value, we replace this with zero.
                             if (splitValuesString[j].equals(".")) {
                                 values[i][j] = 0f;
+                            } else if (splitValuesString[j].equals("inf")) {
+                                values[i][j] = Float.POSITIVE_INFINITY;
                             } else {
                                 values[i][j] = Float.parseFloat(splitValuesString[j]);
                             }
                         } catch (NumberFormatException e) {
+                            List<String> variantIdentifiers = vcfRecord.getIdentifiers();
+                            String variantIdentifier = variantIdentifiers != null ? variantIdentifiers.get(0) : "-";
+                            variantIdentifier = StringUtils.abbreviate(variantIdentifier, 64);
+
                             throw new GwasSummaryStatisticsException(String.format(
-                                    "Error in '%s' value for study [%s], found value: %s",
-                                    fieldFormat.getId(), vcfGenotypeData.getSampleNames()[i], valueString));
+                                    "Error in '%s' value for study [%s], variant '%s', found value: %s",
+                                    fieldFormat.getId(), vcfGenotypeData.getSampleNames()[i],
+                                    variantIdentifier, valueString));
                         }
                     }
                 }

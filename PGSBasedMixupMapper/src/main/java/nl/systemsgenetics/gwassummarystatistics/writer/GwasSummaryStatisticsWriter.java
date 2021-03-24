@@ -2,9 +2,9 @@ package nl.systemsgenetics.gwassummarystatistics.writer;
 
 import com.opencsv.CSVWriter;
 import nl.systemsgenetics.gwassummarystatistics.GwasSummaryStatistics;
-import nl.systemsgenetics.gwassummarystatistics.ReadOnlyGwasSummaryStatistics;
 import nl.systemsgenetics.gwassummarystatistics.effectAllele.EffectAllele;
 
+import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.*;
@@ -16,16 +16,14 @@ public class GwasSummaryStatisticsWriter {
     private final OutputFormat outputFormat;
 
     public GwasSummaryStatisticsWriter(
-            ReadOnlyGwasSummaryStatistics summaryStatistics,
+            GwasSummaryStatistics summaryStatistics,
             OutputFormat outputFormat) {
 
         this.summaryStatistics = summaryStatistics;
         this.outputFormat = outputFormat;
     }
 
-    public void readConfig() {}
-
-    public void save(String pathPrefix) throws IOException {
+    public void save(File pathPrefix) throws IOException {
         // Format the output path.
         String outputPath = String.format("%s_%s.tsv",
                 pathPrefix, summaryStatistics.getGwasId().replace(" ", "_"));
